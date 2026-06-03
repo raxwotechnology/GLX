@@ -34,6 +34,8 @@ import BillFromGrnPage from './pages/BillFromGrnPage';
 import PaymentsPage from './pages/PaymentsPage';
 import PaymentFormPage from './pages/PaymentFormPage';
 import PaymentDetailPage from './pages/PaymentDetailPage';
+import ChequeLedgerPage from './pages/ChequeLedgerPage';
+import BankAccountsPage from './pages/BankAccountsPage';
 import BomsPage from './pages/BomsPage';
 import BomFormPage from './pages/BomFormPage';
 import BomDetailPage from './pages/BomDetailPage';
@@ -144,6 +146,8 @@ function App() {
         <Route path="/payments" element={<ProtectedRoute requiredPermission="payments.view"><PaymentsPage /></ProtectedRoute>} />
         <Route path="/payments/new" element={<ProtectedRoute requiredPermission="payments.manage"><PaymentFormPage /></ProtectedRoute>} />
         <Route path="/payments/:id" element={<ProtectedRoute requiredPermission="payments.view"><PaymentDetailPage /></ProtectedRoute>} />
+        <Route path="/finance/cheques" element={<ProtectedRoute requiredPermission="payments.view"><ChequeLedgerPage /></ProtectedRoute>} />
+        <Route path="/finance/bank-accounts" element={<ProtectedRoute requiredPermission="payments.view"><BankAccountsPage /></ProtectedRoute>} />
         <Route path="/boms" element={<ProtectedRoute requiredPermission="bom.view"><BomsPage /></ProtectedRoute>} />
         <Route path="/boms/new" element={<ProtectedRoute requiredPermission="bom.manage"><BomFormPage /></ProtectedRoute>} />
         <Route path="/boms/:id" element={<ProtectedRoute requiredPermission="bom.view"><BomDetailPage /></ProtectedRoute>} />

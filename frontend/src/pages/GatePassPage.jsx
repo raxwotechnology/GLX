@@ -145,7 +145,27 @@ export default function GatePassPage() {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                     <p className="font-bold text-gray-900">{gp.gatePassNumber}</p>
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLES[gp.status]}`}>
+                                    <span 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (gp.status === 'pending') {
+                                                if (window.confirm(`Approve Gate Pass ${gp.gatePassNumber}?`)) {
+                                                    doAction(gp._id, 'approve');
+                                                }
+                                            } else if (gp.status === 'approved') {
+                                                if (window.confirm(`Record Exit for Gate Pass ${gp.gatePassNumber}?`)) {
+                                                    doAction(gp._id, 'exit');
+                                                }
+                                            }
+                                        }}
+                                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLES[gp.status]} ${
+                                            (gp.status === 'pending' || gp.status === 'approved') ? 'cursor-pointer transform hover:scale-105 active:scale-95 transition-all' : ''
+                                        }`}
+                                        title={
+                                            gp.status === 'pending' ? 'Click to Approve Gate Pass' :
+                                            gp.status === 'approved' ? 'Click to Record Exit' : ''
+                                        }
+                                    >
                                         {gp.status?.toUpperCase()}
                                     </span>
                                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${

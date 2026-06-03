@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import api from '../api/axios';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -34,6 +35,7 @@ export default function PaymentFormPage() {
     const [chequeDate, setChequeDate] = useState('');
     const [bankName, setBankName] = useState('');
     const [transactionReference, setTransactionReference] = useState('');
+    const [bankAccountId, setBankAccountId] = useState('');
     const [notes, setNotes] = useState('');
     const [allocations, setAllocations] = useState([]);
 
@@ -43,6 +45,13 @@ export default function PaymentFormPage() {
         queryKey: ['customers', 'active'],
         queryFn: () => customersApi.list({ status: 'active', limit: 500 }),
         enabled: direction === 'received',
+    });
+    const { data: bankAccountsData } = useQuery({
+        queryKey: ['bankAccounts'],
+        queryFn: async () => {
+            const { data } = await api.get('/finance/bank-accounts');
+            return data.data || [];
+        }
     });
     const { data: suppliersData } = useQuery({
         queryKey: ['suppliers', 'active'],
@@ -90,6 +99,7 @@ export default function PaymentFormPage() {
 
     const customerOptions = (customersData?.data || []).map((c) => ({ value: c._id, label: `${c.displayName} (${c.customerCode})` }));
     const supplierOptions = (suppliersData?.data || []).map((s) => ({ value: s._id, label: `${s.displayName} (${s.supplierCode})` }));
+    const bankAccountOptions = (bankAccountsData || []).map((acc) => ({ value: acc._id, label: `${acc.bankName} - ${acc.accountNumber} (${fmt(acc.balance)})` }));
     const openDocs = direction === 'received' ? (invoicesData?.data || []) : (billsData?.data || []);
 
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 2 }).format(n || 0);
@@ -136,12 +146,14 @@ export default function PaymentFormPage() {
         if (direction === 'received' && !customerId) { toast.error('Select customer'); return; }
         if (direction === 'paid' && !supplierId) { toast.error('Select supplier'); return; }
         if (totalAllocated > +amount) { toast.error('Allocations exceed payment amount'); return; }
+        if ((method === 'cheque' || method === 'bank_transfer') && !bankAccountId) { toast.error('Select company bank account'); return; }
 
         try {
             const result = await mutation.mutateAsync({
                 direction,
                 customerId: direction === 'received' ? customerId : undefined,
                 supplierId: direction === 'paid' ? supplierId : undefined,
+                bankAccountId: (method === 'cheque' || method === 'bank_transfer') ? bankAccountId : undefined,
                 paymentDate,
                 amount: +amount,
                 method,
@@ -204,7 +216,12 @@ export default function PaymentFormPage() {
                                     { value: 'mobile_wallet', label: 'Mobile Wallet' },
                                     { value: 'other', label: 'Other' },
                                 ]}
-                                value={method} onChange={(e) => setMethod(e.target.value)} />
+                                value={method} onChange={(e) => { setMethod(e.target.value); setBankAccountId(''); }} />
+
+                            {(method === 'cheque' || method === 'bank_transfer') && (
+                                <Select label="Company Bank Account" required placeholder="Select company bank account..."
+                                    options={bankAccountOptions} value={bankAccountId} onChange={(e) => setBankAccountId(e.target.value)} />
+                            )}
 
                             {method === 'cheque' && (
                                 <div className="grid grid-cols-2 gap-4">

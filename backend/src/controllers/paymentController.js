@@ -4,6 +4,8 @@ import Payment from '../models/Payment.js';
 import Invoice from '../models/Invoice.js';
 import Bill from '../models/Bill.js';
 import Customer from '../models/Customer.js';
+import BankAccount from '../models/BankAccount.js';
+import { broadcast } from '../services/socketService.js';
 import { updateCustomerBalance } from './invoiceController.js';
 
 /**
@@ -11,7 +13,7 @@ import { updateCustomerBalance } from './invoiceController.js';
  * Record a payment (received from customer or paid to supplier)
  */
 export const createPayment = asyncHandler(async (req, res) => {
-    const { direction, customerId, supplierId, allocations = [], ...rest } = req.body;
+    const { direction, customerId, supplierId, bankAccountId, amount, allocations = [], method, chequeStatus, ...rest } = req.body;
 
     if (direction === 'received' && !customerId) {
         res.status(400); throw new Error('customerId required for received payments');
@@ -22,6 +24,7 @@ export const createPayment = asyncHandler(async (req, res) => {
 
     const session = await mongoose.startSession();
     let payment;
+    const isChequePending = method === 'cheque' && chequeStatus !== 'cleared';
 
     try {
         await session.withTransaction(async () => {
@@ -55,10 +58,28 @@ export const createPayment = asyncHandler(async (req, res) => {
                 partyName = s?.displayName;
             }
 
+            // Update bank account balance if bankAccountId is provided and not a pending cheque
+            if (bankAccountId && !isChequePending) {
+                const bankAccount = await BankAccount.findById(bankAccountId).session(session);
+                if (!bankAccount) throw new Error('Company bank account not found');
+                
+                const payAmount = Number(amount || 0);
+                if (direction === 'received') {
+                    bankAccount.balance = +(bankAccount.balance + payAmount).toFixed(2);
+                } else if (direction === 'paid') {
+                    bankAccount.balance = +(bankAccount.balance - payAmount).toFixed(2);
+                }
+                await bankAccount.save({ session });
+            }
+
             payment = new Payment({
                 direction,
                 customerId: direction === 'received' ? customerId : undefined,
                 supplierId: direction === 'paid' ? supplierId : undefined,
+                bankAccountId,
+                amount,
+                method,
+                chequeStatus: method === 'cheque' ? (chequeStatus || 'pending') : undefined,
                 partyName,
                 allocations,
                 receivedBy: req.user._id,
@@ -89,9 +110,21 @@ export const createPayment = asyncHandler(async (req, res) => {
             }
         });
 
+        // Broadcast bank account balance change after successful transaction commit
+        if (bankAccountId && !isChequePending) {
+            const updatedAccount = await BankAccount.findById(bankAccountId);
+            if (updatedAccount) {
+                broadcast('bank_balance_update', { 
+                    bankAccountId, 
+                    balance: updatedAccount.balance 
+                });
+            }
+        }
+
         const populated = await Payment.findById(payment._id)
             .populate('customerId', 'displayName customerCode')
-            .populate('supplierId', 'displayName supplierCode');
+            .populate('supplierId', 'displayName supplierCode')
+            .populate('bankAccountId', 'bankName accountNumber accountName');
 
         res.status(201).json({ success: true, data: populated });
     } catch (err) {
@@ -101,6 +134,81 @@ export const createPayment = asyncHandler(async (req, res) => {
         session.endSession();
     }
 });
+
+/**
+ * PUT /api/payments/:id/clear
+ * Clear a pending cheque payment, adjusting the linked bank account balance.
+ */
+export const clearPaymentCheque = asyncHandler(async (req, res) => {
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) {
+        res.status(404);
+        throw new Error('Payment not found');
+    }
+    if (payment.method !== 'cheque') {
+        res.status(400);
+        throw new Error('Only cheque payments can be cleared');
+    }
+    if (payment.chequeStatus === 'cleared') {
+        res.status(400);
+        throw new Error('Cheque is already cleared');
+    }
+
+    const session = await mongoose.startSession();
+    try {
+        await session.withTransaction(async () => {
+            payment.chequeStatus = 'cleared';
+            await payment.save({ session });
+
+            if (payment.bankAccountId) {
+                const bankAccount = await BankAccount.findById(payment.bankAccountId).session(session);
+                if (!bankAccount) throw new Error('Associated company bank account not found');
+
+                const payAmount = Number(payment.amount || 0);
+                if (payment.direction === 'received') {
+                    bankAccount.balance = +(bankAccount.balance + payAmount).toFixed(2);
+                } else if (payment.direction === 'paid') {
+                    bankAccount.balance = +(bankAccount.balance - payAmount).toFixed(2);
+                }
+                await bankAccount.save({ session });
+            }
+        });
+
+        // Broadcast bank balance update
+        if (payment.bankAccountId) {
+            const updatedAccount = await BankAccount.findById(payment.bankAccountId);
+            if (updatedAccount) {
+                broadcast('bank_balance_update', {
+                    bankAccountId: payment.bankAccountId,
+                    balance: updatedAccount.balance,
+                });
+            }
+        }
+
+        // Broadcast cheque clearance event
+        try {
+            broadcast('cheque_cleared', {
+                paymentId: payment._id,
+                paymentNumber: payment.paymentNumber,
+                amount: payment.amount,
+                chequeNumber: payment.chequeNumber,
+            });
+        } catch (_) {}
+
+        const populated = await Payment.findById(payment._id)
+            .populate('customerId', 'displayName customerCode')
+            .populate('supplierId', 'displayName supplierCode')
+            .populate('bankAccountId', 'bankName accountNumber accountName');
+
+        res.json({ success: true, message: 'Cheque cleared successfully', data: populated });
+    } catch (err) {
+        res.status(400);
+        throw new Error(err.message || 'Failed to clear cheque');
+    } finally {
+        session.endSession();
+    }
+});
+
 
 export const getPayments = asyncHandler(async (req, res) => {
     const {

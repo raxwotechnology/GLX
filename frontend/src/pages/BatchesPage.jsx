@@ -222,7 +222,24 @@ const BatchesPage = () => {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-3 mb-1">
                                     <h4 className="font-bold text-gray-900 truncate uppercase tracking-tight">{batch.batchNo || batch.batchNumber}</h4>
-                                    {getStatusBadge(batch.status)}
+                                    <div 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            let nextStatus = '';
+                                            if (batch.status === 'planned') nextStatus = 'in_progress';
+                                            else if (batch.status === 'in_progress') nextStatus = 'qc_pending';
+                                            else if (batch.status === 'qc_pending') nextStatus = 'qc_passed';
+                                            else if (batch.status === 'qc_passed') nextStatus = 'completed';
+                                            
+                                            if (nextStatus) {
+                                                handleUpdateStatus(batch._id, nextStatus);
+                                            }
+                                        }}
+                                        className="cursor-pointer transform hover:scale-105 active:scale-95 transition-all"
+                                        title="Click to transition status"
+                                    >
+                                        {getStatusBadge(batch.status)}
+                                    </div>
                                 </div>
                                 <p className="text-xs text-gray-500">
                                     {batch.product || 'Standard Product'} ·

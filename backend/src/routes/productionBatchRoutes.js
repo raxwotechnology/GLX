@@ -3,7 +3,8 @@ import {
     getProductionBatches,
     createProductionBatch,
     startProductionBatch,
-    completeProductionBatch
+    completeProductionBatch,
+    updateProductionBatchStatus
 } from '../controllers/productionBatchController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
@@ -17,5 +18,7 @@ router.route('/')
 
 router.put('/:id/start', authorize('admin', 'manager', 'production_staff'), startProductionBatch);
 router.put('/:id/complete', authorize('admin', 'manager', 'production_staff'), completeProductionBatch);
+router.put('/:id/status', authorize('admin', 'manager', 'production_staff'), updateProductionBatchStatus);
 
 export default router;
+

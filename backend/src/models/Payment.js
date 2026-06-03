@@ -22,6 +22,7 @@ const paymentSchema = new mongoose.Schema({
     // Customer (if received) OR supplier (if paid)
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
     supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
+    bankAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'BankAccount' },
     partyName: String,
 
     paymentDate: { type: Date, default: Date.now },

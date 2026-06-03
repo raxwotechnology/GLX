@@ -189,20 +189,40 @@ export default function PettyCashPage() {
                                         {entry.status === 'pending' && (
                                             <div className="flex gap-1 mr-1">
                                                 <button onClick={() => handleStatusUpdate(entry._id, 'approved')}
-                                                    className="p-1 hover:bg-emerald-50 text-emerald-600 rounded transition">
+                                                    className="p-1 hover:bg-emerald-50 text-emerald-600 rounded transition"
+                                                    title="Approve">
                                                     <CheckCircle2 size={14} />
                                                 </button>
                                                 <button onClick={() => handleStatusUpdate(entry._id, 'rejected')}
-                                                    className="p-1 hover:bg-red-50 text-red-600 rounded transition">
+                                                    className="p-1 hover:bg-red-50 text-red-600 rounded transition"
+                                                    title="Reject">
                                                     <XCircle size={14} />
                                                 </button>
                                             </div>
                                         )}
-                                        {entry.status === 'pending'  && <Clock size={11} className="text-yellow-500" />}
-                                        {entry.status === 'approved' && <CheckCircle2 size={11} className="text-emerald-500" />}
-                                        {entry.status === 'rejected' && <XCircle size={11} className="text-red-500" />}
-                                        <span className="text-[10px] font-bold uppercase text-gray-400">{entry.status}</span>
+                                        <div 
+                                            onClick={(e) => {
+                                                if (entry.status === 'pending') {
+                                                    e.stopPropagation();
+                                                    if (window.confirm(`Approve Petty Cash transaction for Rs. ${entry.amount}?`)) {
+                                                        handleStatusUpdate(entry._id, 'approved');
+                                                    }
+                                                }
+                                            }}
+                                            className={`flex items-center gap-1 ${
+                                                entry.status === 'pending' ? 'cursor-pointer transform hover:scale-105 active:scale-95 transition-all' : ''
+                                            }`}
+                                            title={entry.status === 'pending' ? 'Click to Approve Petty Cash Request' : ''}
+                                        >
+                                            {entry.status === 'pending'  && <Clock size={11} className="text-yellow-500" />}
+                                            {entry.status === 'approved' && <CheckCircle2 size={11} className="text-emerald-500" />}
+                                            {entry.status === 'rejected' && <XCircle size={11} className="text-red-500" />}
+                                            <span className={`text-[10px] font-bold uppercase ${
+                                                entry.status === 'pending' ? 'text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded border border-yellow-100' : 'text-gray-400'
+                                            }`}>{entry.status}</span>
+                                        </div>
                                     </div>
+
                                 </div>
                             </div>
                         ))

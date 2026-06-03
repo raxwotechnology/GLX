@@ -33,6 +33,18 @@ export default function InvoiceDetailPage() {
 
     const printRef = useRef();
 
+    // Fetch payments allocated to this invoice
+    const { data: paymentsData } = useQuery({
+        queryKey: ['paymentsForInvoice', inv?._id],
+        queryFn: () => paymentsApi.list({
+            documentId: inv?._id,
+            limit: 50,
+        }),
+        enabled: !!inv?._id,
+    });
+
+    const payments = paymentsData?.data || [];
+
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 2 }).format(n || 0);
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-LK') : '—';
 
@@ -53,18 +65,6 @@ export default function InvoiceDetailPage() {
         await changeStatus.mutateAsync({ id: inv._id, status: action.status, reason });
         setAction(null); setReason('');
     };
-
-    // Fetch payments allocated to this invoice
-    const { data: paymentsData } = useQuery({
-        queryKey: ['paymentsForInvoice', invoice?._id],
-        queryFn: () => paymentsApi.list({
-            documentId: invoice._id,
-            limit: 50,
-        }),
-        enabled: !!invoice?._id,
-    });
-
-    const payments = paymentsData?.data || [];
 
     const handlePrint = () => {
         window.print();
@@ -287,7 +287,7 @@ export default function InvoiceDetailPage() {
                 <PrintableInvoice
                     ref={printRef}
                     companyInfo={companyInfo}
-                    invoice={invoice}
+                    invoice={inv}
                     payments={payments}
                 />
             </div>

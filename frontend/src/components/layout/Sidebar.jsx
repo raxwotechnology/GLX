@@ -5,7 +5,7 @@ import {
     FolderTree, Award, UserCircle, Tags, Warehouse, Boxes, Truck,
     ShoppingBag, FileText, Receipt, Wallet, Workflow, Factory, ShieldCheck,
     RotateCcw, Wrench, AlertTriangle, FileMinus, X, Users as UsersIcon, Building2, Clock, Calendar as CalendarIcon, Plane, Calculator, DollarSign, Upload,
-    ClipboardList, UserPlus, Ship, Layers, History,
+    ClipboardList, UserPlus, Ship, Layers, History, FileSpreadsheet,
 } from 'lucide-react';
 
 // ── Grouped menu structure ──────────────────────────────────────────────────
@@ -69,6 +69,8 @@ const menuGroups = [
         items: [
             { label: 'Invoices', icon: FileText, path: '/invoices', permission: 'invoices.view' },
             { label: 'Payments', icon: Wallet, path: '/payments', permission: 'payments.view' },
+            { label: 'Cheque Ledger', icon: FileSpreadsheet, path: '/finance/cheques', permission: 'payments.view' },
+            { label: 'Bank Accounts', icon: Building2, path: '/finance/bank-accounts', permission: 'payments.view' },
             { label: 'Petty Cash', icon: DollarSign, path: '/finance/petty-cash', permission: 'payments.view' },
             { label: 'Credit Notes', icon: FileMinus, path: '/credit-notes', permission: 'credit_notes.view' },
         ],

@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-    createPayment, getPayments, getPaymentById,
+    createPayment, getPayments, getPaymentById, clearPaymentCheque
 } from '../controllers/paymentController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
@@ -14,5 +14,6 @@ router
     .post(requirePermission('payments.manage'), createPayment);
 
 router.route('/:id').get(requirePermission('payments.view'), getPaymentById);
+router.put('/:id/clear', requirePermission('payments.manage'), clearPaymentCheque);
 
-export default router;
+export default router;

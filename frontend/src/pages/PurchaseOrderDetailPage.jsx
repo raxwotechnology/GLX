@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Send, Ban, PackageCheck, Receipt } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -9,7 +10,7 @@ import Badge from '../components/ui/Badge';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import GrnModal from '../features/purchaseOrders/GrnModal';
 import QaApprovalModal from '../features/purchaseOrders/QaApprovalModal';
-import { usePurchaseOrder, useChangePoStatus } from '../features/purchaseOrders/usePurchaseOrders';
+import { usePurchaseOrder, useChangePoStatus, useApproveGrnQA } from '../features/purchaseOrders/usePurchaseOrders';
 import { useAuthStore } from '../store/authStore';
 
 const statusVariant = {
@@ -29,7 +30,30 @@ export default function PurchaseOrderDetailPage() {
 
     const { data, isLoading } = usePurchaseOrder(id);
     const changeStatus = useChangePoStatus();
+    const approveQA = useApproveGrnQA();
     const po = data?.data;
+
+    const handleQuickApproveGrn = async (grn) => {
+        if (!window.confirm(`Are you sure you want to QUICK APPROVE GRN ${grn.grnNumber}? This will accept 100% of received materials and generate batch numbers automatically.`)) {
+            return;
+        }
+        const loadToast = toast.loading('Quick approving supplies QA...');
+        try {
+            const payload = {
+                paidAmountLKR: 0,
+                items: (grn.items || []).map(item => ({
+                    _id: item._id,
+                    acceptedQuantity: Number(item.receivedQuantity || 0),
+                    rejectedQuantity: 0,
+                    batchNumber: item.batchNumber || undefined,
+                }))
+            };
+            await approveQA.mutateAsync({ id: grn._id, data: payload });
+            toast.success('✅ QA Approved successfully! Stock and Ledger updated.', { id: loadToast });
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Quick approval failed', { id: loadToast });
+        }
+    };
 
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 2 }).format(n || 0);
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-LK') : '—';
@@ -179,14 +203,20 @@ export default function PurchaseOrderDetailPage() {
                                             <p className="text-xs text-gray-500">{fmtDate(g.receiptDate)}</p>
                                         </div>
                                         {g.status === 'pending_approval' ? (
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant="warning">Pending QA</Badge>
-                                                {canApprove && (
-                                                    <Button size="xs" variant="primary" onClick={() => setSelectedGrnToApprove(g)}>
-                                                        Approve QA
-                                                    </Button>
-                                                )}
-                                            </div>
+                                             <div className="flex items-center gap-2">
+                                                 <div 
+                                                     onClick={() => handleQuickApproveGrn(g)}
+                                                     className="cursor-pointer transform hover:scale-105 active:scale-95 transition-all"
+                                                     title="Click to Quick Approve QA (100% Accepted)"
+                                                 >
+                                                     <Badge variant="warning">Pending QA</Badge>
+                                                 </div>
+                                                 {canApprove && (
+                                                     <Button size="xs" variant="primary" onClick={() => setSelectedGrnToApprove(g)}>
+                                                         Approve QA
+                                                     </Button>
+                                                 )}
+                                             </div>
                                         ) : (
                                             <Badge variant="success">Approved</Badge>
                                         )}

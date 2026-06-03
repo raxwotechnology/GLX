@@ -48,6 +48,7 @@ import exportShipmentRoutes from './routes/exportShipmentRoutes.js';
 import pettyCashRoutes from './routes/pettyCashRoutes.js';
 import fleetRoutes from './routes/fleetRoutes.js';
 import maintenanceRoutes from './routes/maintenanceRoutes.js';
+import bankAccountRoutes from './routes/bankAccountRoutes.js';
 import machineRoutes from './routes/machineRoutes.js';
 import { initSocket } from './services/socketService.js';
 import './services/autoBackupService.js'; // Initialize automated backup listener
@@ -71,6 +72,8 @@ connectDB().then(async () => {
         await PettyCash.collection.dropIndex('voucherCode_1').catch(() => {});
         const { default: ProductionBatch } = await import('./models/ProductionBatch.js');
         await ProductionBatch.collection.dropIndex('batchCode_1').catch(() => {});
+        await ProductionBatch.collection.dropIndex('batchNumber_1').catch(() => {});
+
         
         const { default: excelService } = await import('./services/excelService.js');
         await excelService.syncAllFilesToDB();
@@ -151,6 +154,7 @@ app.use('/api/qc', qcRoutes);
 app.use('/api/crm', crmRoutes);
 app.use('/api/export-shipments', exportShipmentRoutes);
 app.use('/api/finance/petty-cash', pettyCashRoutes);
+app.use('/api/finance/bank-accounts', bankAccountRoutes);
 app.use('/api/fleet', fleetRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/production/machines', machineRoutes);

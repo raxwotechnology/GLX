@@ -158,3 +158,53 @@ export const completeProductionBatch = asyncHandler(async (req, res) => {
 
     res.json({ success: true, data: batch });
 });
+
+/**
+ * @desc    Update production batch status (General status transition)
+ * @route   PUT /api/production-batches/:id/status
+ * @access  Private
+ */
+export const updateProductionBatchStatus = asyncHandler(async (req, res) => {
+    const { status } = req.body;
+    const batch = await ProductionBatch.findById(req.params.id);
+
+    if (!batch) {
+        res.status(404);
+        throw new Error('Batch not found');
+    }
+
+    // Set stage and timestamps accordingly
+    batch.status = status;
+    
+    if (status === 'in_progress') {
+        batch.plannedStartDate = new Date();
+        batch.processingStage = 'washing_cutting';
+        batch.stageTimestamps = { ...batch.stageTimestamps, washing_cutting: new Date() };
+    } else if (status === 'qc_pending') {
+        batch.processingStage = 'packing';
+        batch.stageTimestamps = { ...batch.stageTimestamps, packing: new Date() };
+    } else if (status === 'completed' || status === 'qc_passed') {
+        batch.plannedEndDate = new Date();
+        batch.processingStage = 'completed';
+        batch.stageTimestamps = { ...batch.stageTimestamps, completed: new Date() };
+    }
+
+    await batch.save();
+
+    createAuditLog({
+        action: 'update',
+        module: 'manufacturing',
+        documentId: batch._id,
+        documentCode: batch.batchNo || batch.batchNumber,
+        description: `Updated production batch status to ${status} for batch: ${batch.batchNo || batch.batchNumber}`,
+        req
+    });
+
+    // Bi-directional Excel Sync
+    excelService.updateExcelRow('production', batch.toObject()).catch(err => {
+        console.error('Excel Sync Failed (Status Update):', err);
+    });
+
+    res.json({ success: true, data: batch });
+});
+
