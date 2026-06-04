@@ -35,6 +35,7 @@ export const createUomSchema = z.object({
 export const updateUomSchema = createUomSchema.partial();
 
 export const createProductSchema = z.object({
+    productCode: z.string().max(100).optional(),
     sku: z.string().max(50).optional(),
     barcode: z.string().max(50).optional(),
     name: z.string().min(1).max(200),

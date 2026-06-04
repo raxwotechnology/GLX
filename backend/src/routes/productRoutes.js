@@ -6,6 +6,8 @@ import {
     updateProduct,
     deleteProduct,
     predictYield,
+    getNextProductCode,
+    getProductForecasting,
 } from '../controllers/productController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
@@ -17,11 +19,14 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/predict-yield', requirePermission('products.view'), predictYield);
+router.get('/next-code', requirePermission('products.create'), getNextProductCode);
 
 router
     .route('/')
     .get(requirePermission('products.view'), getProducts)
     .post(requirePermission('products.create'), validate(createProductSchema), createProduct);
+
+router.get('/:id/forecasting', requirePermission('products.view'), getProductForecasting);
 
 router
     .route('/:id')

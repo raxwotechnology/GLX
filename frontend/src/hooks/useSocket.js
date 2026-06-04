@@ -3,13 +3,18 @@ import { io } from 'socket.io-client';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
 
-let socket;
+let socket = null;
+let useCount = 0;
 
 export const useSocket = () => {
     const { user } = useAuthStore();
 
     useEffect(() => {
-        if (user && !socket) {
+        if (!user) return;
+
+        useCount++;
+
+        if (!socket) {
             // Strip /api from VITE_API_URL to get the base socket server URL
             const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace('/api', '');
 
@@ -53,7 +58,8 @@ export const useSocket = () => {
         }
 
         return () => {
-            if (socket) {
+            useCount--;
+            if ((useCount <= 0 || !user) && socket) {
                 socket.disconnect();
                 socket = null;
             }

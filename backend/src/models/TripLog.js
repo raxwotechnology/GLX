@@ -52,14 +52,13 @@ const tripLogSchema = new mongoose.Schema(
 );
 
 // ── Pre-save Hook: Auto-calculate distance and fuel cost ────────────────────
-tripLogSchema.pre('save', function(next) {
+tripLogSchema.pre('save', function() {
   if (this.startOdometer && this.endOdometer) {
     this.distanceKm = this.endOdometer - this.startOdometer;
   }
   if (this.fuelConsumed && this.fuelRate) {
     this.totalCost = parseFloat((this.fuelConsumed * this.fuelRate).toFixed(2));
   }
-  next();
 });
 
 tripLogSchema.index({ vehicleId: 1, startDate: -1 });

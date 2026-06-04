@@ -94,6 +94,7 @@ import SlowFastMoversReportPage from './pages/reports/SlowFastMoversReportPage';
 import LowStockReportPage from './pages/reports/LowStockReportPage';
 import StockMovementReportPage from './pages/reports/StockMovementReportPage';
 import ProductionReportPage from './pages/reports/ProductionReportPage';
+import YieldForecasterPage from './pages/reports/YieldForecasterPage';
 import ReturnsReportPage from './pages/reports/ReturnsReportPage';
 import FinancialSnapshotPage from './pages/reports/FinancialSnapshotPage';
 import HrReportsPage from './pages/reports/HrReportsPage';
@@ -208,6 +209,7 @@ function App() {
         <Route path="/reports/inventory/low-stock" element={<ProtectedRoute requiredPermission="reports.inventory"><LowStockReportPage /></ProtectedRoute>} />
         <Route path="/reports/stock-movement" element={<ProtectedRoute requiredPermission="reports.inventory"><StockMovementReportPage /></ProtectedRoute>} />
         <Route path="/reports/production" element={<ProtectedRoute requiredPermission="reports.production"><ProductionReportPage /></ProtectedRoute>} />
+        <Route path="/reports/yield-forecaster" element={<ProtectedRoute requiredPermission="reports.production"><YieldForecasterPage /></ProtectedRoute>} />
         <Route path="/reports/returns-damages" element={<ProtectedRoute requiredPermission="reports.sales"><ReturnsReportPage /></ProtectedRoute>} />
         <Route path="/reports/financial" element={<ProtectedRoute requiredPermission="reports.financial"><FinancialSnapshotPage /></ProtectedRoute>} />
         <Route path="/reports/daily-pnl" element={<ProtectedRoute requiredPermission="reports.financial"><DailyPnLPage /></ProtectedRoute>} />

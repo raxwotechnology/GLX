@@ -219,21 +219,33 @@ export const markAttendance = asyncHandler(async (req, res) => {
 
     if (att) {
         // Update
-        if (checkInTime !== undefined) att.checkInTime = checkInTime;
-        if (checkOutTime !== undefined) att.checkOutTime = checkOutTime;
+        if (checkInTime !== undefined) {
+            const checkIn = (checkInTime && checkInTime !== "") ? new Date(checkInTime) : null;
+            att.checkInTime = (checkIn && !isNaN(checkIn.getTime())) ? checkIn : null;
+        }
+        if (checkOutTime !== undefined) {
+            const checkOut = (checkOutTime && checkOutTime !== "") ? new Date(checkOutTime) : null;
+            att.checkOutTime = (checkOut && !isNaN(checkOut.getTime())) ? checkOut : null;
+        }
         if (status) att.status = status;
         if (shiftId) att.shiftId = shiftId;
         if (notes !== undefined) att.notes = notes;
         if (lateMinutes !== undefined) att.lateMinutes = lateMinutes;
         if (overtimeMinutes !== undefined) att.overtimeMinutes = overtimeMinutes;
     } else {
+        const checkIn = (checkInTime && checkInTime !== "") ? new Date(checkInTime) : null;
+        const checkOut = (checkOutTime && checkOutTime !== "") ? new Date(checkOutTime) : null;
         att = new Attendance({
             employeeId: emp._id,
             employeeCode: emp.employeeCode,
             employeeName: emp.fullName,
             date: attendanceDate,
-            checkInTime, checkOutTime, status: status || 'present', shiftId,
-            lateMinutes: lateMinutes || 0, overtimeMinutes: overtimeMinutes || 0,
+            checkInTime: (checkIn && !isNaN(checkIn.getTime())) ? checkIn : null,
+            checkOutTime: (checkOut && !isNaN(checkOut.getTime())) ? checkOut : null,
+            status: status || 'present',
+            shiftId,
+            lateMinutes: lateMinutes || 0,
+            overtimeMinutes: overtimeMinutes || 0,
             notes,
             markedBy: req.user._id,
         });
@@ -243,6 +255,9 @@ export const markAttendance = asyncHandler(async (req, res) => {
     if (att.checkInTime && att.checkOutTime) {
         const diff = (new Date(att.checkOutTime) - new Date(att.checkInTime)) / 60000;
         att.totalWorkedMinutes = Math.max(0, Math.floor(diff));
+    } else {
+        att.totalWorkedMinutes = 0;
+        att.overtimeMinutes = 0;
     }
 
     await att.save();
@@ -322,8 +337,10 @@ export const bulkMarkAttendance = asyncHandler(async (req, res) => {
             });
         }
         att.status = r.status || 'present';
-        att.checkInTime = r.checkInTime;
-        att.checkOutTime = r.checkOutTime;
+        const checkIn = (r.checkInTime && r.checkInTime !== "") ? new Date(r.checkInTime) : null;
+        const checkOut = (r.checkOutTime && r.checkOutTime !== "") ? new Date(r.checkOutTime) : null;
+        att.checkInTime = (checkIn && !isNaN(checkIn.getTime())) ? checkIn : null;
+        att.checkOutTime = (checkOut && !isNaN(checkOut.getTime())) ? checkOut : null;
         att.lateMinutes = r.lateMinutes || 0;
         att.overtimeMinutes = r.overtimeMinutes || 0;
         att.notes = r.notes;
@@ -331,6 +348,9 @@ export const bulkMarkAttendance = asyncHandler(async (req, res) => {
         if (att.checkInTime && att.checkOutTime) {
             const diff = (new Date(att.checkOutTime) - new Date(att.checkInTime)) / 60000;
             att.totalWorkedMinutes = Math.max(0, Math.floor(diff));
+        } else {
+            att.totalWorkedMinutes = 0;
+            att.overtimeMinutes = 0;
         }
         await att.save();
         results.push(att);

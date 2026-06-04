@@ -3,6 +3,7 @@ import { z } from 'zod';
 const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ID').or(z.literal(''));
 
 export const productFormSchema = z.object({
+    productCode: z.string().optional().or(z.literal('')),
     name: z.string().min(1, 'Product name is required').max(200),
     shortName: z.string().max(100).optional().or(z.literal('')),
     sku: z.string().max(50).optional().or(z.literal('')),

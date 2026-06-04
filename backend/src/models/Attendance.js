@@ -34,7 +34,7 @@ const attendanceSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // ── Pre-save Hook: Auto-calculate OT based on 8-hour standard shift ──────────
-attendanceSchema.pre('save', function(next) {
+attendanceSchema.pre('save', function() {
     if (this.checkInTime && this.checkOutTime) {
         const workedMs      = new Date(this.checkOutTime) - new Date(this.checkInTime);
         const workedMinutes = Math.floor(workedMs / (1000 * 60));
@@ -43,7 +43,6 @@ attendanceSchema.pre('save', function(next) {
         // Standard shift = 8 hours = 480 minutes
         this.overtimeMinutes    = Math.max(0, workedMinutes - 480);
     }
-    next();
 });
 
 // Unique: one attendance record per employee per date

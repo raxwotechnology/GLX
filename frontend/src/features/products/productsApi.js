@@ -22,6 +22,10 @@ export const productsApi = {
         const response = await api.delete(`/products/${id}`);
         return response.data;
     },
+    getNextCode: async (categoryId) => {
+        const response = await api.get('/products/next-code', { params: { categoryId } });
+        return response.data;
+    },
 
     // Categories
     listCategories: async (params = {}) => {

@@ -1,5 +1,8 @@
 import asyncHandler from 'express-async-handler';
 import Product from '../models/Product.js';
+import Category from '../models/Category.js';
+import PartCounter from '../models/PartCounter.js';
+import ProductionBatch from '../models/ProductionBatch.js';
 import backupEmitter, { BACKUP_EVENTS } from '../utils/backupEventEmitter.js';
 import { createAuditLog } from '../utils/auditLogger.js';
 
@@ -198,6 +201,145 @@ export const predictYield = asyncHandler(async (req, res) => {
                 name: rule.outputProduct?.name,
                 productCode: rule.outputProduct?.productCode,
                 unitOfMeasure: rule.outputProduct?.unitOfMeasure
+            }
+        }
+    });
+});
+
+export const getNextProductCode = asyncHandler(async (req, res) => {
+    const { categoryId } = req.query;
+
+    if (!categoryId) {
+        res.status(400);
+        throw new Error('Category ID is required');
+    }
+
+    const category = await Category.findById(categoryId);
+    if (!category) {
+        res.status(404);
+        throw new Error('Category not found');
+    }
+
+    // Resolve Category Short Code (3-letter uppercase based on name/code, e.g. Mechanical -> MAC)
+    const codeBase = category.code || category.name;
+    const shortCode = codeBase
+        .replace(/[^a-zA-Z]/g, '')
+        .substring(0, 3)
+        .toUpperCase();
+
+    // Date computation (Timezone-agnostic UTC day of year)
+    const today = new Date();
+    
+    // We use UTC calculation to avoid Daylight Saving Time (DST) offsets
+    const utcToday = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const utcJan1 = Date.UTC(today.getFullYear(), 0, 1);
+    
+    const dayOfYear = Math.floor((utcToday - utcJan1) / (24 * 60 * 60 * 1000)) + 1;
+    
+    const yearShort = today.getFullYear().toString().slice(-2);
+    const julianDay = dayOfYear.toString().padStart(3, '0');
+
+    // Build the atomic lock key format: parts:[CategoryShortCode]:[YY][JulianDay]
+    const counterKey = `parts:${shortCode}:${yearShort}${julianDay}`;
+
+    // Atomically increment the sequence counter
+    const counter = await PartCounter.findOneAndUpdate(
+        { _id: counterKey },
+        { $inc: { sequence: 1 } },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    const sequenceNo = counter.sequence.toString().padStart(2, '0');
+    const productCode = `P-${shortCode}-${yearShort}${julianDay}-${sequenceNo}`;
+
+    res.json({ success: true, productCode });
+});
+
+export const getProductForecasting = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    // Fetch all completed production batches for this product
+    const batches = await ProductionBatch.find({
+        productId: id,
+        deletedAt: null,
+        status: 'completed'
+    }).sort({ date: 1 });
+
+    if (!batches || batches.length === 0) {
+        return res.json({
+            success: true,
+            data: { history: [], hasEnoughData: false }
+        });
+    }
+
+    // Map historical batches to forecast input metrics
+    const history = batches.map(b => {
+        const inputWeight = b.inputWeight_total || 0;
+        const outputWeight = b.outputWeight_total || 0;
+        const efficiency = b.efficiencyPercentage || 
+            (inputWeight > 0 ? +((outputWeight / inputWeight) * 100).toFixed(2) : 0);
+        
+        const firewood = (b.firewoodKg_day || 0) + (b.firewoodKg_night || 0);
+        const electricity = b.electricityUnits || 0;
+
+        return {
+            date: b.date,
+            batchNo: b.batchNo,
+            inputWeight,
+            outputWeight,
+            efficiency,
+            firewood,
+            electricity
+        };
+    });
+
+    const count = history.length;
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    let totalInputWeight = 0, totalFirewood = 0, totalElectricity = 0;
+
+    history.forEach((h, index) => {
+        sumX += index;
+        sumY += h.efficiency;
+        sumXY += index * h.efficiency;
+        sumXX += index * index;
+        totalInputWeight += h.inputWeight;
+        totalFirewood += h.firewood;
+        totalElectricity += h.electricity;
+    });
+
+    // Simple Linear Regression calculation
+    let slope = 0;
+    let intercept = sumY / count; // default to average if count < 2
+    
+    if (count >= 2) {
+        const denominator = (count * sumXX) - (sumX * sumX);
+        if (denominator !== 0) {
+            slope = ((count * sumXY) - (sumX * sumY)) / denominator;
+            intercept = (sumY - (slope * sumX)) / count;
+        }
+    }
+
+    // Moving average of last 5 batches
+    const last5 = history.slice(-5);
+    const movingAverageRatio = last5.reduce((sum, h) => sum + h.efficiency, 0) / Math.min(5, count);
+
+    // Resource rates (units consumed per Kg of input material)
+    const avgFirewoodRate = totalInputWeight > 0 ? (totalFirewood / totalInputWeight) : 0;
+    const avgElectricityRate = totalInputWeight > 0 ? (totalElectricity / totalInputWeight) : 0;
+
+    res.json({
+        success: true,
+        data: {
+            hasEnoughData: count >= 3,
+            history,
+            statistics: {
+                count,
+                averageEfficiency: +(sumY / count).toFixed(2),
+                movingAverageRatio: +movingAverageRatio.toFixed(2),
+                avgFirewoodRate: +avgFirewoodRate.toFixed(4),
+                avgElectricityRate: +avgElectricityRate.toFixed(4),
+                slope: +slope.toFixed(4),
+                intercept: +intercept.toFixed(2)
             }
         }
     });

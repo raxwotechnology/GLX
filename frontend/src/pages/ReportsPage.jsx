@@ -31,6 +31,7 @@ const reportGroups = [
         color: 'text-purple-600', bg: 'bg-purple-50',
         reports: [
             { title: 'Production Summary', description: 'Output, yield, cost variance, wastage', path: '/reports/production', icon: Factory },
+            { title: 'Yield & Resource Forecaster', description: 'Predict output, wastage, firewood & power using history', path: '/reports/yield-forecaster', icon: TrendingUp },
         ],
     },
     {

@@ -107,7 +107,7 @@ const productionBatchSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // ── Pre-save Hook: Auto-generate Julian Batch Code & Compute Totals ─────────
-productionBatchSchema.pre('save', function(next) {
+productionBatchSchema.pre('save', function() {
   // 1. Staff totals
   this.staff_total      = (this.staff_day      || 0) + (this.staff_night      || 0);
   this.otherStaff_total = (this.otherStaff_day || 0) + (this.otherStaff_night || 0);
@@ -127,8 +127,6 @@ productionBatchSchema.pre('save', function(next) {
   if (this.isNew && !this.batchNo) {
     this.batchNo = generateBatchCode(this.date, this.supplierShortCode);
   }
-
-  next();
 });
 
 productionBatchSchema.pre(/^find/, function(next) {

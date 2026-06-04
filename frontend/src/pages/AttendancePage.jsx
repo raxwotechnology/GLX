@@ -36,17 +36,36 @@ export default function AttendancePage() {
 
     const [bulkRecords, setBulkRecords] = useState([]);
 
+    const formatDateTimeLocal = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
     const openBulk = () => {
         // Seed with all employees, default present
-        const attMap = new Map(attendance.map((a) => [a.employeeId._id || a.employeeId, a]));
+        const attMap = new Map();
+        attendance.forEach((a) => {
+            if (a.employeeId) {
+                const id = typeof a.employeeId === 'object' ? a.employeeId._id : a.employeeId;
+                if (id) attMap.set(id.toString(), a);
+            }
+        });
+
         const records = employees.map((e) => {
-            const existing = attMap.get(e._id);
+            const existing = attMap.get(e._id.toString());
             return {
                 employeeId: e._id,
                 employeeName: `${e.firstName} ${e.lastName}`,
                 status: existing?.status || 'present',
-                checkInTime: existing?.checkInTime || `${selectedDate}T08:00`,
-                checkOutTime: existing?.checkOutTime || `${selectedDate}T17:00`,
+                checkInTime: existing?.checkInTime ? formatDateTimeLocal(existing.checkInTime) : `${selectedDate}T08:00`,
+                checkOutTime: existing?.checkOutTime ? formatDateTimeLocal(existing.checkOutTime) : `${selectedDate}T17:00`,
             };
         });
         setBulkRecords(records);
@@ -60,8 +79,8 @@ export default function AttendancePage() {
                 records: bulkRecords.map((r) => ({
                     employeeId: r.employeeId,
                     status: r.status,
-                    checkInTime: r.status === 'present' || r.status === 'late' ? r.checkInTime : undefined,
-                    checkOutTime: r.status === 'present' || r.status === 'late' ? r.checkOutTime : undefined,
+                    checkInTime: ['present', 'late', 'half_day'].includes(r.status) && r.checkInTime ? r.checkInTime : undefined,
+                    checkOutTime: ['present', 'late', 'half_day'].includes(r.status) && r.checkOutTime ? r.checkOutTime : undefined,
                 })),
             });
             setIsBulkOpen(false);

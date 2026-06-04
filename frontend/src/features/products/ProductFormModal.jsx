@@ -9,6 +9,7 @@ import Select from '../../components/ui/Select';
 import Textarea from '../../components/ui/Textarea';
 import { productFormSchema } from './productSchemas';
 import { useCategories, useBrands, useUoms, useCreateProduct, useUpdateProduct } from './useProducts';
+import { productsApi } from './productsApi';
 
 const tabs = [
     { id: 'basic', label: 'Basic Info' },
@@ -31,10 +32,13 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
         register,
         handleSubmit,
         reset,
+        setValue,
+        watch,
         formState: { errors },
     } = useForm({
         resolver: zodResolver(productFormSchema),
         defaultValues: {
+            productCode: '',
             type: 'trading',
             status: 'active',
             taxable: true,
@@ -49,6 +53,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
     useEffect(() => {
         if (isOpen && product) {
             reset({
+                productCode: product.productCode || '',
                 name: product.name || '',
                 shortName: product.shortName || '',
                 sku: product.sku || '',
@@ -81,6 +86,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
         } else if (isOpen && !product) {
             // Reset to defaults when creating new
             reset({
+                productCode: '',
                 type: 'trading',
                 status: 'active',
                 taxable: true,
@@ -93,9 +99,34 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
         setActiveTab('basic');
     }, [isOpen, product, reset]);
 
+    const selectedCategoryId = watch('categoryId');
+    const [isLoadingCode, setIsLoadingCode] = useState(false);
+
+    useEffect(() => {
+        if (!isEdit && isOpen && selectedCategoryId) {
+            const fetchNextCode = async () => {
+                setIsLoadingCode(true);
+                try {
+                    const response = await productsApi.getNextCode(selectedCategoryId);
+                    if (response?.success && response?.productCode) {
+                        setValue('productCode', response.productCode);
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch next product code:', err);
+                } finally {
+                    setIsLoadingCode(false);
+                }
+            };
+            fetchNextCode();
+        } else if (!isEdit && isOpen && !selectedCategoryId) {
+            setValue('productCode', '');
+        }
+    }, [selectedCategoryId, isEdit, isOpen, setValue]);
+
     const onSubmit = async (data) => {
         // Transform flat form data back into nested structure for API
         const payload = {
+            productCode: data.productCode || undefined,
             name: data.name,
             shortName: data.shortName || undefined,
             sku: data.sku || undefined,
@@ -192,7 +223,14 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                 <div className="p-6">
                     {activeTab === 'basic' && (
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
+                                <Input
+                                    label="Product Code"
+                                    disabled
+                                    placeholder={isLoadingCode ? "Generating..." : "Auto-generated after category selection"}
+                                    error={errors.productCode?.message}
+                                    {...register('productCode')}
+                                />
                                 <Input label="Product Name" required error={errors.name?.message} {...register('name')} />
                                 <Input label="Short Name" error={errors.shortName?.message} {...register('shortName')} />
                             </div>
