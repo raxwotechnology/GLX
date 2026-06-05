@@ -21,13 +21,21 @@ export const createReturn = asyncHandler(async (req, res) => {
     if (!customer) { res.status(404); throw new Error('Customer not found'); }
 
     // Enrich items
-    const productIds = items.map((i) => i.productId);
-    const products = await Product.find({ _id: { $in: productIds } });
-    const pMap = new Map(products.map((p) => [p._id.toString(), p]));
+    const productIds = items.filter((i) => i.productId).map((i) => i.productId);
+    const productCodes = items.filter((i) => !i.productId && i.productCode).map((i) => i.productCode);
+
+    const [productsById, productsByCode] = await Promise.all([
+        Product.find({ _id: { $in: productIds } }).setOptions({ includeDeleted: true }),
+        Product.find({ productCode: { $in: productCodes } }).setOptions({ includeDeleted: true }),
+    ]);
+
+    const pMap = new Map();
+    productsById.forEach((p) => pMap.set(p._id.toString(), p));
+    productsByCode.forEach((p) => pMap.set(p.productCode, p));
 
     const enrichedItems = items.map((i) => {
-        const p = pMap.get(i.productId);
-        if (!p) throw new Error(`Product ${i.productId} not found`);
+        const p = i.productId ? pMap.get(i.productId.toString()) : pMap.get(i.productCode);
+        if (!p) throw new Error(`Product ${i.productId || i.productCode} not found`);
         return {
             productId: p._id,
             productCode: p.productCode,
@@ -217,7 +225,7 @@ export const processReturn = asyncHandler(async (req, res) => {
 
                 // DISPOSITION: restock → add stock back
                 if (item.disposition === 'restock' && !item.restockedAt) {
-                    const product = await Product.findById(item.productId).session(session);
+                    const product = await Product.findById(item.productId).setOptions({ includeDeleted: true }).session(session);
                     const result = await increaseStock({
                         productId: item.productId,
                         warehouseId: ret.returnToWarehouseId,
@@ -383,20 +391,37 @@ export const getEligibleOrders = asyncHandler(async (req, res) => {
     // Get all returns for these orders
     const orderIds = orders.map((o) => o._id);
     const returns = await CustomerReturn.find({
-        salesOrderId: { $in: orderIds },
+        salesOrderIds: { $in: orderIds },
         status: { $nin: ['rejected', 'cancelled'] },
         deletedAt: null,
-    }).select('salesOrderId items');
+    }).select('salesOrderIds items');
 
-    // Build a map: orderId → { productId → totalReturned }
+    // Build a map: orderId → { (productId or productCode) → totalReturned }
     const returnedMap = new Map();
     returns.forEach((ret) => {
-        const orderId = ret.salesOrderId.toString();
-        if (!returnedMap.has(orderId)) returnedMap.set(orderId, new Map());
-        const productMap = returnedMap.get(orderId);
+        const associatedOrderIds = ret.salesOrderIds && ret.salesOrderIds.length > 0
+            ? ret.salesOrderIds.map(id => id.toString())
+            : [];
+
         ret.items.forEach((ri) => {
-            const pid = ri.productId.toString();
-            productMap.set(pid, (productMap.get(pid) || 0) + (ri.quantityReturned || 0));
+            const itemOrderId = ri.salesOrderId
+                ? ri.salesOrderId.toString()
+                : (associatedOrderIds.length > 0 ? associatedOrderIds[0] : null);
+
+            if (!itemOrderId) return;
+
+            if (!returnedMap.has(itemOrderId)) {
+                returnedMap.set(itemOrderId, new Map());
+            }
+            const productMap = returnedMap.get(itemOrderId);
+
+            let pKey = ri.productCode;
+            if (ri.productId) {
+                pKey = ri.productId._id ? ri.productId._id.toString() : ri.productId.toString();
+            }
+            if (!pKey) return;
+
+            productMap.set(pKey, (productMap.get(pKey) || 0) + (ri.quantityReturned || 0));
         });
     });
 
@@ -404,8 +429,13 @@ export const getEligibleOrders = asyncHandler(async (req, res) => {
     const eligibleOrders = orders.filter((order) => {
         const productMap = returnedMap.get(order._id.toString()) || new Map();
         return order.items.some((item) => {
-            if (!item.productId) return false;
-            const returned = productMap.get(item.productId._id.toString()) || 0;
+            let pKey = item.productCode;
+            if (item.productId) {
+                pKey = item.productId._id ? item.productId._id.toString() : item.productId.toString();
+            }
+            if (!pKey) return false;
+
+            const returned = productMap.get(pKey) || 0;
             return returned < item.orderedQuantity;
         });
     });
@@ -414,8 +444,12 @@ export const getEligibleOrders = asyncHandler(async (req, res) => {
     const enriched = eligibleOrders.map((order) => {
         const productMap = returnedMap.get(order._id.toString()) || new Map();
         const items = order.items.map((item) => {
-            if (!item.productId) return item.toObject();
-            const returned = productMap.get(item.productId._id.toString()) || 0;
+            let pKey = item.productCode;
+            if (item.productId) {
+                pKey = item.productId._id ? item.productId._id.toString() : item.productId.toString();
+            }
+
+            const returned = pKey ? (productMap.get(pKey) || 0) : 0;
             return {
                 ...item.toObject(),
                 alreadyReturnedQuantity: returned,

@@ -1,14 +1,17 @@
-import { useEffect, useRef } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, BarChart3, Package, ShoppingCart, Users, Settings, Navigation,
     FolderTree, Award, UserCircle, Tags, Warehouse, Boxes, Truck,
     ShoppingBag, FileText, Receipt, Wallet, Workflow, Factory, ShieldCheck,
     RotateCcw, Wrench, AlertTriangle, FileMinus, X, Users as UsersIcon, Building2, Clock, Calendar as CalendarIcon, Plane, Calculator, DollarSign, Upload,
     ClipboardList, UserPlus, Ship, Layers, History, FileSpreadsheet,
+    ChevronDown, ChevronRight, CheckSquare, ClipboardCheck, BadgeCheck,
+    PackageCheck, CreditCard, Tag,
 } from 'lucide-react';
+import { usePermission } from '../../hooks/usePermission';
 
-// ── Grouped menu structure ──────────────────────────────────────────────────
+// ── Regular grouped menu structure ─────────────────────────────────────────
 const menuGroups = [
     {
         label: 'Overview',
@@ -135,34 +138,173 @@ const menuGroups = [
     },
 ];
 
-import { usePermission } from '../../hooks/usePermission';
+// ── Approvals accordion structure ───────────────────────────────────────────
+// Each category has an icon, label, and list of links with permissions.
+const approvalCategories = [
+    {
+        id: 'inbound',
+        label: 'Inbound Materials',
+        icon: PackageCheck,
+        description: 'GRN Quality & Quantity',
+        items: [
+            { label: 'Purchase Orders', icon: ShoppingBag, path: '/purchase-orders', permission: 'purchasing.view' },
+            { label: 'Goods Receipts (GRN)', icon: ClipboardCheck, path: '/bills', permission: 'bills.view' },
+            { label: 'Supplier Returns', icon: RotateCcw, path: '/supplier-returns', permission: 'supplier_returns.view' },
+        ],
+    },
+    {
+        id: 'production',
+        label: 'Production Batches',
+        icon: Factory,
+        description: 'QC & Lab Release',
+        items: [
+            { label: 'Production Orders', icon: Factory, path: '/production-orders', permission: 'production.view' },
+            { label: 'Production Batches', icon: Layers, path: '/manufacturing/batches', permission: 'production.view' },
+            { label: 'BOMs (Recipes)', icon: Workflow, path: '/boms', permission: 'bom.view' },
+        ],
+    },
+    {
+        id: 'expenses',
+        label: 'Expense & Petty Cash',
+        icon: DollarSign,
+        description: 'Operational Cash Releases',
+        items: [
+            { label: 'Petty Cash', icon: DollarSign, path: '/finance/petty-cash', permission: 'payments.view' },
+            { label: 'Bills', icon: Receipt, path: '/bills', permission: 'bills.view' },
+            { label: 'Payments', icon: Wallet, path: '/payments', permission: 'payments.view' },
+        ],
+    },
+    {
+        id: 'sales',
+        label: 'Sales & Pricing',
+        icon: Tag,
+        description: 'Discount Override Approvals',
+        items: [
+            { label: 'Sales Orders', icon: ShoppingCart, path: '/sales-orders', permission: 'sales.view' },
+            { label: 'Quotations', icon: FileText, path: '/crm/quotations', permission: 'sales.view' },
+            { label: 'Invoices', icon: FileText, path: '/invoices', permission: 'invoices.view' },
+            { label: 'Credit Notes', icon: CreditCard, path: '/credit-notes', permission: 'credit_notes.view' },
+        ],
+    },
+    {
+        id: 'returns',
+        label: 'Returns & After-Sales',
+        icon: RotateCcw,
+        description: 'RMA & Damage Review',
+        items: [
+            { label: 'Customer Returns (RMA)', icon: RotateCcw, path: '/returns', permission: 'returns.view' },
+            { label: 'Repairs', icon: Wrench, path: '/repairs', permission: 'repairs.view' },
+            { label: 'Damages', icon: AlertTriangle, path: '/damages', permission: 'damages.view' },
+        ],
+    },
+];
 
+// ── Helper: Check if any item in a category is on the active route ──────────
+function useIsCategoryActive(items) {
+    const location = useLocation();
+    return items.some((item) => location.pathname === item.path || location.pathname.startsWith(item.path + '/'));
+}
+
+// ── Approval accordion sub-category component ────────────────────────────────
+function ApprovalCategory({ category, hasPermission, hasAnyPermission, isAdmin }) {
+    const visibleItems = category.items.filter((item) => {
+        if (isAdmin) return true;
+        if (item.permission) return hasPermission(item.permission);
+        if (item.anyPermission) return hasAnyPermission(item.anyPermission);
+        return true;
+    });
+
+    const isActive = useIsCategoryActive(visibleItems);
+    const [isOpen, setIsOpen] = useState(isActive);
+
+    // Auto-open if a child is currently active
+    useEffect(() => {
+        if (isActive) setIsOpen(true);
+    }, [isActive]);
+
+    if (visibleItems.length === 0) return null;
+
+    const Icon = category.icon;
+
+    return (
+        <div className="mb-0.5">
+            {/* Category header button */}
+            <button
+                onClick={() => setIsOpen((prev) => !prev)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+            >
+                <Icon size={15} className="flex-shrink-0" />
+                <div className="flex-1 text-left min-w-0">
+                    <p className="truncate leading-tight">{category.label}</p>
+                    <p className="text-[10px] text-gray-400 truncate leading-tight">{category.description}</p>
+                </div>
+                {isOpen
+                    ? <ChevronDown size={13} className="flex-shrink-0 text-gray-400" />
+                    : <ChevronRight size={13} className="flex-shrink-0 text-gray-400" />
+                }
+            </button>
+
+            {/* Collapsible items */}
+            <div
+                style={{
+                    maxHeight: isOpen ? `${visibleItems.length * 44}px` : '0px',
+                    overflow: 'hidden',
+                    transition: 'max-height 0.22s ease',
+                }}
+            >
+                <div className="ml-3 pl-3 border-l-2 border-primary-100 mt-0.5 mb-1 space-y-0.5">
+                    {visibleItems.map((item) => {
+                        const ItemIcon = item.icon;
+                        return (
+                            <NavLink
+                                key={`${item.label}-${item.path}`}
+                                to={item.path}
+                                className={({ isActive }) =>
+                                    `flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                        isActive
+                                            ? 'bg-primary-100 text-primary-700'
+                                            : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'
+                                    }`
+                                }
+                            >
+                                <ItemIcon size={13} className="flex-shrink-0" />
+                                <span className="truncate">{item.label}</span>
+                            </NavLink>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Main Sidebar component ────────────────────────────────────────────────────
 export default function Sidebar({ isOpen, onClose }) {
     const sidebarRef = useRef(null);
     const { hasPermission, hasAnyPermission, isAdmin } = usePermission();
 
-    // Close on outside click
+    // Close on outside click (mobile)
     useEffect(() => {
         if (!isOpen) return;
-
         const handleOutsideClick = (e) => {
             if (window.innerWidth < 1024 && sidebarRef.current && !sidebarRef.current.contains(e.target)) {
                 onClose();
             }
         };
-
-        // Small delay so the toggle button click doesn't immediately close
         const timerId = setTimeout(() => {
             document.addEventListener('mousedown', handleOutsideClick);
         }, 100);
-
         return () => {
             clearTimeout(timerId);
             document.removeEventListener('mousedown', handleOutsideClick);
         };
     }, [isOpen, onClose]);
 
-    // Filter groups/items by permission
+    // Filter regular groups by permission
     const visibleGroups = menuGroups
         .map((g) => ({
             ...g,
@@ -170,14 +312,14 @@ export default function Sidebar({ isOpen, onClose }) {
                 if (isAdmin) return true;
                 if (item.permission) return hasPermission(item.permission);
                 if (item.anyPermission) return hasAnyPermission(item.anyPermission);
-                return true; // Default to visible if no specific permission set
+                return true;
             }),
         }))
         .filter((g) => g.items.length > 0);
 
     return (
         <>
-            {/* Backdrop overlay (mobile / click-outside layer) */}
+            {/* Backdrop overlay (mobile) */}
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 lg:hidden"
@@ -197,7 +339,6 @@ export default function Sidebar({ isOpen, onClose }) {
                 }}
                 className="h-screen bg-white border-r border-gray-200 flex flex-col z-40 relative"
             >
-                {/* Inner wrapper — keeps content at full 256px width even during animation */}
                 <div className="w-64 flex flex-col h-full">
 
                     {/* ── Logo / Brand ── */}
@@ -211,7 +352,6 @@ export default function Sidebar({ isOpen, onClose }) {
                                 <p className="text-xs text-gray-500 mt-0.5">ERP System</p>
                             </div>
                         </div>
-                        {/* Close button (visible on mobile only) */}
                         <button
                             onClick={onClose}
                             className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition lg:hidden"
@@ -223,14 +363,13 @@ export default function Sidebar({ isOpen, onClose }) {
 
                     {/* ── Scrollable nav ── */}
                     <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
+
+                        {/* ── Regular menu groups ── */}
                         {visibleGroups.map((group) => (
                             <div key={group.label}>
-                                {/* Group heading */}
                                 <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400 select-none">
                                     {group.label}
                                 </p>
-
-                                {/* Group items */}
                                 <div className="space-y-0.5">
                                     {group.items.map((item) => {
                                         const Icon = item.icon;
@@ -239,9 +378,10 @@ export default function Sidebar({ isOpen, onClose }) {
                                                 key={`${item.label}-${item.path}`}
                                                 to={item.path}
                                                 className={({ isActive }) =>
-                                                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                                                        ? 'bg-primary-50 text-primary-700'
-                                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                        isActive
+                                                            ? 'bg-primary-50 text-primary-700'
+                                                            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                                                     }`
                                                 }
                                             >
@@ -253,6 +393,34 @@ export default function Sidebar({ isOpen, onClose }) {
                                 </div>
                             </div>
                         ))}
+
+                        {/* ── Approvals Section ── */}
+                        <div>
+                            {/* Section heading with badge */}
+                            <div className="flex items-center gap-2 px-3 mb-2">
+                                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 select-none">
+                                    Approvals
+                                </p>
+                                <div className="flex items-center gap-1 bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5">
+                                    <BadgeCheck size={9} />
+                                    <span className="text-[9px] font-bold uppercase tracking-wide">Hub</span>
+                                </div>
+                            </div>
+
+                            {/* Accordion categories */}
+                            <div className="space-y-0.5">
+                                {approvalCategories.map((category) => (
+                                    <ApprovalCategory
+                                        key={category.id}
+                                        category={category}
+                                        hasPermission={hasPermission}
+                                        hasAnyPermission={hasAnyPermission}
+                                        isAdmin={isAdmin}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
                     </nav>
 
                     {/* ── Footer ── */}

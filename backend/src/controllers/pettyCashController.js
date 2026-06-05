@@ -39,17 +39,18 @@ const broadcastPettyCashBalance = async () => {
  * @access  Private
  */
 export const createPettyCashEntry = asyncHandler(async (req, res) => {
+    const txType = req.body.transactionType || 'expense';
     const entry = await PettyCash.create({
         ...req.body,
         createdBy: req.user._id,
-        status: req.body.type === 'expense' ? 'pending' : 'replenished'
+        status: txType === 'expense' ? 'pending' : 'approved'
     });
 
     createAuditLog({
         action: 'create',
         module: 'finance',
         documentId: entry._id,
-        description: `New petty cash ${entry.type}: ${entry.description} (${entry.amount})`,
+        description: `New petty cash ${entry.transactionType}: ${entry.item || entry.description || ''} (${entry.amount})`,
         req
     });
 
