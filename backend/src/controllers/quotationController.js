@@ -9,6 +9,10 @@ import { createAuditLog } from '../utils/auditLogger.js';
  * @access  Private
  */
 export const createQuotation = asyncHandler(async (req, res) => {
+    if (req.body.customerId === '') delete req.body.customerId;
+    if (req.body.inquiryId === '') delete req.body.inquiryId;
+    if (req.body.inquiry === '') delete req.body.inquiry;
+
     const quotation = await Quotation.create({
         ...req.body,
         createdBy: req.user._id,
@@ -88,6 +92,10 @@ export const getQuotationById = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const updateQuotation = asyncHandler(async (req, res) => {
+    if (req.body.customerId === '') delete req.body.customerId;
+    if (req.body.inquiryId === '') delete req.body.inquiryId;
+    if (req.body.inquiry === '') delete req.body.inquiry;
+
     const quotation = await Quotation.findByIdAndUpdate(
         req.params.id,
         { ...req.body, updatedBy: req.user._id },

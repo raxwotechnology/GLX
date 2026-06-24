@@ -67,7 +67,8 @@ export default function CustomerAutocompleteSelect({
 
     const filtered = localCustomers.filter(c =>
         c.displayName?.toLowerCase().includes(inputValue.toLowerCase()) ||
-        c.customerCode?.toLowerCase().includes(inputValue.toLowerCase())
+        c.customerCode?.toLowerCase().includes(inputValue.toLowerCase()) ||
+        c.primaryContact?.phone?.toLowerCase().includes(inputValue.toLowerCase())
     );
 
     const handleSelectOption = (customer) => {
@@ -85,11 +86,28 @@ export default function CustomerAutocompleteSelect({
         if (blurTimeoutRef.current) {
             clearTimeout(blurTimeoutRef.current);
         }
+
+        // Parse name and phone
+        const match = nameToCreate.trim().match(/(\+?\d{8,14})/);
+        let phone = '';
+        let displayName = nameToCreate.trim();
+        if (match) {
+            phone = match[1];
+            displayName = nameToCreate.trim().replace(phone, '').trim();
+            if (!displayName) {
+                displayName = `Customer ${phone}`;
+            }
+        }
+
         try {
             const payload = {
-                displayName: nameToCreate.trim(),
-                legalName: nameToCreate.trim(),
+                displayName,
+                legalName: displayName,
                 status: 'active',
+                primaryContact: phone ? {
+                    phone,
+                    name: displayName
+                } : undefined,
                 paymentTerms: {
                     type: 'cod',
                     creditDays: 0,
@@ -186,7 +204,7 @@ export default function CustomerAutocompleteSelect({
                             className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition flex items-center justify-between"
                         >
                             <span className="font-medium text-gray-900">{c.displayName}</span>
-                            <span className="text-gray-400 text-xs font-mono">({c.customerCode})</span>
+                            <span className="text-gray-400 text-xs font-mono">({c.customerCode}{c.primaryContact?.phone ? ` - ${c.primaryContact.phone}` : ''})</span>
                         </button>
                     ))}
                     {inputValue.trim() && !localCustomers.some(c => c.displayName.toLowerCase() === inputValue.trim().toLowerCase()) && (

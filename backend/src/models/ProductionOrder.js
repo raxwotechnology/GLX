@@ -130,6 +130,7 @@ const productionOrderSchema = new mongoose.Schema({
 
     notes: String,
     internalNotes: String,
+    referenceLink: { type: String, trim: true },
 
     // Reference
     sourceType: { type: String, default: 'manual' },

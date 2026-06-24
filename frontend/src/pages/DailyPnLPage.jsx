@@ -7,6 +7,8 @@ import {
     TrendingUp, TrendingDown, Edit, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import io from 'socket.io-client';
+import { getBackendUrl } from '../api/config';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 import DynamicForm from '../components/ui/DynamicForm';
@@ -54,7 +56,19 @@ const DailyPnLPage = () => {
         }
     };
 
-    useEffect(() => { fetchPnL(); }, []);
+    useEffect(() => {
+        fetchPnL();
+        const socket = io(getBackendUrl(), {
+            withCredentials: true,
+        });
+        const handleUpdate = () => {
+            fetchPnL();
+        };
+        socket.on('cheque_cleared', handleUpdate);
+        socket.on('bank_balance_update', handleUpdate);
+        socket.on('financial_update', handleUpdate);
+        return () => socket.disconnect();
+    }, []);
 
     const openModal = (record = null) => {
         if (record) {

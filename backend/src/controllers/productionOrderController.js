@@ -16,7 +16,7 @@ export const createProductionOrder = asyncHandler(async (req, res) => {
     const {
         bomId, plannedQuantity, sourceWarehouseId, outputWarehouseId,
         plannedStartDate, plannedEndDate, priority, sourceType,
-        sourceSalesOrderId, notes, internalNotes,
+        sourceSalesOrderId, notes, internalNotes, referenceLink,
     } = req.body;
 
     const bom = await BillOfMaterials.findById(bomId)
@@ -82,6 +82,7 @@ export const createProductionOrder = asyncHandler(async (req, res) => {
         output,
         notes,
         internalNotes,
+        referenceLink,
         status: 'draft',
         createdBy: req.user._id,
     });

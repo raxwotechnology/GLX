@@ -49,8 +49,10 @@ export const sendGrnConfirmationSms = async (grn, customMessage = null) => {
         const totalVal = grn.totalAcceptedValue || grn.totalPayableLKR || 0;
         const formattedTotal = totalVal.toLocaleString('en-LK', { minimumFractionDigits: 2 });
 
+        const paymentTermText = (grn.balanceDueLKR === 0) ? 'Paid' : `Credit (Outstanding: Rs. ${grn.balanceDueLKR?.toLocaleString('en-LK', { minimumFractionDigits: 2 })})`;
+
         // Construct the SMS message
-        const message = customMessage || `Dear ${supplierName}, your delivery on ${formattedDate} for ${productsList} has been accepted and QA approved. Total accepted value: Rs. ${formattedTotal}. Thank you.`;
+        const message = customMessage || `Dear ${supplierName}, your delivery on ${formattedDate} for ${productsList} has been accepted and QA approved. Payment status: ${paymentTermText}. Total accepted value: Rs. ${formattedTotal}. Thank you.`;
 
         let status = 'sent';
         let formattedContact = formatSmsContact(supplierPhone);

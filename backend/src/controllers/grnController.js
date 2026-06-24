@@ -4,6 +4,8 @@ import GoodsReceiptNote from '../models/GoodsReceiptNote.js';
 import PurchaseOrder from '../models/PurchaseOrder.js';
 import Supplier from '../models/Supplier.js';
 import Bill from '../models/Bill.js';
+import Payment from '../models/Payment.js';
+import BankAccount from '../models/BankAccount.js';
 import { increaseStock } from '../services/stockService.js';
 import { generateJulianBatchCode } from '../utils/julianDate.js';
 import { getIO } from '../services/socketService.js';
@@ -130,7 +132,18 @@ export const createGrn = asyncHandler(async (req, res) => {
  * QA Approval endpoint — performs inspection, updates active stock, computes financial split, and updates supplier balance due.
  */
 export const approveGrnQA = asyncHandler(async (req, res) => {
-    const { items: itemApprovals = [], paidAmountLKR = 0 } = req.body;
+    const {
+        items: itemApprovals = [],
+        paidAmountLKR = 0,
+        paymentType = 'credit',
+        paymentMethod = 'cash',
+        bankAccountId = '',
+        paymentReference = '',
+        chequeNumber = '',
+        chequeDate = '',
+        bankName = '',
+        chequeStatus = 'pending'
+    } = req.body;
     const grn = await GoodsReceiptNote.findById(req.params.id);
 
     if (!grn) {
@@ -296,6 +309,40 @@ export const approveGrnQA = asyncHandler(async (req, res) => {
                 });
 
                 await bill.save({ session });
+
+                if (paymentType === 'paid' && paidAmountLKR > 0 && paymentMethod) {
+                    const isChequePending = paymentMethod === 'cheque' && chequeStatus !== 'cleared';
+                    
+                    if (bankAccountId && paymentMethod !== 'cash' && !isChequePending) {
+                        const bankAccount = await BankAccount.findById(bankAccountId).session(session);
+                        if (!bankAccount) throw new Error('Company bank/cash account not found');
+                        bankAccount.balance = +(bankAccount.balance - paidAmountLKR).toFixed(2);
+                        await bankAccount.save({ session });
+                    }
+
+                    const payment = new Payment({
+                        direction: 'paid',
+                        supplierId: grn.supplierId || undefined,
+                        bankAccountId: paymentMethod !== 'cash' ? (bankAccountId || undefined) : undefined,
+                        amount: paidAmountLKR,
+                        method: paymentMethod,
+                        chequeNumber: paymentMethod === 'cheque' ? chequeNumber : undefined,
+                        chequeDate: paymentMethod === 'cheque' && chequeDate ? new Date(chequeDate) : undefined,
+                        chequeStatus: paymentMethod === 'cheque' ? (chequeStatus || 'pending') : undefined,
+                        bankName: paymentMethod === 'cheque' ? bankName : undefined,
+                        transactionReference: paymentMethod !== 'cheque' && paymentMethod !== 'cash' ? paymentReference : undefined,
+                        partyName: supplier ? supplier.displayName : (grn.farmName || 'Own Farm'),
+                        allocations: [{
+                            documentType: 'bill',
+                            documentId: bill._id,
+                            documentNumber: bill.billNumber,
+                            amount: paidAmountLKR,
+                        }],
+                        receivedBy: req.user._id,
+                        createdBy: req.user._id,
+                    });
+                    await payment.save({ session });
+                }
             }
             
             // Check PO status
@@ -333,6 +380,15 @@ export const approveGrnQA = asyncHandler(async (req, res) => {
                 io.emit('stock_update', {
                     message: `GRN ${grn.grnNumber} approved. Materials stocked.`,
                 });
+
+                if (paymentType === 'paid' && paidAmountLKR > 0 && bankAccountId) {
+                    io.emit('bank_balance_update', {
+                        bankAccountId,
+                    });
+                    io.emit('financial_update', {
+                        message: 'Financial accounts updated via GRN payment',
+                    });
+                }
             } catch (socketErr) {
                 console.warn('[GRN Approval] Socket broadcast error:', socketErr.message);
             }

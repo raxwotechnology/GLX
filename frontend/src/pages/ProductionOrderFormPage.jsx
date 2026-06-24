@@ -29,6 +29,7 @@ export default function ProductionOrderFormPage() {
     const [plannedStartDate, setPlannedStartDate] = useState('');
     const [plannedEndDate, setPlannedEndDate] = useState('');
     const [priority, setPriority] = useState('normal');
+    const [referenceLink, setReferenceLink] = useState('');
     const [notes, setNotes] = useState('');
 
     const { data: bomsData } = useQuery({
@@ -88,6 +89,7 @@ export default function ProductionOrderFormPage() {
                 plannedStartDate: plannedStartDate || undefined,
                 plannedEndDate: plannedEndDate || undefined,
                 priority,
+                referenceLink: referenceLink || undefined,
                 notes: notes || undefined,
             });
             navigate(`/production-orders/${result.data._id}`);
@@ -107,9 +109,9 @@ export default function ProductionOrderFormPage() {
             <div className="grid grid-cols-3 gap-6">
                 <div className="col-span-2 space-y-6">
                     <Card className="p-6">
-                        <h3 className="text-sm font-semibold text-gray-700 mb-4">Recipe & Quantity</h3>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-4">Formula & Quantity</h3>
                         <div className="space-y-4">
-                            <Select label="BOM (Recipe)" required placeholder="Select recipe..."
+                            <Select label="BOM (Formula)" required placeholder="Select formula..."
                                 options={bomOptions} value={bomId} onChange={(e) => setBomId(e.target.value)} />
 
                             {bom && (
@@ -195,8 +197,9 @@ export default function ProductionOrderFormPage() {
                         </Card>
                     )}
 
-                    <Card className="p-6">
-                        <h3 className="text-sm font-semibold text-gray-700 mb-4">Notes</h3>
+                    <Card className="p-6 space-y-4">
+                        <h3 className="text-sm font-semibold text-gray-700">Additional Info</h3>
+                        <Input label="Reference Link" type="url" placeholder="e.g. specifications link, document URL" value={referenceLink} onChange={(e) => setReferenceLink(e.target.value)} />
                         <Textarea label="Notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
                     </Card>
                 </div>

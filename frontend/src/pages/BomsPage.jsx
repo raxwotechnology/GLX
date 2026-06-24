@@ -39,7 +39,7 @@ export default function BomsPage() {
     const columns = [
         { key: 'bomCode', label: 'BOM #', width: '110px', render: (r) => <span className="font-mono text-xs">{r.bomCode}</span> },
         {
-            key: 'name', label: 'Recipe Name',
+            key: 'name', label: 'Formula Name',
             render: (r) => (
                 <div>
                     <p className="font-medium">{r.name}</p>
@@ -97,8 +97,9 @@ export default function BomsPage() {
 
     return (
         <div>
-            <PageHeader title="Bills of Materials (BOM)"
-                description="Recipes that define how finished products are made from raw materials"
+            <PageHeader
+                title="Production Formulas (BOM)"
+                description="Formulas that define how finished products are made from raw materials"
                 actions={canManage && (
                     <Button variant="primary" onClick={() => navigate('/boms/new')}>
                         <Plus size={16} className="mr-1.5" /> New BOM
@@ -131,8 +132,10 @@ export default function BomsPage() {
                 {isLoading ? (
                     <div className="py-16 text-center text-gray-500">Loading...</div>
                 ) : boms.length === 0 ? (
-                    <EmptyState icon={Workflow} title="No BOMs yet"
-                        description="Create your first recipe to manufacture products"
+                    <EmptyState
+                        icon={Workflow}
+                        title="No Formulas Created"
+                        description="Create your first formula to manufacture products"
                         action={canManage && <Button variant="primary" onClick={() => navigate('/boms/new')}>
                             <Plus size={16} className="mr-1.5" /> New BOM
                         </Button>} />

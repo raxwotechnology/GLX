@@ -42,8 +42,8 @@ const menuGroups = [
             { label: 'Stock Adjustment', icon: Sliders, path: '/stock/adjustment', permission: 'inventory.adjust' },
             { label: 'Stock Movements', icon: History, path: '/stock/movements', permission: 'inventory.view' },
             { label: 'Raw Materials Inventory', icon: Layers, path: '/inventory/raw-materials', permission: 'inventory.view' },
-            { label: 'BOM / Recipe Converter', icon: Workflow, path: '/inventory/converter', permission: 'inventory.adjust' },
-            { label: 'Conversion Recipes', icon: Scale, path: '/inventory-recipes', permission: 'bom.view' },
+            { label: 'BOM / Formula Converter', icon: Workflow, path: '/inventory/converter', permission: 'inventory.adjust' },
+            { label: 'Conversion Formulas', icon: Scale, path: '/inventory-recipes', permission: 'bom.view' },
         ],
     },
     {
@@ -62,7 +62,7 @@ const menuGroups = [
         label: 'PRODUCTION',
         icon: Factory,
         items: [
-            { label: 'Production Recipes (BOM)', icon: Workflow, path: '/boms', permission: 'bom.view' },
+            { label: 'Production Formulas (BOM)', icon: Workflow, path: '/boms', permission: 'bom.view' },
             { label: 'Process Templates', icon: ClipboardList, path: '/manufacturing/templates', permission: 'production.view' },
             { label: 'Production Batches', icon: Layers, path: '/manufacturing/batches', permission: 'production.view' },
             { label: 'Production Orders', icon: Factory, path: '/production-orders', permission: 'production.view' },
@@ -188,7 +188,7 @@ const approvalCategories = [
         items: [
             { label: 'Production Orders', icon: Factory, path: '/production-orders', permission: 'production.view' },
             { label: 'Production Batches', icon: Layers, path: '/manufacturing/batches', permission: 'production.view' },
-            { label: 'BOMs (Recipes)', icon: Workflow, path: '/boms', permission: 'bom.view' },
+            { label: 'BOMs (Formulas)', icon: Workflow, path: '/boms', permission: 'bom.view' },
         ],
     },
     {

@@ -44,11 +44,11 @@ export default function InventoryRecipesPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['inventoryRecipes'] });
-            toast.success('Inventory Recipe deleted successfully');
+            toast.success('Inventory Formula deleted successfully');
             setDeleting(null);
         },
         onError: (err) => {
-            toast.error(err.response?.data?.message || 'Failed to delete recipe');
+            toast.error(err.response?.data?.message || 'Failed to delete formula');
         }
     });
 
@@ -59,13 +59,13 @@ export default function InventoryRecipesPage() {
     const columns = [
         { 
             key: 'recipeCode', 
-            label: 'Recipe #', 
+            label: 'Formula #', 
             width: '120px', 
             render: (r) => <span className="font-mono text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">{r.recipeCode}</span> 
         },
         {
             key: 'name', 
-            label: 'Recipe Name',
+            label: 'Formula Name',
             render: (r) => <span className="font-semibold text-gray-800">{r.name}</span>
         },
         {
@@ -130,11 +130,11 @@ export default function InventoryRecipesPage() {
     return (
         <div className="space-y-6">
             <PageHeader 
-                title="Inventory Recipes"
+                title="Inventory Formulas"
                 description="Manage crop-to-product conversion yield ratios for the Inventory Converter."
                 actions={canManage && (
                     <Button variant="primary" onClick={() => navigate('/inventory-recipes/new')}>
-                        <Plus size={16} className="mr-1.5" /> New Recipe
+                        <Plus size={16} className="mr-1.5" /> New Formula
                     </Button>
                 )}
             />
@@ -143,7 +143,7 @@ export default function InventoryRecipesPage() {
                 <div className="p-4 border-b flex flex-wrap gap-3">
                     <div className="relative flex-1 min-w-[200px]">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input type="text" placeholder="Search recipe crop or product..."
+                        <input type="text" placeholder="Search formula crop or product..."
                             className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm"
                             value={filters.search}
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))} />
@@ -160,12 +160,12 @@ export default function InventoryRecipesPage() {
                 </div>
 
                 {isLoading ? (
-                    <div className="py-16 text-center text-gray-500">Loading recipes...</div>
+                    <div className="py-16 text-center text-gray-500">Loading formulas...</div>
                 ) : recipes.length === 0 ? (
-                    <EmptyState icon={Scale} title="No Recipes Found"
-                        description="Define your first crop yield recipe to speed up stock conversions."
+                    <EmptyState icon={Scale} title="No Formulas Found"
+                        description="Define your first crop yield formula to speed up stock conversions."
                         action={canManage && <Button variant="primary" onClick={() => navigate('/inventory-recipes/new')}>
-                            <Plus size={16} className="mr-1.5" /> New Recipe
+                            <Plus size={16} className="mr-1.5" /> New Formula
                         </Button>} />
                 ) : (
                     <>
@@ -180,8 +180,8 @@ export default function InventoryRecipesPage() {
                 isOpen={!!deleting}
                 onClose={() => setDeleting(null)}
                 onConfirm={() => deleteMutation.mutate(deleting._id)}
-                title="Archive Recipe"
-                message={`Are you sure you want to delete/archive recipe: ${deleting?.name}?`}
+                title="Archive Formula"
+                message={`Are you sure you want to delete/archive formula: ${deleting?.name}?`}
                 confirmText="Archive"
                 variant="danger"
             />

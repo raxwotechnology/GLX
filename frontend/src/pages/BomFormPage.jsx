@@ -207,7 +207,7 @@ export default function BomFormPage() {
                         <div className="space-y-4">
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="col-span-2">
-                                    <Input label="Recipe Name" required value={name} onChange={(e) => setName(e.target.value)} />
+                                    <Input label="Formula Name" required value={name} onChange={(e) => setName(e.target.value)} />
                                 </div>
                                 <Input label="Version" value={version} onChange={(e) => setVersion(e.target.value)} />
                             </div>
@@ -297,7 +297,7 @@ export default function BomFormPage() {
                             </Button>
                         </div>
                         {labor.length === 0 ? (
-                            <p className="text-sm text-gray-500 text-center py-4">No labor tracked for this recipe</p>
+                            <p className="text-sm text-gray-500 text-center py-4">No labor tracked for this formula</p>
                         ) : (
                             <div className="space-y-2">
                                 {labor.map((l, idx) => (

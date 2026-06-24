@@ -225,7 +225,7 @@ const QuotationsPage = () => {
                                 </div>
                                 <div className="flex items-center justify-between mt-4">
                                     <div className="text-2xl font-black text-gray-900 font-mono">
-                                        ${(quote.grandTotal || quote.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        Rs. ${(quote.grandTotal || quote.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </div>
                                     <div className="text-[10px] font-bold text-gray-400 uppercase">Total Amount</div>
                                 </div>
@@ -290,11 +290,11 @@ const QuotationsPage = () => {
                                     <input type="number" className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} />
                                 </div>
                                 <div className="col-span-3 space-y-1">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Price ($)</label>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Price (LKR)</label>
                                     <input type="number" step="0.01" className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white font-mono" value={item.unitPrice} onChange={e => handleItemChange(index, 'unitPrice', Number(e.target.value))} />
                                 </div>
                                 <div className="col-span-2 text-right pb-2 font-black text-gray-700 text-sm font-mono">
-                                    ${(Number(item.subtotal) || 0).toFixed(2)}
+                                    Rs. ${(Number(item.subtotal) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                                 <div className="col-span-1 flex justify-center pb-2">
                                     <button type="button" onClick={() => removeItem(index)} className="text-gray-300 hover:text-red-500 transition"><X size={18} /></button>
@@ -306,7 +306,7 @@ const QuotationsPage = () => {
                     <div className="bg-slate-50 p-6 rounded-2xl flex justify-between items-center">
                         <div>
                             <span className="text-sm font-bold text-gray-500 uppercase">Subtotal</span>
-                            <div className="text-xl font-black text-gray-900 font-mono">${(formData.totalAmount || 0).toFixed(2)}</div>
+                            <div className="text-xl font-black text-gray-900 font-mono">Rs. ${(formData.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         </div>
                         <div className="flex gap-3">
                             <Button variant="outline" type="button" onClick={() => setIsFormOpen(false)}>Cancel</Button>

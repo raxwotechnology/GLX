@@ -3,10 +3,10 @@ import mongoose from 'mongoose';
 const quotationSchema = new mongoose.Schema({
     quotationCode: { type: String, unique: true },
     quoteNumber: { type: String },
-    inquiry: { type: mongoose.Schema.Types.ObjectId, ref: 'Inquiry' },
-    inquiryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Inquiry' },
+    inquiry: { type: mongoose.Schema.Types.ObjectId, ref: 'Inquiry', set: v => v === '' ? undefined : v },
+    inquiryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Inquiry', set: v => v === '' ? undefined : v },
     // customerId can reference either Customer or be provided as a string name
-    customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', set: v => v === '' ? undefined : v },
     customerName: { type: String },
     version: { type: Number, default: 1 },
     items: [{
@@ -38,6 +38,16 @@ const quotationSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 quotationSchema.pre('validate', async function () {
+    if (this.customerId === '') {
+        this.customerId = undefined;
+    }
+    if (this.inquiryId === '') {
+        this.inquiryId = undefined;
+    }
+    if (this.inquiry === '') {
+        this.inquiry = undefined;
+    }
+
     if (!this.quotationCode) {
         const date = new Date();
         const prefix = `QUO-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}`;

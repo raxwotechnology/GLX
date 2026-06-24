@@ -78,6 +78,9 @@ export default function DashboardPage() {
             socket.on('gate_pass_approved', handleUpdate);
             socket.on('gate_pass_rejected', handleUpdate);
             socket.on('gate_pass_exited', handleUpdate);
+            socket.on('cheque_cleared', handleUpdate);
+            socket.on('bank_balance_update', handleUpdate);
+            socket.on('financial_update', handleUpdate);
 
             return () => {
                 socket.off('low_stock_alert');
@@ -87,6 +90,9 @@ export default function DashboardPage() {
                 socket.off('gate_pass_approved', handleUpdate);
                 socket.off('gate_pass_rejected', handleUpdate);
                 socket.off('gate_pass_exited', handleUpdate);
+                socket.off('cheque_cleared', handleUpdate);
+                socket.off('bank_balance_update', handleUpdate);
+                socket.off('financial_update', handleUpdate);
             };
         }
     }, [socket, qc]);

@@ -14,6 +14,7 @@ export const createProductionOrderSchema = z.object({
     sourceSalesOrderId: objectId.optional(),
     notes: z.string().optional(),
     internalNotes: z.string().optional(),
+    referenceLink: z.string().optional().or(z.literal('')),
 });
 
 export const completeProductionSchema = z.object({

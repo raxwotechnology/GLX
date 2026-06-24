@@ -108,6 +108,11 @@ export const createPayment = asyncHandler(async (req, res) => {
             if (direction === 'received') {
                 await updateCustomerBalance(customerId, session);
             }
+            try {
+                broadcast('financial_update', {
+                    message: 'Financial accounts updated via new payment log',
+                });
+            } catch (_) {}
         });
 
         // Broadcast bank account balance change after successful transaction commit
@@ -193,6 +198,9 @@ export const clearPaymentCheque = asyncHandler(async (req, res) => {
                 amount: payment.amount,
                 chequeNumber: payment.chequeNumber,
             });
+            broadcast('financial_update', {
+                message: 'Financial accounts updated via cheque clearance',
+            });
         } catch (_) {}
 
         const populated = await Payment.findById(payment._id)
@@ -204,6 +212,106 @@ export const clearPaymentCheque = asyncHandler(async (req, res) => {
     } catch (err) {
         res.status(400);
         throw new Error(err.message || 'Failed to clear cheque');
+    } finally {
+        session.endSession();
+    }
+});
+
+/**
+ * PUT /api/payments/:id/status
+ * Update the chequeStatus of a payment, adjusting bank account balance based on status transition.
+ */
+export const updatePaymentChequeStatus = asyncHandler(async (req, res) => {
+    const { chequeStatus } = req.body;
+    if (!['pending', 'cleared', 'bounced'].includes(chequeStatus)) {
+        res.status(400);
+        throw new Error('Invalid cheque status');
+    }
+
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) {
+        res.status(404);
+        throw new Error('Payment not found');
+    }
+    if (payment.method !== 'cheque') {
+        res.status(400);
+        throw new Error('Only cheque payments can have their status updated');
+    }
+
+    const oldStatus = payment.chequeStatus || 'pending';
+    const newStatus = chequeStatus;
+
+    if (oldStatus === newStatus) {
+        return res.json({ success: true, message: 'Status is already set to ' + newStatus, data: payment });
+    }
+
+    const session = await mongoose.startSession();
+    try {
+        await session.withTransaction(async () => {
+            payment.chequeStatus = newStatus;
+            await payment.save({ session });
+
+            if (payment.bankAccountId) {
+                const bankAccount = await BankAccount.findById(payment.bankAccountId).session(session);
+                if (!bankAccount) throw new Error('Associated company bank account not found');
+
+                const payAmount = Number(payment.amount || 0);
+
+                // If transitioning from cleared -> non-cleared, reverse the bank balance adjustment
+                if (oldStatus === 'cleared' && newStatus !== 'cleared') {
+                    if (payment.direction === 'received') {
+                        bankAccount.balance = +(bankAccount.balance - payAmount).toFixed(2);
+                    } else if (payment.direction === 'paid') {
+                        bankAccount.balance = +(bankAccount.balance + payAmount).toFixed(2);
+                    }
+                    await bankAccount.save({ session });
+                }
+                // If transitioning from non-cleared -> cleared, apply the bank balance adjustment
+                else if (oldStatus !== 'cleared' && newStatus === 'cleared') {
+                    if (payment.direction === 'received') {
+                        bankAccount.balance = +(bankAccount.balance + payAmount).toFixed(2);
+                    } else if (payment.direction === 'paid') {
+                        bankAccount.balance = +(bankAccount.balance - payAmount).toFixed(2);
+                    }
+                    await bankAccount.save({ session });
+                }
+            }
+        });
+
+        // Broadcast bank balance update if bankAccountId was adjusted
+        if (payment.bankAccountId && (oldStatus === 'cleared' || newStatus === 'cleared')) {
+            const updatedAccount = await BankAccount.findById(payment.bankAccountId);
+            if (updatedAccount) {
+                broadcast('bank_balance_update', {
+                    bankAccountId: payment.bankAccountId,
+                    balance: updatedAccount.balance,
+                });
+            }
+        }
+
+        // Broadcast cheque status update event
+        try {
+            broadcast('cheque_cleared', {
+                paymentId: payment._id,
+                paymentNumber: payment.paymentNumber,
+                amount: payment.amount,
+                chequeNumber: payment.chequeNumber,
+                status: newStatus,
+            });
+            broadcast('financial_update', {
+                message: `Financial accounts updated via cheque status change to ${newStatus}`,
+            });
+        } catch (_) {}
+
+        const populated = await Payment.findById(payment._id)
+            .populate('customerId', 'displayName customerCode')
+            .populate('supplierId', 'displayName supplierCode')
+            .populate('bankAccountId', 'bankName accountNumber accountName');
+
+        res.json({ success: true, message: `Cheque status updated to ${newStatus} successfully`, data: populated });
+    } catch (err) {
+        res.status(400);
+        throw new Error(err.message || 'Failed to update cheque status');
     } finally {
         session.endSession();
     }

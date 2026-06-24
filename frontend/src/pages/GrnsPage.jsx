@@ -57,17 +57,34 @@ export default function GrnsPage() {
     // QC/QA inspection state
     const [qcApprovals, setQcApprovals] = useState([]);
     const [paidAmountLKR, setPaidAmountLKR] = useState('');
+    const [bankAccounts, setBankAccounts] = useState([]);
+    const [paymentType, setPaymentType] = useState('credit');
+    const [paymentMethod, setPaymentMethod] = useState('cash');
+    const [bankAccountId, setBankAccountId] = useState('');
+    const [paymentReference, setPaymentReference] = useState('');
+    const [chequeNumber, setChequeNumber] = useState('');
+    const [chequeDate, setChequeDate] = useState('');
+    const [bankName, setBankName] = useState('');
+    const [chequeStatus, setChequeStatus] = useState('pending');
+
+    useEffect(() => {
+        if (!bankAccountId && bankAccounts.length > 0) {
+            const def = bankAccounts.find(a => a.isActive) || bankAccounts[0];
+            if (def) setBankAccountId(def._id);
+        }
+    }, [bankAccounts, bankAccountId]);
 
     const fetchAllData = useCallback(async () => {
         setLoading(true);
         try {
-            const [grnRes, supRes, farmRes, whRes, prodRes, poRes] = await Promise.all([
+            const [grnRes, supRes, farmRes, whRes, prodRes, poRes, bankRes] = await Promise.all([
                 api.get('/grns'),
                 api.get('/suppliers'),
                 api.get('/farms?status=active'),
                 api.get('/warehouses'),
                 api.get('/products'),
-                api.get('/purchase-orders?status=approved,sent,partially_received')
+                api.get('/purchase-orders?status=approved,sent,partially_received'),
+                api.get('/finance/bank-accounts')
             ]);
             setGrns(grnRes.data.data || []);
             setSuppliers(supRes.data.data || []);
@@ -75,6 +92,7 @@ export default function GrnsPage() {
             setWarehouses(whRes.data.data || []);
             setProducts(prodRes.data.data || []);
             setPurchaseOrders(poRes.data.data || []);
+            setBankAccounts(bankRes.data.data || []);
         } catch (err) {
             toast.error('Failed to load material receipts (GRNs)');
         } finally {
@@ -214,6 +232,13 @@ export default function GrnsPage() {
     const openQcModal = (grn) => {
         setSelectedGrn(grn);
         setPaidAmountLKR('');
+        setPaymentType('credit');
+        setPaymentMethod('cash');
+        setPaymentReference('');
+        setChequeNumber('');
+        setChequeDate('');
+        setBankName('');
+        setChequeStatus('pending');
         // Initialize QC approvals list
         const initialApprovals = grn.items.map(item => ({
             _id: item._id,
@@ -258,7 +283,15 @@ export default function GrnsPage() {
         try {
             await api.post(`/grns/${selectedGrn._id}/approve`, {
                 items: qcApprovals,
-                paidAmountLKR: Number(paidAmountLKR) || 0
+                paidAmountLKR: Number(paidAmountLKR) || 0,
+                paymentType,
+                paymentMethod,
+                bankAccountId: paymentType === 'paid' ? bankAccountId : undefined,
+                paymentReference: paymentType === 'paid' && (paymentMethod === 'card' || paymentMethod === 'bank_transfer') ? paymentReference : undefined,
+                chequeNumber: paymentType === 'paid' && paymentMethod === 'cheque' ? chequeNumber : undefined,
+                chequeDate: paymentType === 'paid' && paymentMethod === 'cheque' ? chequeDate : undefined,
+                bankName: paymentType === 'paid' && paymentMethod === 'cheque' ? bankName : undefined,
+                chequeStatus: paymentType === 'paid' && paymentMethod === 'cheque' ? chequeStatus : undefined,
             });
             toast.success('✅ QA Inspection approved, stock and supplier balances updated!');
             setIsQcOpen(false);
@@ -523,16 +556,119 @@ export default function GrnsPage() {
                         ))}
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-150">
-                        <Input
-                            label="Paid Amount (LKR) — If paid cash instantly"
-                            type="number"
-                            min="0"
-                            step="any"
-                            placeholder="0.00"
-                            value={paidAmountLKR}
-                            onChange={(e) => setPaidAmountLKR(e.target.value)}
-                        />
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-4">
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-600 block">Payment Type</label>
+                            <select
+                                value={paymentType}
+                                onChange={(e) => setPaymentType(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
+                            >
+                                <option value="credit">On Credit (Generate Bill)</option>
+                                <option value="paid">Paid Instantly</option>
+                            </select>
+                        </div>
+
+                        {paymentType === 'paid' && (
+                            <div className="space-y-3 pt-2 border-t border-gray-100">
+                                <Input
+                                    label="Paid Amount (LKR) *"
+                                    type="number"
+                                    min="0.01"
+                                    step="any"
+                                    placeholder="0.00"
+                                    value={paidAmountLKR}
+                                    onChange={(e) => setPaidAmountLKR(e.target.value)}
+                                    required
+                                />
+
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-600 block">Payment Method</label>
+                                    <select
+                                        value={paymentMethod}
+                                        onChange={(e) => setPaymentMethod(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
+                                    >
+                                        <option value="cash">Cash</option>
+                                        <option value="bank_transfer">Bank Transfer</option>
+                                        <option value="cheque">Cheque</option>
+                                    </select>
+                                </div>
+
+                                {paymentMethod !== 'cash' && (
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-600 block">Company Bank/Cash Account *</label>
+                                        <select
+                                            value={bankAccountId}
+                                            onChange={(e) => setBankAccountId(e.target.value)}
+                                            required
+                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
+                                        >
+                                            <option value="">-- Select Bank Account --</option>
+                                            {bankAccounts.map((acc) => (
+                                                <option key={acc._id} value={acc._id}>
+                                                    {acc.bankName} - {acc.accountNumber} ({acc.accountName})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
+                                {paymentMethod === 'bank_transfer' && (
+                                    <Input
+                                        label="Transaction Reference Number"
+                                        type="text"
+                                        placeholder="Enter bank reference number"
+                                        value={paymentReference}
+                                        onChange={(e) => setPaymentReference(e.target.value)}
+                                    />
+                                )}
+
+                                {paymentMethod === 'cheque' && (
+                                    <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-lg border">
+                                        <div className="col-span-1">
+                                            <Input
+                                                label="Cheque Number *"
+                                                type="text"
+                                                required
+                                                value={chequeNumber}
+                                                onChange={(e) => setChequeNumber(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-span-1">
+                                            <Input
+                                                label="Bank Name *"
+                                                type="text"
+                                                required
+                                                value={bankName}
+                                                onChange={(e) => setBankName(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-span-1">
+                                            <Input
+                                                label="Cheque Date *"
+                                                type="date"
+                                                required
+                                                value={chequeDate}
+                                                onChange={(e) => setChequeDate(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-span-1 space-y-1">
+                                            <label className="text-xs font-bold text-gray-500 block">Cheque Status</label>
+                                            <select
+                                                value={chequeStatus}
+                                                onChange={(e) => setChequeStatus(e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
+                                            >
+                                                <option value="pending">Pending</option>
+                                                <option value="cleared">Cleared</option>
+                                                <option value="cancelled">Cancelled</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

@@ -43,17 +43,17 @@ export default function ChequeLedgerPage() {
         return () => socket.disconnect();
     }, [refetch]);
 
-    const handleClearCheque = async (payment) => {
-        if (!window.confirm(`Are you sure you want to clear cheque #${payment.chequeNumber || payment.paymentNumber}?`)) {
+    const handleUpdateChequeStatus = async (payment, newStatus) => {
+        if (!window.confirm(`Are you sure you want to change status of cheque #${payment.chequeNumber || payment.paymentNumber} to ${newStatus}?`)) {
             return;
         }
-        const loadToast = toast.loading('Clearing cheque and updating bank balance...');
+        const loadToast = toast.loading(`Updating cheque status to ${newStatus}...`);
         try {
-            await api.put(`/payments/${payment._id}/clear`);
-            toast.success('✅ Cheque cleared and bank balance updated in real-time!', { id: loadToast });
+            await api.put(`/payments/${payment._id}/status`, { chequeStatus: newStatus });
+            toast.success(`✅ Cheque status updated to ${newStatus} in real-time!`, { id: loadToast });
             refetch();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to clear cheque', { id: loadToast });
+            toast.error(error.response?.data?.message || 'Failed to update cheque status', { id: loadToast });
         }
     };
 
@@ -132,22 +132,22 @@ export default function ChequeLedgerPage() {
             key: 'chequeStatus', 
             label: 'Status', 
             render: (r) => {
-                const statusStr = r.chequeStatus || r.status || 'Pending';
-                const isPending = statusStr.toLowerCase() === 'pending';
+                const statusStr = r.chequeStatus || 'pending';
                 return (
-                    <div 
-                        onClick={(e) => {
-                            if (isPending) {
-                                e.stopPropagation();
-                                handleClearCheque(r);
-                            }
-                        }}
-                        className={isPending ? 'cursor-pointer transform hover:scale-105 active:scale-95 transition-all' : ''}
-                        title={isPending ? 'Click to Clear Cheque' : ''}
-                    >
-                        <Badge variant={getStatusBadgeVariant(statusStr)}>
-                            {statusStr}
-                        </Badge>
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <select
+                            value={statusStr}
+                            onChange={(e) => handleUpdateChequeStatus(r, e.target.value)}
+                            className={`text-xs font-bold px-2 py-0.5 rounded-lg border focus:outline-none focus:ring-1 focus:ring-primary-500 cursor-pointer ${
+                                statusStr === 'cleared' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' :
+                                statusStr === 'bounced' ? 'text-rose-700 bg-rose-50 border-rose-200' :
+                                'text-amber-700 bg-amber-50 border-amber-200'
+                            }`}
+                        >
+                            <option value="pending">Pending</option>
+                            <option value="cleared">Cleared</option>
+                            <option value="bounced">Bounced</option>
+                        </select>
                     </div>
                 );
             }

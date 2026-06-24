@@ -76,7 +76,7 @@ export default function InventoryRecipeFormPage() {
             const src = products.find(p => p._id === sourceProductId);
             const dest = products.find(p => p._id === destinationProductId);
             if (src && dest && !name) {
-                setName(`${src.name} to ${dest.name} Recipe`);
+                setName(`${src.name} to ${dest.name} Formula`);
             }
         }
     }, [sourceProductId, destinationProductId, products, name, isEdit]);
@@ -91,17 +91,17 @@ export default function InventoryRecipeFormPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['inventoryRecipes'] });
-            toast.success(isEdit ? 'Recipe updated successfully!' : 'Recipe created successfully!');
+            toast.success(isEdit ? 'Formula updated successfully!' : 'Formula created successfully!');
             navigate('/inventory-recipes');
         },
         onError: (err) => {
-            toast.error(err.response?.data?.message || 'Failed to save recipe');
+            toast.error(err.response?.data?.message || 'Failed to save formula');
         }
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!name.trim()) return toast.error('Recipe name is required');
+        if (!name.trim()) return toast.error('Formula name is required');
         if (!sourceProductId) return toast.error('Source raw material is required');
         if (!destinationProductId) return toast.error('Destination output product is required');
         if (Number(inputQuantity) <= 0) return toast.error('Standard input quantity must be positive');
@@ -119,7 +119,7 @@ export default function InventoryRecipeFormPage() {
     };
 
     if (isEdit && isLoadingRecipe) {
-        return <div className="py-20 text-center text-gray-500 font-medium">Loading recipe details...</div>;
+        return <div className="py-20 text-center text-gray-500 font-medium">Loading formula details...</div>;
     }
 
     return (
@@ -129,7 +129,7 @@ export default function InventoryRecipeFormPage() {
                     <ArrowLeft size={18} />
                 </Button>
                 <PageHeader 
-                    title={isEdit ? 'Edit Inventory Recipe' : 'New Inventory Recipe'} 
+                    title={isEdit ? 'Edit Inventory Formula' : 'New Inventory Formula'} 
                     description={isEdit ? 'Modify crop conversion yield parameters' : 'Define conversion ratio from crop to finished product'}
                 />
             </div>
@@ -138,8 +138,8 @@ export default function InventoryRecipeFormPage() {
                 <Card className="p-6 space-y-5">
                     <div>
                         <Input 
-                            label="Recipe Name *" 
-                            placeholder="e.g. Raw Moringa Leaves to Moringa Powder Recipe"
+                            label="Formula Name *" 
+                            placeholder="e.g. Raw Moringa Leaves to Moringa Powder Formula"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
@@ -232,7 +232,7 @@ export default function InventoryRecipeFormPage() {
                     </Button>
                     <Button type="submit" variant="primary" disabled={saveMutation.isPending}>
                         <Save size={16} className="mr-1.5" />
-                        {saveMutation.isPending ? 'Saving...' : 'Save Recipe'}
+                        {saveMutation.isPending ? 'Saving...' : 'Save Formula'}
                     </Button>
                 </div>
             </form>

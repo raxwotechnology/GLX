@@ -401,8 +401,8 @@ export default function InventoryConverterPage() {
     return (
         <div className="max-w-5xl mx-auto space-y-6">
             <PageHeader
-                title="Inventory & Recipe Converter"
-                description="Convert raw materials to finished products using recipes or direct conversion factors."
+                title="Inventory & Formula Converter"
+                description="Convert raw materials to finished products using formulas or direct conversion factors."
             />
 
             {/* TAB SYSTEM */}
@@ -422,7 +422,7 @@ export default function InventoryConverterPage() {
                             : 'text-gray-500 hover:text-gray-800'
                     }`}
                 >
-                    <Scale size={16} /> Recipe-based (Simple)
+                    <Scale size={16} /> Formula-based (Simple)
                 </button>
                 <button
                     onClick={() => {
@@ -439,7 +439,7 @@ export default function InventoryConverterPage() {
                             : 'text-gray-500 hover:text-gray-800'
                     }`}
                 >
-                    <RefreshCw size={15} /> Direct (No Recipe)
+                    <RefreshCw size={15} /> Direct (No Formula)
                 </button>
             </div>
 
@@ -452,7 +452,7 @@ export default function InventoryConverterPage() {
                             {activeTab === 'recipe' ? (
                                 <>
                                     <Scale size={18} className="text-primary-550" />
-                                    <span>Recipe Conversion Parameters</span>
+                                    <span>Formula Conversion Parameters</span>
                                 </>
                             ) : (
                                 <>
@@ -560,12 +560,12 @@ export default function InventoryConverterPage() {
                                 <div className="space-y-4 pt-1">
                                     {/* Recipe Autocomplete Search */}
                                     <div className="relative" ref={suggestionsRef}>
-                                        <label className="text-xs font-bold text-gray-600 block mb-1">Select Inventory Recipe *</label>
+                                        <label className="text-xs font-bold text-gray-600 block mb-1">Select Inventory Formula *</label>
                                         <div className="relative">
                                             <FileText className="absolute left-3 top-3 text-gray-400" size={16} />
                                             <input
                                                 type="text"
-                                                placeholder={sourceProductId ? "Start typing recipe name or code..." : "Select a raw material first..."}
+                                                placeholder={sourceProductId ? "Start typing formula name or code..." : "Select a raw material first..."}
                                                 disabled={!sourceProductId}
                                                 value={recipeSearchQuery}
                                                 onChange={(e) => {
@@ -602,7 +602,7 @@ export default function InventoryConverterPage() {
                                         )}
                                         {showSuggestions && recipeSearchQuery && getFilteredRecipes().length === 0 && (
                                             <div className="absolute z-35 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 p-4 text-center text-xs text-gray-500">
-                                                No matching active recipe found for {activeSourceProd?.name || 'selected raw material'}.
+                                                No matching active formula found for {activeSourceProd?.name || 'selected raw material'}.
                                             </div>
                                         )}
                                     </div>
@@ -837,7 +837,7 @@ export default function InventoryConverterPage() {
                                     className="w-full md:w-auto"
                                 >
                                     <Save size={16} className="mr-1.5" /> 
-                                    {saving ? 'Processing...' : activeTab === 'recipe' ? 'Convert via Recipe' : 'Convert Stock Directly'}
+                                    {saving ? 'Processing...' : activeTab === 'recipe' ? 'Convert via Formula' : 'Convert Stock Directly'}
                                 </Button>
                             </div>
                         </form>

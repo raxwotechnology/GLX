@@ -200,6 +200,15 @@ export default function ProductionOrderDetailPage() {
                         </table>
                     </Card>
 
+                    {po.referenceLink && (
+                        <Card className="p-6">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-2">Reference Link</h3>
+                            <a href={po.referenceLink} target="_blank" rel="noopener noreferrer" className="text-sm text-primary-600 hover:underline break-all font-semibold">
+                                {po.referenceLink}
+                            </a>
+                        </Card>
+                    )}
+
                     {po.notes && (
                         <Card className="p-6">
                             <h3 className="text-sm font-semibold text-gray-700 mb-2">Notes</h3>

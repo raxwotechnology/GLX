@@ -124,9 +124,9 @@ export const useConvertStockRecipe = () => {
             qc.invalidateQueries({ queryKey: ['bomAvailability'], refetchType: 'all' });
             qc.invalidateQueries({ queryKey: ['products'], refetchType: 'all' });
             invalidateReportsAndDashboard(qc);
-            toast.success(data.message || 'Recipe conversion successful');
+            toast.success(data.message || 'Formula conversion successful');
         },
-        onError: (err) => toast.error(err.response?.data?.message || 'Recipe conversion failed'),
+        onError: (err) => toast.error(err.response?.data?.message || 'Formula conversion failed'),
     });
 };
 
