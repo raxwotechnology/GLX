@@ -24,6 +24,11 @@ const salaryStructureSchema = new mongoose.Schema({
         type: String,
         default: 'all',
     },
+    frequency: {
+        type: String,
+        enum: ['monthly', 'daily'],
+        default: 'monthly',
+    },
     components: [componentSchema],
     isActive: { type: Boolean, default: true },
     deletedAt: { type: Date, default: null },

@@ -3,7 +3,7 @@ import api from '../api/axios';
 import { format } from 'date-fns';
 import {
     Plus, Search, Layers,
-    CheckCircle2, Clock, MoreHorizontal, AlertCircle
+    CheckCircle2, Clock, MoreHorizontal, AlertCircle, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
@@ -32,8 +32,11 @@ const BatchesPage = () => {
         product: '',
         inputWeight_total: '',
         date: new Date().toISOString().split('T')[0],
-        machineId: ''
+        staff_total: '',
+        remark: ''
     });
+
+    const [assignedMachines, setAssignedMachines] = useState([]);
 
     const productionSchema = [
         { name: 'date', label: 'Date', type: 'date', required: false },
@@ -46,12 +49,6 @@ const BatchesPage = () => {
             options: templates.map(t => ({ value: t._id, label: `${t.name} (${t.code})` }))
         },
         { name: 'inputWeight_total', label: 'Total Input Weight (kg)', type: 'number', required: false },
-        {
-            name: 'machineId',
-            label: 'Machine',
-            type: 'select',
-            options: machines.map(m => ({ value: m._id, label: `${m.name} (${m.code})` }))
-        },
         { name: 'staff_total', label: 'Total StaffCount', type: 'number' },
         { name: 'remark', label: 'Remarks', type: 'textarea' }
     ];
@@ -100,8 +97,10 @@ const BatchesPage = () => {
             product: '',
             inputWeight_total: '',
             date: new Date().toISOString().split('T')[0],
-            machineId: ''
+            staff_total: '',
+            remark: ''
         });
+        setAssignedMachines([{ machineId: '', hours: '' }]);
         setIsModalOpen(true);
     };
 
@@ -114,7 +113,9 @@ const BatchesPage = () => {
         try {
             const payload = {
                 ...formData,
-                machineAssignments: formData.machineId ? [{ machineId: formData.machineId }] : []
+                machineAssignments: assignedMachines
+                    .filter(am => am.machineId && am.hours > 0)
+                    .map(am => ({ machineId: am.machineId, hours: Number(am.hours) || 0 }))
             };
             await api.post('/production-batches', payload);
             toast.success('Batch created successfully');
@@ -373,8 +374,8 @@ const BatchesPage = () => {
                 )}
             </div>
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Production Batch" size="lg">
-                <div className="p-6">
+            <Modal isOpen={isModalOpen} onClose={() => setIsOpen(false)} title="Create New Production Batch" size="lg">
+                <div className="p-6 space-y-4 overflow-y-auto max-h-[85vh]">
                     <DynamicForm
                         schema={productionSchema}
                         formData={formData}
@@ -383,6 +384,94 @@ const BatchesPage = () => {
                         loading={saving}
                         submitLabel="Initialize Batch"
                     />
+                    
+                    {/* Machine Assignments Section */}
+                    <div className="border-t pt-4 space-y-3">
+                        <div className="flex justify-between items-center">
+                            <h4 className="text-sm font-semibold text-gray-700">Machine Assignments</h4>
+                            <button
+                                type="button"
+                                onClick={() => setAssignedMachines(prev => [...prev, { machineId: '', hours: '' }])}
+                                className="text-xs text-primary-600 hover:text-primary-800 font-bold flex items-center gap-1"
+                            >
+                                <Plus size={14} className="mr-0.5" /> Add Machine
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-2.5">
+                            {assignedMachines.map((am, idx) => {
+                                const machineCost = (() => {
+                                    const m = machines.find(mach => mach._id === am.machineId);
+                                    return m ? (m.hourlyCost || 0) * (Number(am.hours) || 0) : 0;
+                                })();
+
+                                return (
+                                    <div key={idx} className="flex gap-3 items-end bg-gray-50 p-2.5 border border-gray-150 rounded-xl relative group">
+                                        <div className="flex-1">
+                                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Machine</label>
+                                            <select
+                                                value={am.machineId}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setAssignedMachines(prev => prev.map((item, i) => i === idx ? { ...item, machineId: val } : item));
+                                                }}
+                                                className="w-full h-9 px-2 bg-white border border-gray-200 rounded-lg text-sm outline-none"
+                                            >
+                                                <option value="">Select Machine</option>
+                                                {machines.map(m => (
+                                                    <option key={m._id} value={m._id}>{m.name} ({m.code}) - LKR {m.hourlyCost}/hr</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="w-28">
+                                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Running Hours</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.1"
+                                                value={am.hours}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setAssignedMachines(prev => prev.map((item, i) => i === idx ? { ...item, hours: val } : item));
+                                                }}
+                                                placeholder="Hours"
+                                                className="w-full h-9 px-2 bg-white border border-gray-200 rounded-lg text-sm outline-none"
+                                            />
+                                        </div>
+
+                                        <div className="w-32 text-right pb-2">
+                                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Cost</label>
+                                            <span className="text-sm font-semibold text-gray-800">LKR {machineCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setAssignedMachines(prev => prev.filter((_, i) => i !== idx))}
+                                            className="p-2 hover:bg-red-50 text-red-500 hover:text-red-700 rounded-lg transition-colors mb-0.5"
+                                        >
+                                            <Trash2 size={15} />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {assignedMachines.length > 0 && (() => {
+                            const totalMachineCost = assignedMachines.reduce((sum, am) => {
+                                const m = machines.find(mach => mach._id === am.machineId);
+                                return sum + (m ? (m.hourlyCost || 0) * (Number(am.hours) || 0) : 0);
+                            }, 0);
+                            if (totalMachineCost > 0) {
+                                return (
+                                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800 flex justify-between items-center font-bold mt-2">
+                                        <span>Total Machine Operation Cost:</span>
+                                        <span className="text-base text-blue-900">LKR {totalMachineCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                    </div>
+                                );
+                            }
+                        })()}
+                    </div>
                 </div>
             </Modal>
         </div>

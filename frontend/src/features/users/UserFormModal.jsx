@@ -11,6 +11,67 @@ import { useCreateUser, useUpdateUser } from './useUsers';
 import { ROLES, getRoleConfig } from './roleConfig';
 import { useDesignations } from '../hr/useHr';
 
+const ALL_PERMISSIONS = [
+    {
+        module: 'Sales & CRM',
+        items: [
+            { code: 'pos.access', label: 'POS Access' },
+            { code: 'sales.view', label: 'View Sales' },
+            { code: 'sales.create', label: 'Create Sales' },
+            { code: 'sales.edit', label: 'Edit Sales' },
+            { code: 'sales.approve', label: 'Approve Sales Orders' },
+            { code: 'sales.delete', label: 'Delete Sales' },
+            { code: 'customers.view', label: 'View Customers' },
+            { code: 'customers.manage', label: 'Manage Customers' }
+        ]
+    },
+    {
+        module: 'Inventory & Stock',
+        items: [
+            { code: 'products.view', label: 'View Products' },
+            { code: 'products.create', label: 'Add Products' },
+            { code: 'products.edit', label: 'Edit Products' },
+            { code: 'inventory.view', label: 'View Inventory' },
+            { code: 'inventory.adjust', label: 'Adjust Stock' },
+            { code: 'inventory.transfer', label: 'Transfer Stock' },
+            { code: 'inventory.opening', label: 'Opening Stock' },
+            { code: 'warehouses.manage', label: 'Manage Warehouses' }
+        ]
+    },
+    {
+        module: 'Purchasing & Production',
+        items: [
+            { code: 'purchasing.view', label: 'View Purchasing' },
+            { code: 'grn.manage', label: 'Manage GRN & QA Gate' },
+            { code: 'suppliers.view', label: 'View Suppliers' },
+            { code: 'production.view', label: 'View Production Batches' },
+            { code: 'bom.view', label: 'View BOM Formulas' }
+        ]
+    },
+    {
+        module: 'HR & Payroll',
+        items: [
+            { code: 'hr.employees.view', label: 'View Employees' },
+            { code: 'hr.employees.manage', label: 'Manage Employees' },
+            { code: 'hr.attendance.manage', label: 'Manage Attendance' },
+            { code: 'hr.leaves.manage', label: 'Manage Leaves' },
+            { code: 'hr.payroll.manage', label: 'Manage Payroll' }
+        ]
+    },
+    {
+        module: 'Accounting & Reports',
+        items: [
+            { code: 'invoices.view', label: 'View Invoices' },
+            { code: 'bills.manage', label: 'Manage Bills' },
+            { code: 'payments.manage', label: 'Manage Payments' },
+            { code: 'reports.sales', label: 'Sales Reports' },
+            { code: 'reports.inventory', label: 'Inventory Reports' },
+            { code: 'reports.hr', label: 'HR Reports' },
+            { code: 'reports.financial', label: 'Financial / P&L Reports' }
+        ]
+    }
+];
+
 const createSchema = z.object({
     firstName: z.string().min(1, 'First name required').max(50),
     lastName: z.string().min(1, 'Last name required').max(50),
@@ -38,6 +99,7 @@ const updateSchema = z.object({
 export default function UserFormModal({ isOpen, onClose, user = null }) {
     const isEdit = !!user;
     const [selectedRole, setSelectedRole] = useState('staff');
+    const [selectedPerms, setSelectedPerms] = useState([]);
 
     const createMutation = useCreateUser();
     const updateMutation = useUpdateUser();
@@ -61,15 +123,16 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                 phone: user.phone || '',
                 role: user.role || 'staff',
                 isActive: user.isActive !== false,
-                permissions: Array.isArray(user.permissions) ? user.permissions.join(', ') : '',
             });
             setSelectedRole(user.role || 'staff');
+            setSelectedPerms(Array.isArray(user.permissions) ? user.permissions : []);
         } else if (isOpen) {
             reset({
                 firstName: '', lastName: '', email: '', password: '',
-                phone: '', role: 'staff', isActive: true, permissions: '',
+                phone: '', role: 'staff', isActive: true,
             });
             setSelectedRole('staff');
+            setSelectedPerms([]);
         }
     }, [isOpen, user, reset]);
 
@@ -78,10 +141,6 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
     }, [roleValue]);
 
     const onSubmit = async (data) => {
-        const permissionsArray = typeof data.permissions === 'string'
-            ? data.permissions.split(',').map(p => p.trim()).filter(p => p !== '')
-            : [];
-
         try {
             if (isEdit) {
                 await updateMutation.mutateAsync({
@@ -92,7 +151,7 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                         phone: data.phone || undefined,
                         role: data.role,
                         isActive: data.isActive,
-                        permissions: permissionsArray,
+                        permissions: selectedPerms,
                     },
                 });
             } else {
@@ -104,6 +163,7 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                     phone: data.phone || undefined,
                     role: data.role,
                     designationId: data.designationId || undefined,
+                    permissions: selectedPerms,
                 });
             }
             onClose();
@@ -177,26 +237,51 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                     </div>
 
                     {isEdit && (
-                        <>
+                        <div className="border-t pt-4 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Additional Permissions (Comma-separated codes)
+                                <label className="block text-sm font-semibold text-gray-800">
+                                    Additional Permissions (Overrides role defaults)
                                 </label>
-                                <textarea
-                                    className="w-full px-3 py-2 border rounded-lg text-sm font-mono"
-                                    rows="3"
-                                    placeholder="e.g. inventory.transfer, sales.view"
-                                    {...register('permissions')}
-                                />
-                                <p className="text-[10px] text-gray-500 mt-1">
-                                    Overrides the default role permissions. Leave empty to use role defaults.
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                    Check items to grant permissions specifically to this user on top of their role defaults.
                                 </p>
                             </div>
-                            <label className="flex items-center gap-2 text-sm mt-4">
-                                <input type="checkbox" {...register('isActive')} />
-                                Active (uncheck to deactivate this user from logging in)
+
+                            <div className="space-y-4 max-h-[35vh] overflow-y-auto pr-2">
+                                {ALL_PERMISSIONS.map((group) => (
+                                    <div key={group.module} className="bg-gray-50 p-3.5 border rounded-xl space-y-2.5">
+                                        <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{group.module}</h5>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {group.items.map((item) => {
+                                                const checked = selectedPerms.includes(item.code);
+                                                return (
+                                                    <label key={item.code} className="flex items-start gap-2 text-xs text-gray-700 cursor-pointer select-none font-medium">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={checked}
+                                                            onChange={() => {
+                                                                if (checked) {
+                                                                    setSelectedPerms(prev => prev.filter(p => p !== item.code));
+                                                                } else {
+                                                                    setSelectedPerms(prev => [...prev, item.code]);
+                                                                }
+                                                            }}
+                                                            className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                                        />
+                                                        <span>{item.label}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <label className="flex items-center gap-2 text-sm mt-4 select-none cursor-pointer">
+                                <input type="checkbox" {...register('isActive')} className="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                <span className="text-gray-700 font-medium">Active (de-select to deactivate this user account)</span>
                             </label>
-                        </>
+                        </div>
                     )}
                 </div>
 

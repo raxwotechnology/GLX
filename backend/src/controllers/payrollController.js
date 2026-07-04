@@ -119,6 +119,13 @@ export const processPayroll = asyncHandler(async (req, res) => {
         if (!emp.basicSalary || emp.basicSalary <= 0) continue; // skip if no basic salary set
 
         const attendance = await getEmployeeMonthAttendance(emp._id, periodYear, periodMonth);
+        const isDaily = emp.salaryStructureId?.frequency === 'daily';
+
+        let basic = emp.basicSalary;
+        if (isDaily) {
+            // Basic salary is daily rate * days present
+            basic = (emp.basicSalary || 0) * (attendance.daysPresent || 0);
+        }
 
         // Build earnings from salary structure
         const structureEarnings = [];
@@ -127,8 +134,11 @@ export const processPayroll = asyncHandler(async (req, res) => {
                 .filter((c) => c.type === 'earning')
                 .forEach((c) => {
                     let amount = 0;
-                    if (c.calculationType === 'fixed') amount = c.amount || 0;
-                    else if (c.calculationType === 'percentage_of_basic') amount = (emp.basicSalary * (c.percentage || 0)) / 100;
+                    if (c.calculationType === 'fixed') {
+                        amount = isDaily ? (c.amount || 0) * (attendance.daysPresent || 0) : (c.amount || 0);
+                    } else if (c.calculationType === 'percentage_of_basic') {
+                        amount = (basic * (c.percentage || 0)) / 100;
+                    }
                     structureEarnings.push({
                         name: c.name,
                         amount,
@@ -140,13 +150,13 @@ export const processPayroll = asyncHandler(async (req, res) => {
         }
 
         const calc = calculatePayslip({
-            basicSalary: emp.basicSalary,
+            basicSalary: basic,
             earnings: structureEarnings,
             otherDeductions: [], // advances/loans can be added per-employee later
             attendance: {
                 workingDays,
                 daysPresent: attendance.daysPresent,
-                unpaidLeaveDays: attendance.unpaidLeaveDays,
+                unpaidLeaveDays: isDaily ? 0 : attendance.unpaidLeaveDays, // Daily wage earners don't have double unpaid leave deductions
                 overtimeHours: attendance.overtimeHours,
             },
             overtimeRate: overtimeRatePerHour,
@@ -160,9 +170,9 @@ export const processPayroll = asyncHandler(async (req, res) => {
             daysPresent: attendance.daysPresent,
             daysAbsent: attendance.daysAbsent,
             leaveDays: attendance.leaveDays,
-            unpaidLeaveDays: attendance.unpaidLeaveDays,
+            unpaidLeaveDays: isDaily ? 0 : attendance.unpaidLeaveDays,
             overtimeHours: attendance.overtimeHours,
-            basicSalary: emp.basicSalary,
+            basicSalary: basic, // Store calculated period basic salary
             earnings: calc.earnings,
             grossEarnings: calc.grossEarnings,
             deductions: calc.deductions,

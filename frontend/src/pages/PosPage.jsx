@@ -224,6 +224,13 @@ export default function PosPage() {
         }).filter((i) => i.qty > 0));
     };
 
+    const setPrice = (productId, price) => {
+        setCart((prev) => prev.map((i) => {
+            if (i.productId !== productId) return i;
+            return { ...i, price };
+        }));
+    };
+
     const removeFromCart = (productId) => {
         setCart((prev) => prev.filter((i) => i.productId !== productId));
     };
@@ -238,7 +245,7 @@ export default function PosPage() {
         let subtotal = 0;
         let totalTax = 0;
         cart.forEach((item) => {
-            const lineSub = item.qty * item.price;
+            const lineSub = item.qty * (+item.price || 0);
             subtotal += lineSub;
             if (taxMode === 'override') {
                 totalTax += lineSub * ((+overrideTaxRate || 0) / 100);
@@ -321,7 +328,7 @@ export default function PosPage() {
             items: cart.map((i) => ({
                 productId: i.productId,
                 orderedQuantity: i.qty,
-                unitPrice: i.price,
+                unitPrice: +i.price || 0,
                 taxRate: taxMode === 'override' ? (+overrideTaxRate || 0) : i.taxRate,
                 taxable: taxMode === 'override' ? (+overrideTaxRate || 0) > 0 : i.taxable,
                 discountPercent: 0,
@@ -604,6 +611,7 @@ export default function PosPage() {
                         setOrderDiscountPercent={setOrderDiscountPercent}
                         updateQty={updateQty}
                         setQty={setQty}
+                        setPrice={setPrice}
                         removeFromCart={removeFromCart}
                         clearCart={clearCart}
                         handleCheckout={handleCheckout}
@@ -716,6 +724,7 @@ export default function PosPage() {
                             setOrderDiscountPercent={setOrderDiscountPercent}
                             updateQty={updateQty}
                             setQty={setQty}
+                            setPrice={setPrice}
                             removeFromCart={removeFromCart}
                             clearCart={clearCart}
                             handleCheckout={handleCheckout}
@@ -764,7 +773,7 @@ export default function PosPage() {
 function CartPanel({
     cart, totals, fmt, taxMode, overrideTaxRate, setTaxMode, setOverrideTaxRate,
     orderDiscountPercent, setOrderDiscountPercent,
-    updateQty, setQty, removeFromCart, clearCart, handleCheckout,
+    updateQty, setQty, setPrice, removeFromCart, clearCart, handleCheckout,
     isPending, customerId, embedded,
     paymentMethod, setPaymentMethod,
     bankAccountId, setBankAccountId,
@@ -837,9 +846,19 @@ function CartPanel({
                                         </button>
                                     </div>
 
-                                    <div className="text-right">
-                                        <p className="text-sm font-bold text-gray-800">{fmt(item.qty * item.price)}</p>
-                                        <p className="text-xs text-gray-400">{fmt(item.price)} each</p>
+                                    <div className="text-right flex flex-col items-end">
+                                        <p className="text-sm font-bold text-gray-800">{fmt(item.qty * (+item.price || 0))}</p>
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                            <input
+                                                type="number"
+                                                value={item.price}
+                                                min="0"
+                                                step="0.01"
+                                                onChange={(e) => setPrice(item.productId, e.target.value)}
+                                                className="w-20 text-right text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium font-mono"
+                                            />
+                                            <span className="text-xs text-gray-400">each</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

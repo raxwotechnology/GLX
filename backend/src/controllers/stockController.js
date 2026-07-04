@@ -349,6 +349,7 @@ export const convertStock = asyncHandler(async (req, res) => {
         notes,
         batchNumber = null,
         openQuantity, // accept openQuantity
+        machineAssignments = []
     } = req.body;
 
     if (!sourceProductId || !destinationProductId || !warehouseId || !inputQuantity || !outputQuantity) {
@@ -394,7 +395,21 @@ export const convertStock = asyncHandler(async (req, res) => {
 
             const sourceUnitCost = decResult.stockItem?.costPerUnit || sourceProduct.basePrice || 0;
             const materialCost = sourceUnitCost * Number(inputQuantity);
-            const totalProductionCost = materialCost + Number(laborCost) + Number(overheadCost);
+
+            let machineCost = 0;
+            if (machineAssignments && machineAssignments.length > 0) {
+                const Machine = mongoose.model('Machine');
+                for (const assignment of machineAssignments) {
+                    if (assignment.machineId) {
+                        const machine = await Machine.findById(assignment.machineId);
+                        if (machine) {
+                            machineCost += (Number(assignment.hours) || 0) * (machine.hourlyCost || 0);
+                        }
+                    }
+                }
+            }
+
+            const totalProductionCost = materialCost + Number(laborCost) + Number(overheadCost) + machineCost;
             const destCostPerUnit = outputQuantity > 0 ? +(totalProductionCost / outputQuantity).toFixed(2) : 0;
 
             await increaseStock({
@@ -426,6 +441,7 @@ export const convertStock = asyncHandler(async (req, res) => {
                 materialCost: Number(materialCost.toFixed(2)),
                 laborCost: Number(Number(laborCost).toFixed(2)),
                 overheadCost: Number(Number(overheadCost).toFixed(2)),
+                machineAssignments,
                 processingStage: 'completed',
                 qcStatus: 'approved',
                 status: 'completed',
@@ -467,6 +483,7 @@ export const convertStockBom = asyncHandler(async (req, res) => {
         mainProductId,
         inputQuantity,
         notes,
+        machineAssignments = []
     } = req.body;
 
     if (!bomId || !warehouseId || !mainProductId || !inputQuantity) {
@@ -545,7 +562,21 @@ export const convertStockBom = asyncHandler(async (req, res) => {
             // 3. Calculate destination cost per unit
             const finalLaborCost = req.body.laborCost !== undefined ? Number(req.body.laborCost) : ((bom.totalLaborCost || 0) * multiplier);
             const finalOverheadCost = req.body.overheadCost !== undefined ? Number(req.body.overheadCost) : ((bom.totalOverheadCost || 0) * multiplier);
-            const totalProductionCost = totalMaterialCost + finalLaborCost + finalOverheadCost;
+            
+            let machineCost = 0;
+            if (machineAssignments && machineAssignments.length > 0) {
+                const Machine = mongoose.model('Machine');
+                for (const assignment of machineAssignments) {
+                    if (assignment.machineId) {
+                        const machine = await Machine.findById(assignment.machineId);
+                        if (machine) {
+                            machineCost += (Number(assignment.hours) || 0) * (machine.hourlyCost || 0);
+                        }
+                    }
+                }
+            }
+
+            const totalProductionCost = totalMaterialCost + finalLaborCost + finalOverheadCost + machineCost;
             const destCostPerUnit = outputQuantity > 0 ? +(totalProductionCost / outputQuantity).toFixed(2) : 0;
 
             // 4. Increase stock for finished goods
@@ -577,6 +608,7 @@ export const convertStockBom = asyncHandler(async (req, res) => {
                 materialCost: Number(totalMaterialCost.toFixed(2)),
                 laborCost: Number(finalLaborCost.toFixed(2)),
                 overheadCost: Number(finalOverheadCost.toFixed(2)),
+                machineAssignments,
                 processingStage: 'completed',
                 qcStatus: 'approved',
                 status: 'completed',
@@ -622,6 +654,7 @@ export const convertStockRecipe = asyncHandler(async (req, res) => {
         notes,
         batchNumber = null,
         openQuantity, // accept openQuantity
+        machineAssignments = []
     } = req.body;
 
     if (!recipeId || !warehouseId || !inputQuantity) {
@@ -677,7 +710,21 @@ export const convertStockRecipe = asyncHandler(async (req, res) => {
 
             const sourceUnitCost = decResult.stockItem?.costPerUnit || sourceProduct.basePrice || 0;
             const materialCost = sourceUnitCost * Number(inputQuantity);
-            const totalProductionCost = materialCost + Number(laborCost) + Number(overheadCost);
+
+            let machineCost = 0;
+            if (machineAssignments && machineAssignments.length > 0) {
+                const Machine = mongoose.model('Machine');
+                for (const assignment of machineAssignments) {
+                    if (assignment.machineId) {
+                        const machine = await Machine.findById(assignment.machineId);
+                        if (machine) {
+                            machineCost += (Number(assignment.hours) || 0) * (machine.hourlyCost || 0);
+                        }
+                    }
+                }
+            }
+
+            const totalProductionCost = materialCost + Number(laborCost) + Number(overheadCost) + machineCost;
             const destCostPerUnit = outputQuantity > 0 ? +(totalProductionCost / outputQuantity).toFixed(2) : 0;
 
             // 2. Generate batch number
@@ -715,6 +762,7 @@ export const convertStockRecipe = asyncHandler(async (req, res) => {
                 materialCost: Number(materialCost.toFixed(2)),
                 laborCost: Number(Number(laborCost).toFixed(2)),
                 overheadCost: Number(Number(overheadCost).toFixed(2)),
+                machineAssignments,
                 processingStage: 'completed',
                 qcStatus: 'approved',
                 status: 'completed',

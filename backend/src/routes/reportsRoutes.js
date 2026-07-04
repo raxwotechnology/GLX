@@ -11,7 +11,7 @@ import {
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
 import {
-    getPnLRecords, createPnLRecord, updatePnLRecord, deletePnLRecord
+    getPnLRecords, createPnLRecord, updatePnLRecord, deletePnLRecord, getDailyPnLCalculation
 } from '../controllers/dailyPnLController.js';
 import {
     getProductionSummary, getProductionByProduct, getProductionWastage,
@@ -52,6 +52,7 @@ router.post('/financial/targets', requirePermission('reports.financial'), setTar
 router.get('/financial/variance', requirePermission('reports.financial'), getVarianceReport);
 router.get('/financial/comparison', requirePermission('reports.financial'), getSalesComparison);
 router.get('/financial/pnl-dynamic', requirePermission('reports.financial'), getDynamicPnLReport);
+router.get('/pnl/autocalculate', requirePermission('reports.financial'), getDailyPnLCalculation);
 router.get('/pnl/records', requirePermission('reports.financial'), getPnLRecords);
 router.post('/pnl/records', requirePermission('reports.financial'), createPnLRecord);
 router.put('/pnl/records/:id', requirePermission('reports.financial'), updatePnLRecord);

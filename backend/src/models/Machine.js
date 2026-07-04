@@ -6,6 +6,8 @@ const machineSchema = new mongoose.Schema({
     type: { type: String }, // dryer, powderer, etc.
     status: { type: String, default: 'active' }, // active, maintenance, broken
     capacity: { type: Number },
+    fuelType: { type: String, enum: ['electric', 'wood', 'diesel', 'gas', 'other'], default: 'electric' },
+    hourlyCost: { type: Number, default: 0 },
     lastMaintenanceDate: Date,
     nextMaintenanceDate: Date,
     deletedAt: { type: Date, default: null },

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { 
     RefreshCw, ArrowRight, Save, Info, AlertTriangle, 
     Layers, Scale, CheckCircle2, AlertCircle, Warehouse, 
-    Boxes, FileText, ChevronRight, Check, Play, DollarSign
+    Boxes, FileText, ChevronRight, Check, Play, DollarSign, Trash2, Plus
 } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -37,6 +37,9 @@ export default function InventoryConverterPage() {
     const [overheadCost, setOverheadCost] = useState('');
     const [notes, setNotes] = useState('');
 
+    const [machines, setMachines] = useState([]);
+    const [assignedMachines, setAssignedMachines] = useState([{ machineId: '', hours: '' }]);
+
     // --- Tab 1: Recipe Converter State ---
     const [recipes, setRecipes] = useState([]);
     const [recipeSearchQuery, setRecipeSearchQuery] = useState('');
@@ -55,10 +58,11 @@ export default function InventoryConverterPage() {
     const fetchDropdownsAndRecipes = useCallback(async () => {
         setLoading(true);
         try {
-            const [whRes, prodRes, recipeRes] = await Promise.all([
+            const [whRes, prodRes, recipeRes, machineRes] = await Promise.all([
                 api.get('/warehouses'),
                 api.get('/products?status=all'),
-                api.get('/inventory-recipes', { params: { status: 'active' } })
+                api.get('/inventory-recipes', { params: { status: 'active' } }),
+                api.get('/production/machines')
             ]);
             setWarehouses(whRes.data.data || []);
             setWarehouseId(whRes.data.data?.[0]?._id || '');
@@ -73,6 +77,9 @@ export default function InventoryConverterPage() {
 
             // Recipes
             setRecipes(recipeRes.data.data || []);
+
+            // Machines
+            setMachines(machineRes.data.data || []);
         } catch (err) {
             toast.error('Failed to load initial configuration data');
         } finally {
@@ -253,6 +260,9 @@ export default function InventoryConverterPage() {
                 notes,
                 batchNumber: selectedBatch === 'all' ? null : selectedBatch,
                 openQuantity: openQuantity ? Number(openQuantity) : undefined,
+                machineAssignments: assignedMachines
+                    .filter(am => am.machineId && am.hours > 0)
+                    .map(am => ({ machineId: am.machineId, hours: Number(am.hours) || 0 }))
             });
 
             setInputQuantity('');
@@ -263,6 +273,7 @@ export default function InventoryConverterPage() {
             setNotes('');
             setLaborCost('');
             setOverheadCost('');
+            setAssignedMachines([{ machineId: '', hours: '' }]);
             fetchRawMaterialStock(sourceProductId, warehouseId);
         } catch (err) {
             // Error toast is handled by the mutation hook
@@ -302,6 +313,9 @@ export default function InventoryConverterPage() {
                 notes,
                 batchNumber: selectedBatch === 'all' ? null : selectedBatch,
                 openQuantity: openQuantity ? Number(openQuantity) : undefined,
+                machineAssignments: assignedMachines
+                    .filter(am => am.machineId && am.hours > 0)
+                    .map(am => ({ machineId: am.machineId, hours: Number(am.hours) || 0 }))
             });
 
             setInputQuantity('');
@@ -310,6 +324,7 @@ export default function InventoryConverterPage() {
             setNotes('');
             setLaborCost('');
             setOverheadCost('');
+            setAssignedMachines([{ machineId: '', hours: '' }]);
             setYieldPrediction(null);
             setDestinationProductId('');
             fetchRawMaterialStock(sourceProductId, warehouseId);
@@ -364,8 +379,12 @@ export default function InventoryConverterPage() {
     }, [inputQuantity, sourceUnitCost]);
 
     const totalProductionCost = useMemo(() => {
-        return materialCostTotal + Number(laborCost || 0) + Number(overheadCost || 0);
-    }, [materialCostTotal, laborCost, overheadCost]);
+        const mCost = assignedMachines.reduce((sum, am) => {
+            const m = machines.find(mach => mach._id === am.machineId);
+            return sum + (m ? (m.hourlyCost || 0) * (Number(am.hours) || 0) : 0);
+        }, 0);
+        return materialCostTotal + Number(laborCost || 0) + Number(overheadCost || 0) + mCost;
+    }, [materialCostTotal, laborCost, overheadCost, machines, assignedMachines]);
 
     const yieldOutputQty = useMemo(() => {
         return Number(outputQuantity || 0);
@@ -777,41 +796,127 @@ export default function InventoryConverterPage() {
                             )}
 
                             {/* COST ALLOCATION FIELDS */}
-                            {(selectedRecipe || yieldPrediction || destinationProductId) && (
-                                <div className="border-t pt-4 space-y-4">
-                                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Actual Manufacturing Cost Allocation</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-655 block mb-1">Labor Cost Allocation (LKR)</label>
-                                            <div className="relative">
-                                                <DollarSign className="absolute left-3 top-3 text-gray-400" size={14} />
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    placeholder="e.g. 2500"
-                                                    value={laborCost}
-                                                    onChange={(e) => setLaborCost(e.target.value)}
-                                                    className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none font-medium"
-                                                />
-                                            </div>
+                            <div className="border-t pt-4 space-y-4">
+                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Actual Manufacturing Cost Allocation</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-655 block mb-1">Labor Cost Allocation (LKR)</label>
+                                        <div className="relative">
+                                            <DollarSign className="absolute left-3 top-3 text-gray-400" size={14} />
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                placeholder="e.g. 2500"
+                                                value={laborCost}
+                                                onChange={(e) => setLaborCost(e.target.value)}
+                                                className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none font-medium"
+                                            />
                                         </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-655 block mb-1">Overhead Cost Allocation (LKR)</label>
-                                            <div className="relative">
-                                                <DollarSign className="absolute left-3 top-3 text-gray-400" size={14} />
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    placeholder="e.g. 1200"
-                                                    value={overheadCost}
-                                                    onChange={(e) => setOverheadCost(e.target.value)}
-                                                    className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none font-medium"
-                                                />
-                                            </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-655 block mb-1">Overhead Cost Allocation (LKR)</label>
+                                        <div className="relative">
+                                            <DollarSign className="absolute left-3 top-3 text-gray-400" size={14} />
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                placeholder="e.g. 1200"
+                                                value={overheadCost}
+                                                onChange={(e) => setOverheadCost(e.target.value)}
+                                                className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none font-medium"
+                                            />
                                         </div>
                                     </div>
                                 </div>
-                            )}
+
+                                {/* Machine Cost Inputs */}
+                                <div className="border-t pt-4 space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <h4 className="text-xs font-bold text-gray-550 uppercase tracking-wider">Machine Assignments</h4>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAssignedMachines(prev => [...prev, { machineId: '', hours: '' }])}
+                                            className="text-xs text-primary-600 hover:text-primary-800 font-bold flex items-center gap-1"
+                                        >
+                                            <Plus size={14} className="mr-0.5" /> Add Machine
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-2.5">
+                                        {assignedMachines.map((am, idx) => {
+                                            const machineCost = (() => {
+                                                const m = machines.find(mach => mach._id === am.machineId);
+                                                return m ? (m.hourlyCost || 0) * (Number(am.hours) || 0) : 0;
+                                            })();
+
+                                            return (
+                                                <div key={idx} className="flex gap-3 items-end bg-gray-50 p-2.5 border border-gray-150 rounded-xl relative group">
+                                                    <div className="flex-1">
+                                                        <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Machine</label>
+                                                        <select
+                                                            value={am.machineId}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                setAssignedMachines(prev => prev.map((item, i) => i === idx ? { ...item, machineId: val } : item));
+                                                            }}
+                                                            className="w-full h-9 px-2 bg-white border border-gray-200 rounded-lg text-sm outline-none"
+                                                        >
+                                                            <option value="">Select Machine</option>
+                                                            {machines.map(m => (
+                                                                <option key={m._id} value={m._id}>{m.name} ({m.code}) - LKR {m.hourlyCost}/hr</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    <div className="w-28">
+                                                        <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Running Hours</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="0.1"
+                                                            value={am.hours}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                setAssignedMachines(prev => prev.map((item, i) => i === idx ? { ...item, hours: val } : item));
+                                                            }}
+                                                            placeholder="Hours"
+                                                            className="w-full h-9 px-2 bg-white border border-gray-200 rounded-lg text-sm outline-none"
+                                                        />
+                                                    </div>
+
+                                                    <div className="w-32 text-right pb-2">
+                                                        <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Cost</label>
+                                                        <span className="text-sm font-semibold text-gray-800">LKR {machineCost.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAssignedMachines(prev => prev.filter((_, i) => i !== idx))}
+                                                        className="p-2 hover:bg-red-50 text-red-500 hover:text-red-700 rounded-lg transition-colors mb-0.5"
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {assignedMachines.length > 0 && (() => {
+                                        const totalMachineCost = assignedMachines.reduce((sum, am) => {
+                                            const m = machines.find(mach => mach._id === am.machineId);
+                                            return sum + (m ? (m.hourlyCost || 0) * (Number(am.hours) || 0) : 0);
+                                        }, 0);
+                                        if (totalMachineCost > 0) {
+                                            return (
+                                                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex justify-between font-bold mt-2">
+                                                    <span>Total Machine Operation Cost:</span>
+                                                    <span>LKR {totalMachineCost.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                                                </div>
+                                            );
+                                        }
+                                    })()}
+                                </div>
+                            </div>
 
                             <div>
                                 <label className="text-xs font-bold text-gray-600 block mb-1">Operations Notes / Remarks</label>

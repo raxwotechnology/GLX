@@ -23,19 +23,19 @@ export default function SalaryStructuresPage() {
     const [isOpen, setIsOpen] = useState(false);
     const [editing, setEditing] = useState(null);
     const [deleting, setDeleting] = useState(null);
-    const [form, setForm] = useState({ name: '', code: '', description: '', components: [] });
+    const [form, setForm] = useState({ name: '', code: '', description: '', frequency: 'monthly', components: [] });
 
     const list = data?.data || [];
 
     const openNew = () => {
         setEditing(null);
-        setForm({ name: '', code: '', description: '', components: [] });
+        setForm({ name: '', code: '', description: '', frequency: 'monthly', components: [] });
         setIsOpen(true);
     };
 
     const openEdit = (s) => {
         setEditing(s);
-        setForm({ name: s.name, code: s.code || '', description: s.description || '', components: s.components || [] });
+        setForm({ name: s.name, code: s.code || '', description: s.description || '', frequency: s.frequency || 'monthly', components: s.components || [] });
         setIsOpen(true);
     };
 
@@ -79,6 +79,7 @@ export default function SalaryStructuresPage() {
     const columns = [
         { key: 'name', label: 'Name', render: (r) => <span className="font-medium">{r.name}</span> },
         { key: 'code', label: 'Code', render: (r) => <span className="font-mono text-xs">{r.code}</span> },
+        { key: 'frequency', label: 'Frequency', render: (r) => <span className="capitalize text-sm font-semibold text-gray-700">{r.frequency || 'Monthly'}</span> },
         { key: 'components', label: 'Components', render: (r) => r.components?.length || 0 },
         { key: 'status', label: 'Status', render: (r) => <Badge variant={r.isActive ? 'success' : 'default'}>{r.isActive ? 'Active' : 'Inactive'}</Badge> },
         {
@@ -106,11 +107,18 @@ export default function SalaryStructuresPage() {
             <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}
                 title={editing ? 'Edit Salary Structure' : 'New Salary Structure'} size="xl">
                 <div className="p-6 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                         <Input label="Name" required value={form.name}
                             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
                         <Input label="Code" value={form.code}
                             onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))} />
+                        <Select label="Frequency"
+                            options={[
+                                { value: 'monthly', label: 'Monthly' },
+                                { value: 'daily', label: 'Daily' }
+                            ]}
+                            value={form.frequency}
+                            onChange={(e) => setForm((f) => ({ ...f, frequency: e.target.value }))} />
                     </div>
 
                     <div>

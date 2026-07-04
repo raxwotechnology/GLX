@@ -204,7 +204,42 @@ const DailyPnLPage = () => {
             </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedRecord ? 'Edit Daily P&L' : 'Add Daily P&L'} size="lg">
-                <div className="p-6">
+                <div className="p-6 space-y-4">
+                    <div className="flex justify-between items-center bg-gray-50 p-3.5 border rounded-xl">
+                        <div>
+                            <p className="text-sm font-semibold text-gray-750">Autofill from System Data</p>
+                            <p className="text-xs text-gray-500">Pulls sales, raw materials, labor, transport, and petty cash expenses automatically.</p>
+                        </div>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={async () => {
+                                if (!formData.date) {
+                                    toast.error('Select a date first');
+                                    return;
+                                }
+                                const toastId = toast.loading('Calculating from system data...');
+                                try {
+                                    const { data } = await api.get(`/reports/pnl/autocalculate?date=${formData.date}`);
+                                    if (data.success && data.data) {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            ...data.data
+                                        }));
+                                        toast.success('Autofilled successfully', { id: toastId });
+                                    } else {
+                                        toast.error('Autofill failed', { id: toastId });
+                                    }
+                                } catch (err) {
+                                    toast.error(err.response?.data?.message || 'Autofill calculation failed', { id: toastId });
+                                }
+                            }}
+                        >
+                            Pull System Data
+                        </Button>
+                    </div>
+
                     <DynamicForm
                         schema={pnlSchema}
                         formData={formData}

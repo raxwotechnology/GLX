@@ -52,6 +52,7 @@ import ProductionOrderFormPage from './pages/ProductionOrderFormPage';
 import ProductionOrderDetailPage from './pages/ProductionOrderDetailPage';
 import BatchesPage from './pages/BatchesPage';
 import ProcessTemplatesPage from './pages/ProcessTemplatesPage';
+import MachinesPage from './pages/MachinesPage';
 import InquiriesPage from './pages/InquiriesPage';
 import QuotationsPage from './pages/QuotationsPage';
 import ShipmentsPage from './pages/ShipmentsPage';
@@ -180,6 +181,7 @@ function App() {
 
         <Route path="/manufacturing/batches" element={<ProtectedRoute requiredPermission="production.view"><BatchesPage /></ProtectedRoute>} />
         <Route path="/manufacturing/templates" element={<ProtectedRoute requiredPermission="production.view"><ProcessTemplatesPage /></ProtectedRoute>} />
+        <Route path="/manufacturing/machines" element={<ProtectedRoute requiredPermission="production.view"><MachinesPage /></ProtectedRoute>} />
 
         <Route path="/crm/inquiries" element={<ProtectedRoute requiredPermission="customers.view"><InquiriesPage /></ProtectedRoute>} />
         <Route path="/crm/quotations" element={<ProtectedRoute requiredPermission="sales.view"><QuotationsPage /></ProtectedRoute>} />

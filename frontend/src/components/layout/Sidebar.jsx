@@ -67,6 +67,7 @@ const menuGroups = [
             { label: 'Process Templates', icon: ClipboardList, path: '/manufacturing/templates', permission: 'production.view' },
             { label: 'Production Batches', icon: Layers, path: '/manufacturing/batches', permission: 'production.view' },
             { label: 'Production Orders', icon: Factory, path: '/production-orders', permission: 'production.view' },
+            { label: 'Machine Registry', icon: Wrench, path: '/manufacturing/machines', permission: 'production.view' },
         ],
     },
     {

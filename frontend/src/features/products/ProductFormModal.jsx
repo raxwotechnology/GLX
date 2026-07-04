@@ -47,6 +47,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null, forc
             sellable: true,
             allowBackorder: false,
             minimumOrderQuantity: 1,
+            basePrice: 0,
         },
     });
 
@@ -103,6 +104,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null, forc
                 minimumOrderQuantity: 1,
                 productType: forceProductType || 'finished_good',
                 categoryId: rawCat ? rawCat._id : '',
+                basePrice: 0,
             });
         }
         setActiveTab('basic');
@@ -132,6 +134,14 @@ export default function ProductFormModal({ isOpen, onClose, product = null, forc
             setValue('productCode', '');
         }
     }, [selectedCategoryId, selectedProductShortCode, isEdit, isOpen, setValue]);
+
+    const onInvalid = (errors) => {
+        console.error('Product validation failed:', errors);
+        const errorList = Object.values(errors).map((err) => err.message);
+        if (errorList.length > 0) {
+            toast.error(`Validation error: ${errorList.join(', ')}`);
+        }
+    };
 
     const onSubmit = async (data) => {
         const rawCat = forceProductType === 'raw_material' && categoriesData?.data
@@ -214,7 +224,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null, forc
             title={isEdit ? `Edit Product — ${product?.productCode}` : 'Create New Product'}
             size="xl"
         >
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
                 {/* Tabs */}
                 <div className="border-b border-gray-200">
                     <div className="flex gap-1 px-6">

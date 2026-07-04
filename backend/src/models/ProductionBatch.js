@@ -72,6 +72,9 @@ const productionBatchSchema = new mongoose.Schema({
   // Formula: (outputWeight_total / inputWeight_total) × 100
 
   // ── Cost Details (LKR) ───────────────────────────────────────────────────
+  machineId:    { type: mongoose.Schema.Types.ObjectId, ref: 'Machine' },
+  machineHours: { type: Number, default: 0 },
+  machineCost:  { type: Number, default: 0 },
   materialCost: { type: Number, default: 0 },
   laborCost:    { type: Number, default: 0 },
   overheadCost: { type: Number, default: 0 },
@@ -95,6 +98,8 @@ const productionBatchSchema = new mongoose.Schema({
   // ── Machine Assignments ──────────────────────────────────────────────────
   machineAssignments: [{
     machineId: { type: mongoose.Schema.Types.ObjectId, ref: 'Machine' },
+    hours:     { type: Number, default: 0 },
+    cost:      { type: Number, default: 0 },
     startTime: Date,
     endTime:   Date,
     notes:     String,
@@ -113,7 +118,7 @@ const productionBatchSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // ── Pre-save Hook: Auto-generate Julian Batch Code & Compute Totals ─────────
-productionBatchSchema.pre('save', function() {
+productionBatchSchema.pre('save', async function() {
   // 1. Staff totals
   this.staff_total      = (this.staff_day      || 0) + (this.staff_night      || 0);
   this.otherStaff_total = (this.otherStaff_day || 0) + (this.otherStaff_night || 0);
@@ -129,8 +134,44 @@ productionBatchSchema.pre('save', function() {
     );
   }
 
+  // Calculate machineCost (supports both single machine field and multiple assignments)
+  let totalMachineCost = 0;
+  if (this.machineId) {
+    try {
+      const Machine = mongoose.model('Machine');
+      const machine = await Machine.findById(this.machineId);
+      if (machine) {
+        totalMachineCost += (this.machineHours || 0) * (machine.hourlyCost || 0);
+      }
+    } catch (err) {
+      console.error('Error calculating single machine cost in pre-save hook:', err);
+    }
+  }
+
+  if (this.machineAssignments && this.machineAssignments.length > 0) {
+    try {
+      const Machine = mongoose.model('Machine');
+      for (const assignment of this.machineAssignments) {
+        if (assignment.machineId) {
+          const machine = await Machine.findById(assignment.machineId);
+          if (machine) {
+            assignment.cost = (assignment.hours || 0) * (machine.hourlyCost || 0);
+            totalMachineCost += assignment.cost;
+          } else {
+            assignment.cost = 0;
+          }
+        } else {
+          assignment.cost = 0;
+        }
+      }
+    } catch (err) {
+      console.error('Error calculating multiple machine costs in pre-save hook:', err);
+    }
+  }
+  this.machineCost = totalMachineCost;
+
   // 3.5. Compute Cost Totals
-  this.totalCost = (this.materialCost || 0) + (this.laborCost || 0) + (this.overheadCost || 0);
+  this.totalCost = (this.materialCost || 0) + (this.laborCost || 0) + (this.overheadCost || 0) + (this.machineCost || 0);
 
   // 4. Generate Julian Batch Code (new documents only)
   if (this.isNew && !this.batchNo) {
