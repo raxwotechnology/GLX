@@ -24,6 +24,18 @@ const menuGroups = [
         ],
     },
     {
+        label: 'ALUECO ALUMINIUM',
+        icon: Layers,
+        items: [
+            { label: 'Alu Quotations', icon: FileText, path: '/alu/quotations', permission: 'sales.view' },
+            { label: 'Alu Scrap Inventory', icon: History, path: '/alu/scrap', permission: 'sales.view' },
+            { label: 'Production Kanban', icon: ClipboardList, path: '/alu/kanban', permission: 'sales.view' },
+            { label: '2D Visual Configurator', icon: Sparkles, path: '/alu/configurator', permission: 'sales.view' },
+            { label: 'On-Site Site Surveys', icon: Navigation, path: '/alu/surveys', permission: 'sales.view' },
+            { label: 'Alu Database', icon: Settings, path: '/alu/database', permission: 'sales.view' },
+        ],
+    },
+    {
         label: 'PRODUCT MASTER',
         icon: FolderTree,
         items: [
@@ -42,32 +54,16 @@ const menuGroups = [
             { label: 'Stock Transfer', icon: ArrowLeftRight, path: '/stock/transfer', permission: 'inventory.transfer' },
             { label: 'Stock Adjustment', icon: Sliders, path: '/stock/adjustment', permission: 'inventory.adjust' },
             { label: 'Stock Movements', icon: History, path: '/stock/movements', permission: 'inventory.view' },
-            { label: 'Raw Materials Inventory', icon: Layers, path: '/inventory/raw-materials', permission: 'inventory.view' },
-            { label: 'BOM / Formula Converter', icon: Workflow, path: '/inventory/converter', permission: 'inventory.adjust' },
-            { label: 'Conversion Formulas', icon: Scale, path: '/inventory-recipes', permission: 'bom.view' },
         ],
     },
     {
         label: 'PROCUREMENT & SUPPLY',
         icon: ShoppingBag,
         items: [
-            { label: 'Suppliers / Farms', icon: Truck, path: '/suppliers', permission: 'suppliers.view' },
-            { label: 'Farms Registry', icon: Home, path: '/farms', permission: 'grn.manage' },
-            { label: 'Farm Harvests (GRN)', icon: CalendarIcon, path: '/farms/harvests', permission: 'grn.manage' },
+            { label: 'Suppliers', icon: Truck, path: '/suppliers', permission: 'suppliers.view' },
             { label: 'Purchase Orders', icon: ShoppingBag, path: '/purchase-orders', permission: 'purchasing.view' },
             { label: 'Goods Receipt Notes (GRN)', icon: PackageCheck, path: '/grns', permission: 'grn.manage' },
             { label: 'Supplier Bills', icon: Receipt, path: '/bills', permission: 'bills.view' },
-        ],
-    },
-    {
-        label: 'PRODUCTION',
-        icon: Factory,
-        items: [
-            { label: 'Production Formulas (BOM)', icon: Workflow, path: '/boms', permission: 'bom.view' },
-            { label: 'Process Templates', icon: ClipboardList, path: '/manufacturing/templates', permission: 'production.view' },
-            { label: 'Production Batches', icon: Layers, path: '/manufacturing/batches', permission: 'production.view' },
-            { label: 'Production Orders', icon: Factory, path: '/production-orders', permission: 'production.view' },
-            { label: 'Machine Registry', icon: Wrench, path: '/manufacturing/machines', permission: 'production.view' },
         ],
     },
     {
@@ -343,21 +339,21 @@ function MenuGroup({ group, searchQuery }) {
     const Icon = group.icon;
 
     return (
-        <div className="mb-2">
+        <div className="mb-1.5">
             {/* Category header button */}
             <button
                 onClick={() => setIsOpen((prev) => !prev)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
                     isActive
-                        ? 'bg-primary-50 text-primary-700 font-bold'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
                 }`}
             >
-                {Icon && <Icon size={16} className={`flex-shrink-0 ${isActive ? 'text-primary-600' : 'text-gray-400'}`} />}
-                <span className="flex-1 text-left truncate text-xs font-semibold uppercase tracking-wider">{group.label}</span>
+                {Icon && <Icon size={16} className={`flex-shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />}
+                <span className="flex-1 text-left truncate text-xs uppercase tracking-wider">{group.label}</span>
                 {isOpen
-                    ? <ChevronDown size={14} className="text-gray-400 flex-shrink-0" />
-                    : <ChevronRight size={14} className="text-gray-400 flex-shrink-0" />
+                    ? <ChevronDown size={14} className="text-slate-500 flex-shrink-0" />
+                    : <ChevronRight size={14} className="text-slate-500 flex-shrink-0" />
                 }
             </button>
 
@@ -369,7 +365,7 @@ function MenuGroup({ group, searchQuery }) {
                     transition: 'max-height 0.22s ease',
                 }}
             >
-                <div className="ml-3 pl-3 border-l border-gray-100 mt-1 space-y-0.5">
+                <div className="ml-3.5 pl-3 border-l border-slate-900 mt-1 space-y-0.5">
                     {visibleItems.map((item) => {
                         const Icon = item.icon;
                         return (
@@ -377,14 +373,14 @@ function MenuGroup({ group, searchQuery }) {
                                 key={`${item.label}-${item.path}`}
                                 to={item.path}
                                 className={({ isActive }) =>
-                                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                    `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
                                         isActive
-                                            ? 'bg-primary-50 text-primary-700'
-                                            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                            ? 'bg-emerald-950/20 text-emerald-400 border border-emerald-900/30'
+                                            : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
                                     }`
                                 }
                             >
-                                <Icon size={16} className="flex-shrink-0 text-gray-400" />
+                                <Icon size={15} className="flex-shrink-0" />
                                 <span className="truncate">{item.label}</span>
                             </NavLink>
                         );
@@ -509,36 +505,36 @@ export default function Sidebar({ isOpen, onClose }) {
                     transition: 'width 0.25s ease, min-width 0.25s ease',
                     flexShrink: 0,
                 }}
-                className="h-screen bg-white border-r border-gray-200 flex flex-col z-40 relative"
+                className="h-screen bg-[#0B192C] border-r border-slate-900 flex flex-col z-40 relative text-slate-100"
             >
                 <div className="w-64 flex flex-col h-full">
 
                     {/* ── Logo / Brand ── */}
-                    <div className="p-5 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+                    <div className="p-5 border-b border-slate-900 flex items-center justify-between flex-shrink-0">
                         <div className="flex items-center gap-3">
                             {settings?.companyLogo ? (
                                 <img
                                     src={settings.companyLogo}
-                                    className="w-9 h-9 object-contain rounded-lg flex-shrink-0 border border-gray-100 p-0.5"
+                                    className="w-9 h-9 object-contain rounded-lg flex-shrink-0 border border-slate-800 p-0.5 bg-slate-900"
                                     alt="Logo"
                                 />
                             ) : (
-                                <div className="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <div className="w-9 h-9 bg-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <Package className="w-5 h-5 text-white" />
                                 </div>
                             )}
                             <div>
-                                <h2 className="font-semibold text-gray-900 leading-none truncate max-w-[145px]" title={settings?.companyName || 'Export Lanka'}>
-                                    {settings?.companyName || 'Export Lanka'}
+                                <h2 className="font-extrabold text-white leading-none truncate max-w-[145px]" title={settings?.companyName || 'ALUECO'}>
+                                    {settings?.companyName || 'ALUECO'}
                                 </h2>
-                                <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[145px]" title={settings?.companyPhone || 'Exports ERP'}>
-                                    {settings?.companyPhone || 'Exports ERP'}
+                                <p className="text-[10px] text-slate-500 mt-1 truncate max-w-[145px]" title="ALUMINIUM SYSTEMS">
+                                    ALUMINIUM SYSTEMS
                                 </p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition lg:hidden"
+                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-800 hover:text-slate-350 transition lg:hidden"
                             aria-label="Close sidebar"
                         >
                             <X size={16} />
@@ -546,21 +542,21 @@ export default function Sidebar({ isOpen, onClose }) {
                     </div>
 
                     {/* ── Search and Date Filter Controls ── */}
-                    <div className="px-5 py-4 border-b border-gray-200 space-y-4 flex-shrink-0">
+                    <div className="px-5 py-4 border-b border-slate-900 space-y-4 flex-shrink-0">
                         {/* Search Menu Input */}
                         <div className="relative">
-                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
                             <input
                                 type="text"
                                 placeholder="Search menu..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary-500 font-medium text-gray-800"
+                                className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-850 rounded-lg text-xs outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-100 placeholder-slate-500"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={() => setSearchQuery('')}
-                                    className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
+                                    className="absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-300"
                                 >
                                     <X size={14} />
                                 </button>
@@ -568,9 +564,9 @@ export default function Sidebar({ isOpen, onClose }) {
                         </div>
 
                         {/* Date Filter */}
-                        <div className="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <div className="space-y-2 bg-slate-900/40 p-3 rounded-lg border border-slate-850">
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Date Filter</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Date Filter</span>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -578,7 +574,7 @@ export default function Sidebar({ isOpen, onClose }) {
                                         onChange={handleDateFilterToggle}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-7 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary-600"></div>
+                                    <div className="w-7 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
                                 </label>
                             </div>
 
@@ -587,7 +583,7 @@ export default function Sidebar({ isOpen, onClose }) {
                                     <select
                                         value={filterMonth}
                                         onChange={handleMonthChange}
-                                        className="px-2 py-1.5 border border-gray-200 rounded-md text-[11px] focus:ring-2 focus:ring-primary-500 outline-none bg-white font-semibold text-gray-700 cursor-pointer"
+                                        className="px-2 py-1.5 border border-slate-800 rounded-md text-[11px] focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-900 font-semibold text-slate-300 cursor-pointer"
                                     >
                                         <option value="1">January</option>
                                         <option value="2">February</option>
@@ -605,7 +601,7 @@ export default function Sidebar({ isOpen, onClose }) {
                                     <select
                                         value={filterYear}
                                         onChange={handleYearChange}
-                                        className="px-2 py-1.5 border border-gray-200 rounded-md text-[11px] focus:ring-2 focus:ring-primary-500 outline-none bg-white font-semibold text-gray-700 cursor-pointer"
+                                        className="px-2 py-1.5 border border-slate-800 rounded-md text-[11px] focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-900 font-semibold text-slate-300 cursor-pointer"
                                     >
                                         <option value="2024">2024</option>
                                         <option value="2025">2025</option>
@@ -618,7 +614,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     </div>
 
                     {/* ── Scrollable nav ── */}
-                    <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
+                    <nav className="flex-1 overflow-y-auto no-scrollbar py-3 px-3 space-y-4">
 
                         {/* ── Regular menu groups ── */}
                         {visibleGroups.map((group) => (
@@ -662,8 +658,8 @@ export default function Sidebar({ isOpen, onClose }) {
                     </nav>
 
                     {/* ── Footer ── */}
-                    <div className="p-4 border-t border-gray-200 flex-shrink-0">
-                        <p className="text-xs text-gray-400">v1.0.0 · MVP</p>
+                    <div className="p-4 border-t border-slate-900 flex-shrink-0">
+                        <p className="text-xs text-slate-500">v1.0.0 · MVP</p>
                     </div>
                 </div>
             </aside>

@@ -6,7 +6,7 @@ import {
     DollarSign, ShoppingCart, TrendingUp, AlertTriangle,
     Package, Factory, FileText, Users, CreditCard, ArrowRight,
     Camera, RefreshCw, Layers, ShieldCheck, Wallet, Landmark,
-    Calendar, CheckCircle, Clock, Home, Workflow, Plus
+    Calendar, CheckCircle, Clock, Home, Workflow, Plus, Settings
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -159,18 +159,18 @@ export default function DashboardPage() {
                         <span className="text-xs font-bold text-gray-850">Stock Overview</span>
                     </div>
                 </button>
-                <button onClick={() => navigate('/farms')} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition text-left">
-                    <span className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><Home size={16} /></span>
+                <button onClick={() => navigate('/alu/quotations')} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition text-left">
+                    <span className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><FileText size={16} /></span>
                     <div>
-                        <span className="text-[9px] text-gray-400 block font-semibold uppercase">Agricultural</span>
-                        <span className="text-xs font-bold text-gray-850">Farms Registry</span>
+                        <span className="text-[9px] text-gray-400 block font-semibold uppercase">Aluminium</span>
+                        <span className="text-xs font-bold text-gray-850">Alu Quotations</span>
                     </div>
                 </button>
-                <button onClick={() => navigate('/inventory/converter')} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition text-left">
-                    <span className="p-2 bg-violet-50 text-violet-600 rounded-lg"><Workflow size={16} /></span>
+                <button onClick={() => navigate('/alu/database')} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition text-left">
+                    <span className="p-2 bg-violet-50 text-violet-600 rounded-lg"><Settings size={16} /></span>
                     <div>
-                        <span className="text-[9px] text-gray-400 block font-semibold uppercase">Production</span>
-                        <span className="text-xs font-bold text-gray-850">Direct Converter</span>
+                        <span className="text-[9px] text-gray-400 block font-semibold uppercase">Configuration</span>
+                        <span className="text-xs font-bold text-gray-850">Alu Database</span>
                     </div>
                 </button>
             </div>
@@ -209,11 +209,11 @@ export default function DashboardPage() {
                         <span className="font-bold text-sm">New GRN Inbound</span>
                         <span className="text-[10px] text-primary-100 mt-1">Receive Supplier Materials</span>
                     </button>
-                    <button onClick={() => navigate('/manufacturing/batches')}
+                    <button onClick={() => navigate('/alu/quotations/new')}
                         className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-violet-600 to-violet-700 text-white rounded-2xl shadow-md active:scale-95 transition-all text-center">
-                        <Factory size={32} className="mb-2" />
-                        <span className="font-bold text-sm">Log Production</span>
-                        <span className="text-[10px] text-violet-100 mt-1">Record Shift Output</span>
+                        <FileText size={32} className="mb-2" />
+                        <span className="font-bold text-sm">New Alu Quotation</span>
+                        <span className="text-[10px] text-violet-100 mt-1">Estimate window & door profiles</span>
                     </button>
                     <button onClick={triggerCamera}
                         className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-emerald-600 to-emerald-700 text-white rounded-2xl shadow-md active:scale-95 transition-all text-center">
@@ -288,11 +288,12 @@ export default function DashboardPage() {
                                     <Card className="p-6">
                                         <h3 className="text-sm font-bold text-gray-700 mb-4">Live Control Actions</h3>
                                         <div className="space-y-2">
+                                            <Button fullWidth variant="primary" onClick={() => navigate('/alu/quotations/new')}>New Aluminium Quotation <Plus size={14} className="ml-auto" /></Button>
                                             <Button fullWidth variant="outline" onClick={() => navigate('/sales-orders/new')}>New Sales Order <ArrowRight size={14} className="ml-auto" /></Button>
                                             <Button fullWidth variant="outline" onClick={() => navigate('/payments/new')}>Record Payment <ArrowRight size={14} className="ml-auto" /></Button>
                                             <Button fullWidth variant="outline" onClick={() => navigate('/purchase-orders/new')}>New Purchase Order <ArrowRight size={14} className="ml-auto" /></Button>
-                                            <Button fullWidth variant="primary" onClick={() => navigate('/finance/petty-cash')}>Petty Cash Ledger <ArrowRight size={14} className="ml-auto" /></Button>
-                                            <Button fullWidth variant="primary" onClick={() => navigate('/stock')}>Stock Overview <ArrowRight size={14} className="ml-auto" /></Button>
+                                            <Button fullWidth variant="outline" onClick={() => navigate('/finance/petty-cash')}>Petty Cash Ledger <ArrowRight size={14} className="ml-auto" /></Button>
+                                            <Button fullWidth variant="outline" onClick={() => navigate('/stock')}>Stock Overview <ArrowRight size={14} className="ml-auto" /></Button>
                                             <Button fullWidth variant="outline" onClick={() => navigate('/reports')}>View All Reports <ArrowRight size={14} className="ml-auto" /></Button>
                                         </div>
                                     </Card>
@@ -337,14 +338,14 @@ export default function DashboardPage() {
                         {activeTab === 'operations' && (
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 <Card className="lg:col-span-2 p-6 space-y-6">
-                                    <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5"><Factory className="text-indigo-600" /> Plant Production & Yield status</h3>
+                                    <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5"><Factory className="text-indigo-600" /> Aluminium Fabrication & Output status</h3>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-indigo-900">
-                                            <p className="text-[10px] font-bold uppercase text-indigo-600">Active Shift Runs</p>
+                                            <p className="text-[10px] font-bold uppercase text-indigo-600">Active Fabrication Jobs</p>
                                             <p className="text-2xl font-black mt-1">{deptData?.operations?.activeProduction}</p>
                                         </div>
                                         <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-emerald-900">
-                                            <p className="text-[10px] font-bold uppercase text-emerald-600">Batches Completed (Month)</p>
+                                            <p className="text-[10px] font-bold uppercase text-emerald-600">Completed Custom Orders (Month)</p>
                                             <p className="text-2xl font-black mt-1">{deptData?.operations?.completedProductionVerification || deptData?.operations?.completedProductionThisMonth}</p>
                                         </div>
                                     </div>
@@ -353,8 +354,8 @@ export default function DashboardPage() {
                                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 shadow-sm space-y-3">
                                         <div className="flex justify-between items-center">
                                             <div>
-                                                <h4 className="text-xs font-bold text-indigo-800 uppercase tracking-wider">Monthly Production Target Progress</h4>
-                                                <p className="text-2xl font-black text-indigo-950 mt-1">{deptData?.operations?.actualProduction?.toLocaleString() || 0} Kg <span className="text-xs font-medium text-gray-500">actual / {deptData?.operations?.targetProduction?.toLocaleString() || 0} Kg target</span></p>
+                                                <h4 className="text-xs font-bold text-indigo-800 uppercase tracking-wider">Monthly Fabrication Output Target</h4>
+                                                <p className="text-2xl font-black text-indigo-950 mt-1">{deptData?.operations?.actualProduction?.toLocaleString() || 0} Items <span className="text-xs font-medium text-gray-500">completed / {deptData?.operations?.targetProduction?.toLocaleString() || 0} Items target</span></p>
                                             </div>
                                             <Badge variant={deptData?.operations?.productionPercentage >= 105 ? 'success' : 'warning'}>
                                                 {deptData?.operations?.productionPercentage || 0}% Achieved
@@ -367,7 +368,7 @@ export default function DashboardPage() {
                                             />
                                         </div>
                                         {deptData?.operations?.productionPercentage >= 100 ? (
-                                            <p className="text-[10px] text-emerald-600 font-bold">🎉 Target Achieved! Monthly production goal successfully met.</p>
+                                            <p className="text-[10px] text-emerald-600 font-bold">🎉 Target Achieved! Monthly fabrication goal successfully met.</p>
                                         ) : (
                                             <p className="text-[10px] text-gray-500">Currently tracing towards the monthly target. Progress: {deptData?.operations?.productionPercentage || 0}%</p>
                                         )}
@@ -375,7 +376,7 @@ export default function DashboardPage() {
 
                                     {/* Recent batches */}
                                     <div className="space-y-3 pt-2">
-                                        <h4 className="text-xs font-bold text-gray-400 uppercase">Recent Batches</h4>
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase">Recent Custom Fabrications</h4>
                                         <div className="border border-gray-100 rounded-xl overflow-hidden text-xs">
                                             {deptData?.general?.recentBatches?.map(b => (
                                                 <div key={b._id} className="flex justify-between items-center p-3 border-b bg-gray-50/25 last:border-0 hover:bg-gray-50 transition">
@@ -384,7 +385,7 @@ export default function DashboardPage() {
                                                         <p className="text-[10px] text-gray-500 mt-0.5">{b.product} · {format(new Date(b.date), 'MMM dd, yyyy')}</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="font-semibold">{b.outputWeight_total || 0} kg Yield</p>
+                                                        <p className="font-semibold">{b.outputWeight_total || 0} Units Built</p>
                                                         <p className="text-[10px] text-gray-400">{(b.efficiencyPercentage || 0).toFixed(1)}% efficiency</p>
                                                     </div>
                                                 </div>
@@ -541,7 +542,7 @@ export default function DashboardPage() {
                         {activeTab === 'sales' && (
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 <Card className="lg:col-span-2 p-6 space-y-4">
-                                    <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5"><TrendingUp className="text-primary-600" /> CRM Leads & Inquiry Funnel</h3>
+                                    <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5"><TrendingUp className="text-primary-600" /> Fabrication Leads & Quotations Funnel</h3>
                                     <div className="grid grid-cols-4 gap-3">
                                         {deptData?.sales?.pipelineFunnel?.slice(0, 4).map((stage, idx) => (
                                             <div key={idx} className="bg-gray-50 border rounded-xl p-4 text-center">
@@ -556,7 +557,7 @@ export default function DashboardPage() {
                                 </Card>
 
                                 <Card className="p-6 space-y-4">
-                                    <h3 className="text-sm font-bold text-gray-700">Top Monthly Products</h3>
+                                    <h3 className="text-sm font-bold text-gray-700">Top Selling Profiles & Products</h3>
                                     <div className="space-y-3">
                                         {deptData?.sales?.topProducts?.map(prod => (
                                             <div key={prod._id} className="flex justify-between items-center py-2 border-b last:border-0 text-xs">

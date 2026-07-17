@@ -55,6 +55,14 @@ import ProcessTemplatesPage from './pages/ProcessTemplatesPage';
 import MachinesPage from './pages/MachinesPage';
 import InquiriesPage from './pages/InquiriesPage';
 import QuotationsPage from './pages/QuotationsPage';
+import AluQuotationsPage from './pages/AluQuotationsPage';
+import AluQuotationFormPage from './pages/AluQuotationFormPage';
+import AluQuotationDetailPage from './pages/AluQuotationDetailPage';
+import AluDatabasePage from './pages/AluDatabasePage';
+import AluScrapPage from './pages/AluScrapPage';
+import AluKanbanPage from './pages/AluKanbanPage';
+import AluConfiguratorPage from './pages/AluConfiguratorPage';
+import AluSurveyPage from './pages/AluSurveyPage';
 import ShipmentsPage from './pages/ShipmentsPage';
 import PettyCashPage from './pages/PettyCashPage';
 import FixedAssetsPage from './pages/FixedAssetsPage';
@@ -185,6 +193,18 @@ function App() {
 
         <Route path="/crm/inquiries" element={<ProtectedRoute requiredPermission="customers.view"><InquiriesPage /></ProtectedRoute>} />
         <Route path="/crm/quotations" element={<ProtectedRoute requiredPermission="sales.view"><QuotationsPage /></ProtectedRoute>} />
+        
+        {/* ALUECO Aluminium System Routes */}
+        <Route path="/alu/quotations" element={<ProtectedRoute requiredPermission="sales.view"><AluQuotationsPage /></ProtectedRoute>} />
+        <Route path="/alu/quotations/new" element={<ProtectedRoute requiredPermission="sales.view"><AluQuotationFormPage /></ProtectedRoute>} />
+        <Route path="/alu/quotations/:id" element={<ProtectedRoute requiredPermission="sales.view"><AluQuotationDetailPage /></ProtectedRoute>} />
+        <Route path="/alu/quotations/:id/edit" element={<ProtectedRoute requiredPermission="sales.view"><AluQuotationFormPage /></ProtectedRoute>} />
+        <Route path="/alu/database" element={<ProtectedRoute requiredPermission="sales.view"><AluDatabasePage /></ProtectedRoute>} />
+        <Route path="/alu/scrap" element={<ProtectedRoute requiredPermission="sales.view"><AluScrapPage /></ProtectedRoute>} />
+        <Route path="/alu/kanban" element={<ProtectedRoute requiredPermission="sales.view"><AluKanbanPage /></ProtectedRoute>} />
+        <Route path="/alu/configurator" element={<ProtectedRoute requiredPermission="sales.view"><AluConfiguratorPage /></ProtectedRoute>} />
+        <Route path="/alu/surveys" element={<ProtectedRoute requiredPermission="sales.view"><AluSurveyPage /></ProtectedRoute>} />
+
         <Route path="/logistics/shipments" element={<ProtectedRoute requiredPermission="inventory.view"><ShipmentsPage /></ProtectedRoute>} />
         <Route path="/logistics/gate-passes" element={<ProtectedRoute requiredPermission="inventory.view"><GatePassPage /></ProtectedRoute>} />
 

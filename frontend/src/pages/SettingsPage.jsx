@@ -1,13 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Settings as SettingsIcon, Building2, DollarSign, Box, Save } from 'lucide-react';
+import {
+    Building2, DollarSign, Package, Save, Globe,
+    Phone, Mail, MapPin, Hash, BadgeCheck, AlertTriangle,
+    ChevronRight, CheckCircle2
+} from 'lucide-react';
 
-import PageHeader from '../components/ui/PageHeader';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
 import { useSettings, useUpdateSettings } from '../features/settings/useSettings';
 
 const settingsSchema = z.object({
@@ -23,14 +23,69 @@ const settingsSchema = z.object({
     lowStockThreshold: z.coerce.number().min(0),
 });
 
+const TABS = [
+    { id: 'company',   label: 'Company Profile',    icon: Building2,  color: 'text-blue-500' },
+    { id: 'finance',   label: 'Financial Defaults', icon: DollarSign, color: 'text-emerald-500' },
+    { id: 'inventory', label: 'Inventory Settings', icon: Package,    color: 'text-amber-500' },
+];
+
+function SectionBadge({ icon: Icon, label, accent = 'blue' }) {
+    const map = {
+        blue:    'bg-blue-50 border-blue-200 text-blue-600',
+        emerald: 'bg-emerald-50 border-emerald-200 text-emerald-600',
+        amber:   'bg-amber-50 border-amber-200 text-amber-600',
+    };
+    return (
+        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border mb-5 ${map[accent]}`}>
+            <Icon size={13} />
+            <span className="text-xs font-semibold tracking-wide uppercase">{label}</span>
+        </div>
+    );
+}
+
+function StyledInput({ label, icon: Icon, error, type = 'text', step, placeholder, registration, required }) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                {label}{required && <span className="text-rose-500 ml-1">*</span>}
+            </label>
+            <div className="relative group">
+                {Icon && (
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none">
+                        <Icon size={15} />
+                    </div>
+                )}
+                <input
+                    type={type}
+                    step={step}
+                    placeholder={placeholder}
+                    {...registration}
+                    className={`w-full ${Icon ? 'pl-9' : 'pl-3'} pr-3 py-2.5 rounded-xl bg-white border text-sm text-gray-800 placeholder-gray-300 outline-none transition-all
+                        ${error
+                            ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-400/20'
+                            : 'border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
+                        }`}
+                />
+            </div>
+            {error && (
+                <p className="text-xs text-rose-500 flex items-center gap-1">
+                    <AlertTriangle size={11} /> {error}
+                </p>
+            )}
+        </div>
+    );
+}
+
 export default function SettingsPage() {
     const { data, isLoading } = useSettings();
     const updateMutation = useUpdateSettings();
+    const [activeTab, setActiveTab] = useState('company');
+    const [saved, setSaved] = useState(false);
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm({
         resolver: zodResolver(settingsSchema),
         defaultValues: {
-            companyName: 'Export Lanka',
+            companyName: 'ALUECO Aluminium Systems',
             currency: 'LKR',
             currencySymbol: 'Rs.',
             defaultTaxRate: 0,
@@ -39,80 +94,267 @@ export default function SettingsPage() {
     });
 
     useEffect(() => {
-        if (data?.data) {
-            reset(data.data);
-        }
+        if (data?.data) reset(data.data);
     }, [data, reset]);
 
     const onSubmit = async (formData) => {
         await updateMutation.mutateAsync(formData);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
     };
 
-    if (isLoading) return <div className="py-20 text-center text-gray-500">Loading settings...</div>;
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-gray-400 text-sm">Loading settings...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div>
-            <PageHeader
-                title="System Settings"
-                description="Configure company profiles, financial defaults, and inventory behavior"
-            />
+        <div className="min-h-screen bg-gray-50 p-6">
 
-            <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl space-y-6">
-                {/* Company Profile */}
-                <Card className="p-6">
-                    <div className="flex items-center gap-3 mb-6">
-                        <Building2 size={20} className="text-primary-600" />
-                        <h3 className="font-semibold text-gray-900">Company Profile</h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input label="Company Name" required error={errors.companyName?.message} {...register('companyName')} />
-                        <Input label="Tax ID / Registration" error={errors.taxId?.message} {...register('taxId')} />
-                        <Input label="Email Address" type="email" error={errors.companyEmail?.message} {...register('companyEmail')} />
-                        <Input label="Phone Number" error={errors.companyPhone?.message} {...register('companyPhone')} />
-                        <div className="col-span-2">
-                            <Input label="Logo Image URL" error={errors.companyLogo?.message} {...register('companyLogo')} />
-                        </div>
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
-                            <textarea
-                                className="w-full px-3 py-2 border rounded-lg text-sm"
-                                rows="3"
-                                {...register('companyAddress')}
-                            />
-                        </div>
-                    </div>
-                </Card>
-
-                {/* Financial Settings */}
-                <Card className="p-6">
-                    <div className="flex items-center gap-3 mb-6">
-                        <DollarSign size={20} className="text-green-600" />
-                        <h3 className="font-semibold text-gray-900">Financial Defaults</h3>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                        <Input label="System Currency" placeholder="LKR" error={errors.currency?.message} {...register('currency')} />
-                        <Input label="Currency Symbol" placeholder="Rs." error={errors.currencySymbol?.message} {...register('currencySymbol')} />
-                        <Input label="Default Tax Rate (%)" type="number" step="0.01" error={errors.defaultTaxRate?.message} {...register('defaultTaxRate')} />
-                    </div>
-                </Card>
-
-                {/* Inventory Settings */}
-                <Card className="p-6">
-                    <div className="flex items-center gap-3 mb-6">
-                        <Box size={20} className="text-amber-600" />
-                        <h3 className="font-semibold text-gray-900">Inventory Preferences</h3>
-                    </div>
-                    <div className="w-1/3">
-                        <Input label="Low Stock Alert Threshold" type="number" error={errors.lowStockThreshold?.message} {...register('lowStockThreshold')} />
-                    </div>
-                </Card>
-
-                <div className="flex justify-end gap-3 pt-4">
-                    <Button type="submit" variant="primary" size="lg" loading={updateMutation.isPending}>
-                        <Save size={18} className="mr-2" /> Save All Settings
-                    </Button>
+            {/* ── Page Header ─────────────────────────────────────── */}
+            <div className="mb-8">
+                <div className="flex items-center gap-2 text-gray-400 text-xs mb-3">
+                    <span>Admin</span>
+                    <ChevronRight size={12} />
+                    <span className="text-emerald-500 font-medium">System Settings</span>
                 </div>
-            </form>
+                <div className="flex items-end justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">System Settings</h1>
+                        <p className="text-gray-400 text-sm mt-1">Configure company profile, financial defaults &amp; inventory behaviour</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleSubmit(onSubmit)}
+                        disabled={updateMutation.isPending}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md
+                            ${saved
+                                ? 'bg-emerald-600 text-white shadow-emerald-200'
+                                : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200'
+                            }`}
+                    >
+                        {saved ? (
+                            <><CheckCircle2 size={16} /> Saved!</>
+                        ) : updateMutation.isPending ? (
+                            <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>
+                        ) : (
+                            <><Save size={16} /> Save Settings</>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {/* ── Layout ──────────────────────────────────────────── */}
+            <div className="flex gap-6">
+
+                {/* Sidebar tabs */}
+                <div className="w-52 flex-shrink-0">
+                    <nav className="flex flex-col gap-1">
+                        {TABS.map((tab) => {
+                            const Icon = tab.icon;
+                            const isActive = activeTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-left transition-all
+                                        ${isActive
+                                            ? 'bg-white border border-gray-200 text-emerald-600 shadow-sm'
+                                            : 'text-gray-500 hover:bg-white hover:text-gray-700 border border-transparent'
+                                        }`}
+                                >
+                                    <Icon size={16} className={isActive ? 'text-emerald-500' : tab.color} />
+                                    {tab.label}
+                                    {isActive && <ChevronRight size={14} className="ml-auto text-emerald-400" />}
+                                </button>
+                            );
+                        })}
+                    </nav>
+
+                    {/* Company badge card */}
+                    <div className="mt-6 p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-3">
+                            <Building2 size={18} className="text-emerald-500" />
+                        </div>
+                        <p className="text-xs font-bold text-gray-800">ALUECO</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Aluminium Systems</p>
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                            <p className="text-[10px] text-gray-400">v1.0.0 · ERP Platform</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content panel */}
+                <div className="flex-1">
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-7">
+
+                            {/* ── COMPANY PROFILE ───────────────────────── */}
+                            {activeTab === 'company' && (
+                                <div>
+                                    <SectionBadge icon={Building2} label="Business Identity" accent="blue" />
+                                    <div className="grid grid-cols-2 gap-4 mb-8">
+                                        <StyledInput
+                                            label="Company Name"
+                                            icon={Building2}
+                                            required
+                                            error={errors.companyName?.message}
+                                            registration={register('companyName')}
+                                        />
+                                        <StyledInput
+                                            label="Tax ID / Registration No."
+                                            icon={Hash}
+                                            error={errors.taxId?.message}
+                                            registration={register('taxId')}
+                                        />
+                                    </div>
+
+                                    <SectionBadge icon={Globe} label="Contact Details" accent="blue" />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <StyledInput
+                                            label="Email Address"
+                                            icon={Mail}
+                                            type="email"
+                                            placeholder="info@alueco.lk"
+                                            error={errors.companyEmail?.message}
+                                            registration={register('companyEmail')}
+                                        />
+                                        <StyledInput
+                                            label="Phone Number"
+                                            icon={Phone}
+                                            placeholder="0777 140 680"
+                                            error={errors.companyPhone?.message}
+                                            registration={register('companyPhone')}
+                                        />
+                                        <div className="col-span-2">
+                                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Company Address</label>
+                                            <div className="relative group mt-1.5">
+                                                <MapPin size={15} className="absolute left-3 top-3 text-gray-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
+                                                <textarea
+                                                    rows={3}
+                                                    placeholder="No. 123, Negoda Road, Weliweriya, Sri Lanka"
+                                                    {...register('companyAddress')}
+                                                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-800 placeholder-gray-300 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 resize-none"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <StyledInput
+                                                label="Company Logo URL"
+                                                icon={BadgeCheck}
+                                                placeholder="https://example.com/logo.png"
+                                                error={errors.companyLogo?.message}
+                                                registration={register('companyLogo')}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── FINANCIAL DEFAULTS ────────────────────── */}
+                            {activeTab === 'finance' && (
+                                <div>
+                                    <SectionBadge icon={DollarSign} label="Currency Configuration" accent="emerald" />
+                                    <div className="grid grid-cols-3 gap-4 mb-6">
+                                        <StyledInput
+                                            label="System Currency"
+                                            icon={Globe}
+                                            placeholder="LKR"
+                                            error={errors.currency?.message}
+                                            registration={register('currency')}
+                                        />
+                                        <StyledInput
+                                            label="Currency Symbol"
+                                            icon={DollarSign}
+                                            placeholder="Rs."
+                                            error={errors.currencySymbol?.message}
+                                            registration={register('currencySymbol')}
+                                        />
+                                        <StyledInput
+                                            label="Default Tax Rate (%)"
+                                            icon={Hash}
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            error={errors.defaultTaxRate?.message}
+                                            registration={register('defaultTaxRate')}
+                                        />
+                                    </div>
+
+                                    <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4 flex gap-3">
+                                        <CheckCircle2 size={18} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-emerald-700">Sri Lanka Rupee (LKR)</p>
+                                            <p className="text-xs text-emerald-600/70 mt-0.5">
+                                                All quotations, invoices, and cost summaries will use these currency settings system-wide.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── INVENTORY SETTINGS ────────────────────── */}
+                            {activeTab === 'inventory' && (
+                                <div>
+                                    <SectionBadge icon={Package} label="Stock Alert Configuration" accent="amber" />
+                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                        <StyledInput
+                                            label="Low Stock Alert Threshold (units)"
+                                            icon={AlertTriangle}
+                                            type="number"
+                                            placeholder="10"
+                                            error={errors.lowStockThreshold?.message}
+                                            registration={register('lowStockThreshold')}
+                                        />
+                                    </div>
+
+                                    <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 flex gap-3">
+                                        <AlertTriangle size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-amber-700">Low Stock Notifications</p>
+                                            <p className="text-xs text-amber-600/70 mt-0.5">
+                                                When any product's stock drops at or below this threshold, the system triggers a real-time alert and highlights it on the dashboard.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+
+                        {/* Bottom action bar */}
+                        <div className="flex items-center justify-between mt-5 px-1">
+                            <p className="text-xs text-gray-400">
+                                Changes take effect immediately across all users.
+                            </p>
+                            <button
+                                type="submit"
+                                disabled={updateMutation.isPending}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md
+                                    ${saved
+                                        ? 'bg-emerald-600 text-white shadow-emerald-200'
+                                        : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200'
+                                    }`}
+                            >
+                                {saved ? (
+                                    <><CheckCircle2 size={16} /> Settings Saved!</>
+                                ) : updateMutation.isPending ? (
+                                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>
+                                ) : (
+                                    <><Save size={16} /> Save All Settings</>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     );
 }

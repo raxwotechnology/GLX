@@ -58,6 +58,7 @@ import { initSocket } from './services/socketService.js';
 import './services/autoBackupService.js'; // Initialize automated backup listener
 import { initCertificationAlerts } from './services/certificationAlertService.js';
 import gatePassRoutes from './routes/gatePassRoutes.js';
+import aluRoutes from './routes/aluRoutes.js';
 
 import { seedDefaults } from './utils/seedDefaults.js';
 
@@ -176,6 +177,7 @@ app.use('/api/fleet', fleetRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/production/machines', machineRoutes);
 app.use('/api/gate-passes', gatePassRoutes);
+app.use('/api/alu', aluRoutes);
 
 
 // Health check endpoint

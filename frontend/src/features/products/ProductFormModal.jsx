@@ -250,43 +250,49 @@ export default function ProductFormModal({ isOpen, onClose, product = null, forc
                         <div className="space-y-4">
                             <div className="grid grid-cols-4 gap-4">
                                 <Input
-                                    label="Short Code (e.g. MOR)"
+                                    label="Short Code (e.g. MOR, CLR)"
                                     maxLength={3}
-                                    placeholder="3 letters"
+                                    placeholder="3 letters (e.g., MOR=Moratuwa, CLR=Clear)"
                                     disabled={isEdit}
                                     required
                                     error={errors.productShortCode?.message}
                                     {...register('productShortCode')}
                                 />
                                 <Input
-                                    label="Product Code"
+                                    label="Product System Code"
                                     disabled
                                     placeholder={isLoadingCode ? "Generating..." : "Auto-generated after category selection"}
                                     error={errors.productCode?.message}
                                     {...register('productCode')}
                                 />
-                                <Input label="Product Name" required error={errors.name?.message} {...register('name')} />
-                                <Input label="Short Name" error={errors.shortName?.message} {...register('shortName')} />
+                                <Input 
+                                    label="Product Name / Profile Code" 
+                                    required 
+                                    placeholder="e.g. SD1001 Outer Frame / 5mm Clear Glass"
+                                    error={errors.name?.message} 
+                                    {...register('name')} 
+                                />
+                                <Input label="Short Name / Model" placeholder="e.g. Outer Frame (1.2mm)" error={errors.shortName?.message} {...register('shortName')} />
                             </div>
                             <div className="grid grid-cols-3 gap-4">
-                                <Input label="SKU" error={errors.sku?.message} {...register('sku')} />
-                                <Input label="Barcode" error={errors.barcode?.message} {...register('barcode')} />
+                                <Input label="SKU / Manufacturer Code" placeholder="e.g. SWISSTEK-SD1001" error={errors.sku?.message} {...register('sku')} />
+                                <Input label="Barcode" placeholder="Scan if available" error={errors.barcode?.message} {...register('barcode')} />
                                 <Select
-                                    label="Type"
+                                    label="Business Line Type"
                                     required
                                     error={errors.type?.message}
                                     options={[
-                                        { value: 'trading', label: 'Trading (buy & sell)' },
-                                        { value: 'manufactured', label: 'Manufactured' },
-                                        { value: 'service', label: 'Service' },
-                                        { value: 'bundle', label: 'Bundle' },
+                                        { value: 'trading', label: 'Trading (Profiles, Glass, Accessories)' },
+                                        { value: 'manufactured', label: 'Custom Fabricated (Windows & Doors)' },
+                                        { value: 'service', label: 'Labor & Installation' },
+                                        { value: 'bundle', label: 'Bundle Kit (DIY Openings)' },
                                     ]}
                                     {...register('type')}
                                 />
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 <Select
-                                    label="Category"
+                                    label="Material Category"
                                     required
                                     disabled={forceProductType === 'raw_material'}
                                     error={errors.categoryId?.message}
@@ -294,21 +300,21 @@ export default function ProductFormModal({ isOpen, onClose, product = null, forc
                                     {...register('categoryId')}
                                 />
                                 <Select
-                                    label="Brand"
+                                    label="Brand / Supplier"
                                     error={errors.brandId?.message}
                                     options={brandOptions}
                                     {...register('brandId')}
                                 />
                                 <Select
-                                    label="Product Type" required
+                                    label="Inventory Product Type" required
                                     disabled={forceProductType === 'raw_material'}
                                     options={[
-                                        { value: 'finished_good', label: 'Finished Good (sellable)' },
-                                        { value: 'raw_material', label: 'Raw Material (for production)' },
-                                        { value: 'semi_finished', label: 'Semi-Finished (intermediate)' },
-                                        { value: 'packaging', label: 'Packaging Material' },
-                                        { value: 'consumable', label: 'Consumable' },
-                                        { value: 'service', label: 'Service' },
+                                        { value: 'raw_material', label: 'Raw Profile / Glass Sheet (For fabrication)' },
+                                        { value: 'finished_good', label: 'Finished Window / Door (Stock item)' },
+                                        { value: 'semi_finished', label: 'Semi-Finished Assembly' },
+                                        { value: 'packaging', label: 'Packaging' },
+                                        { value: 'consumable', label: 'Consumable & Seals (Beading)' },
+                                        { value: 'service', label: 'Labor Service' },
                                     ]}
                                     error={errors.productType?.message}
                                     {...register('productType')}
@@ -316,7 +322,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null, forc
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <Select
-                                    label="Unit of Measure"
+                                    label="Unit of Measure (UOM)"
                                     required
                                     error={errors.unitOfMeasure?.message}
                                     options={uomOptions}
