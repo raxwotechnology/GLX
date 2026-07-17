@@ -20,7 +20,7 @@ export const getBackendUrl = () => {
 
     return isLocalhost 
         ? 'http://localhost:5000' 
-        : window.location.origin;
+        : 'https://alueco.onrender.com';
 };
 
 export const getApiUrl = () => {

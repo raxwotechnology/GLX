@@ -100,6 +100,7 @@ app.use(helmet());
 app.use(cors({
     origin: function (origin, callback) {
         const defaultOrigins = [
+            'https://alueco.netlify.app',
             'https://alueco.onrender.com',
             'https://export-lanka.netlify.app',
             'http://localhost:5173',
