@@ -113,40 +113,57 @@ export default function InvoiceDetailPage() {
             <div className="grid grid-cols-3 gap-6">
                 <div className="col-span-2 space-y-6">
                     <Card className="p-6">
-                        <h3 className="text-sm font-semibold text-gray-700 mb-4">Customer</h3>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-4">Customer & Vehicle Details</h3>
                         <div className="grid grid-cols-2 gap-6">
                             <div>
-                                <p className="text-xs text-gray-500 uppercase mb-1">Bill To</p>
-                                <p className="font-medium">{inv.customerSnapshot?.name}</p>
-                                <p className="text-sm text-gray-600">{inv.customerSnapshot?.code}</p>
-                                {inv.customerSnapshot?.taxRegistrationNumber && (
-                                    <p className="text-sm text-gray-600">VAT: {inv.customerSnapshot.taxRegistrationNumber}</p>
+                                <p className="text-xs text-gray-500 uppercase mb-1">Bill To / Owner</p>
+                                <p className="font-medium">{inv.vehicleOwner || inv.customerSnapshot?.name}</p>
+                                {inv.customerSnapshot?.code && <p className="text-sm text-gray-600">{inv.customerSnapshot?.code}</p>}
+                                {inv.insuranceCompany && (
+                                    <p className="text-sm text-gray-600 font-semibold mt-1">Insurance: {inv.insuranceCompany}</p>
                                 )}
-                                {inv.billingAddress && (
+                                {inv.billingAddress?.line1 && (
                                     <div className="text-sm text-gray-600 mt-2">
                                         {inv.billingAddress.line1}
-                                        {inv.billingAddress.city && <br />}
-                                        {inv.billingAddress.city}{inv.billingAddress.postalCode && ` ${inv.billingAddress.postalCode}`}
                                     </div>
                                 )}
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 uppercase mb-1">Payment Terms</p>
-                                <p className="text-sm">{inv.paymentTerms?.type?.toUpperCase()}
-                                    {inv.paymentTerms?.type === 'credit' && ` (${inv.paymentTerms.creditDays} days)`}
-                                </p>
-                                {inv.salesOrderNumbers?.length > 0 && (
-                                    <>
-                                        <p className="text-xs text-gray-500 uppercase mt-3 mb-1">Related Orders</p>
-                                        <div className="text-sm">
-                                            {inv.salesOrderNumbers.map((n) => (
-                                                <span key={n} className="inline-block mr-2 font-mono">{n}</span>
-                                            ))}
-                                        </div>
-                                    </>
+                                <p className="text-xs text-gray-500 uppercase mb-1">Vehicle Metadata</p>
+                                {inv.vehicleNo && (
+                                    <p className="text-sm text-blue-700 font-bold font-mono">Vehicle No: {inv.vehicleNo}</p>
+                                )}
+                                {inv.vehicleModel && <p className="text-sm text-gray-600">Model: {inv.vehicleModel}</p>}
+                                {inv.jobCaption && <p className="text-sm text-gray-600">Job: {inv.jobCaption}</p>}
+                                {inv.sourceDocumentCode && (
+                                    <p className="text-xs text-purple-700 font-bold mt-2">
+                                        Source: {inv.sourceDocumentType?.toUpperCase()} ({inv.sourceDocumentCode})
+                                    </p>
                                 )}
                             </div>
                         </div>
+
+                        {/* Vehicle Photos */}
+                        {(inv.numberPlateImage || inv.lorryBodyImage) && (
+                            <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-xs font-bold text-gray-500 uppercase mb-2">Number Plate Photo</p>
+                                    {inv.numberPlateImage ? (
+                                        <img src={inv.numberPlateImage} alt="Number Plate" className="h-32 object-contain rounded border bg-gray-50 p-1" />
+                                    ) : (
+                                        <p className="text-xs text-gray-400 italic">No photo attached</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-gray-500 uppercase mb-2">Lorry Body Photo</p>
+                                    {inv.lorryBodyImage ? (
+                                        <img src={inv.lorryBodyImage} alt="Lorry Body" className="h-32 object-contain rounded border bg-gray-50 p-1" />
+                                    ) : (
+                                        <p className="text-xs text-gray-400 italic">No photo attached</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </Card>
 
                     <Card>

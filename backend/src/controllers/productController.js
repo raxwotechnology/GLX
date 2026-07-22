@@ -12,6 +12,42 @@ export const createProduct = asyncHandler(async (req, res) => {
         createdBy: req.user._id,
     });
 
+    // Handle initial stock quantity if passed
+    if (req.body.initialQuantity !== undefined && Number(req.body.initialQuantity) >= 0) {
+        try {
+            const StockItem = (await import('../models/StockItem.js')).default;
+            const Warehouse = (await import('../models/Warehouse.js')).default;
+            
+            let warehouseId = req.body.warehouseId;
+            if (!warehouseId) {
+                const wh = await Warehouse.findOne({ deletedAt: null });
+                if (wh) {
+                    warehouseId = wh._id;
+                }
+            }
+            
+            if (warehouseId) {
+                await StockItem.create({
+                    productId: product._id,
+                    productCode: product.productCode,
+                    productName: product.name,
+                    warehouseId,
+                    quantities: {
+                        onHand: Number(req.body.initialQuantity),
+                        openStock: Number(req.body.initialQuantity),
+                        available: Number(req.body.initialQuantity)
+                    },
+                    unitOfMeasure: product.unitOfMeasure || 'pcs',
+                    costPerUnit: req.body.costs?.standardCost || 0,
+                    totalValue: Number(req.body.initialQuantity) * (req.body.costs?.standardCost || 0),
+                    lastMovementDate: new Date()
+                });
+            }
+        } catch (err) {
+            console.error('Error seeding initial product stock:', err);
+        }
+    }
+
     const populated = await Product.findById(product._id)
         .populate('categoryId', 'name code')
         .populate('brandId', 'name');

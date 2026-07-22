@@ -6,13 +6,13 @@ import { createAuditLog } from '../utils/auditLogger.js';
 export const createCustomer = asyncHandler(async (req, res) => {
     // Clean up empty string ID fields
     const payload = { ...req.body, createdBy: req.user._id };
-    if (!payload.customerGroupId) delete payload.customerGroupId;
     if (!payload.assignedSalesRep) delete payload.assignedSalesRep;
+    if (!payload.introducer) delete payload.introducer;
 
     const customer = await Customer.create(payload);
     const populated = await Customer.findById(customer._id)
-        .populate('customerGroupId', 'name code color')
-        .populate('assignedSalesRep', 'firstName lastName');
+        .populate('assignedSalesRep', 'firstName lastName')
+        .populate('introducer', 'firstName lastName callingName employeeCode designation');
     res.status(201).json({ success: true, data: populated });
 
     createAuditLog({
@@ -29,7 +29,7 @@ export const createCustomer = asyncHandler(async (req, res) => {
 
 export const getCustomers = asyncHandler(async (req, res) => {
     const {
-        search, customerGroupId, status, assignedSalesRep,
+        search, status, assignedSalesRep,
         onCreditHold, isOverdue,
         page = 1, limit = 20,
         sortBy = 'createdAt', sortOrder = 'desc',
@@ -45,7 +45,6 @@ export const getCustomers = asyncHandler(async (req, res) => {
             { 'primaryContact.phone': { $regex: search, $options: 'i' } },
         ];
     }
-    if (customerGroupId) filter.customerGroupId = customerGroupId;
     if (status) filter.status = status;
     if (assignedSalesRep) filter.assignedSalesRep = assignedSalesRep;
     if (onCreditHold !== undefined) filter['creditStatus.onCreditHold'] = onCreditHold === 'true';
@@ -56,8 +55,8 @@ export const getCustomers = asyncHandler(async (req, res) => {
 
     const [customers, total] = await Promise.all([
         Customer.find(filter)
-            .populate('customerGroupId', 'name code color')
             .populate('assignedSalesRep', 'firstName lastName')
+            .populate('introducer', 'firstName lastName callingName employeeCode designation')
             .sort(sortObj)
             .skip(skip)
             .limit(Number(limit)),
@@ -76,8 +75,8 @@ export const getCustomers = asyncHandler(async (req, res) => {
 
 export const getCustomerById = asyncHandler(async (req, res) => {
     const customer = await Customer.findById(req.params.id)
-        .populate('customerGroupId', 'name code color defaultDiscountPercent')
         .populate('assignedSalesRep', 'firstName lastName email phone')
+        .populate('introducer', 'firstName lastName callingName employeeCode designation')
         .populate('createdBy', 'firstName lastName')
         .populate('updatedBy', 'firstName lastName');
 
@@ -87,15 +86,15 @@ export const getCustomerById = asyncHandler(async (req, res) => {
 
 export const updateCustomer = asyncHandler(async (req, res) => {
     const payload = { ...req.body, updatedBy: req.user._id };
-    if (payload.customerGroupId === '') payload.customerGroupId = null;
     if (payload.assignedSalesRep === '') payload.assignedSalesRep = null;
+    if (payload.introducer === '') payload.introducer = null;
 
     const oldData = await Customer.findById(req.params.id);
     const customer = await Customer.findByIdAndUpdate(req.params.id, payload, {
         new: true, runValidators: true,
     })
-        .populate('customerGroupId', 'name code color')
-        .populate('assignedSalesRep', 'firstName lastName');
+        .populate('assignedSalesRep', 'firstName lastName')
+        .populate('introducer', 'firstName lastName callingName employeeCode designation');
 
     if (!customer) { res.status(404); throw new Error('Customer not found'); }
     res.json({ success: true, data: customer });

@@ -12,6 +12,7 @@ import Pagination from '../components/ui/Pagination';
 import EmptyState from '../components/ui/EmptyState';
 import { useInvoices, useAgingSummary } from '../features/invoices/useInvoices';
 import { useAuthStore } from '../store/authStore';
+import api from '../api/axios';
 
 const paymentStatusVariant = {
     unpaid: 'warning',
@@ -138,7 +139,28 @@ export default function InvoicesPage() {
                         <input type="text" placeholder="Search by invoice # or customer..."
                             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm"
                             value={filters.search}
-                            onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))} />
+                            onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
+                            onKeyDown={async (e) => {
+                                if (e.key === 'Enter') {
+                                    const searchVal = e.target.value.trim();
+                                    if (searchVal.toUpperCase().startsWith('INV-')) {
+                                        const found = invoices.find(inv => inv.invoiceNumber?.toUpperCase() === searchVal.toUpperCase());
+                                        if (found) {
+                                            navigate(`/invoices/${found._id}`);
+                                        } else {
+                                            try {
+                                                const res = await api.get(`/invoices?search=${searchVal}`);
+                                                const foundBack = res.data?.data?.find(inv => inv.invoiceNumber?.toUpperCase() === searchVal.toUpperCase());
+                                                if (foundBack) {
+                                                    navigate(`/invoices/${foundBack._id}`);
+                                                }
+                                            } catch (err) {
+                                                console.error('Barcode fetch failed', err);
+                                            }
+                                        }
+                                    }
+                                }
+                            }} />
                     </div>
                     <div className="w-48">
                         <Select placeholder="All Statuses"

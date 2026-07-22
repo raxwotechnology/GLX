@@ -12,7 +12,7 @@ import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import CustomerFormModal from '../features/customers/CustomerFormModal';
 import {
-    useCustomers, useCustomerGroups, useDeleteCustomer, useToggleCreditHold,
+    useCustomers, useDeleteCustomer, useToggleCreditHold,
 } from '../features/customers/useCustomers';
 import { useAuthStore } from '../store/authStore';
 import ExportButtons from '../components/ui/ExportButtons';
@@ -33,7 +33,7 @@ export default function CustomersPage() {
     const canHoldCredit = ['admin', 'manager', 'accountant'].includes(user?.role);
 
     const [filters, setFilters] = useState({
-        search: '', customerGroupId: '', status: '',
+        search: '', status: '',
         page: 1, limit: 10,
     });
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -43,7 +43,6 @@ export default function CustomersPage() {
     const [holdReason, setHoldReason] = useState('');
 
     const { data, isLoading } = useCustomers(filters);
-    const { data: groupsData } = useCustomerGroups();
     const deleteMutation = useDeleteCustomer();
     const holdMutation = useToggleCreditHold();
 
@@ -54,7 +53,6 @@ export default function CustomersPage() {
     const exportColumns = [
         { header: 'Code', dataKey: 'customerCode' },
         { header: 'Name', dataKey: 'displayName' },
-        { header: 'Group', dataKey: 'groupName' },
         { header: 'Phone', dataKey: 'phone' },
         { header: 'Email', dataKey: 'email' },
         { header: 'Balance (LKR)', dataKey: 'balance' },
@@ -70,13 +68,12 @@ export default function CustomersPage() {
 
     const exportData = customers.map(c => ({
         ...c,
-        groupName: c.customerGroupId?.name || '—',
         phone: c.primaryContact?.phone || '—',
         email: c.primaryContact?.email || '—',
         balance: c.creditStatus?.currentBalance || 0,
     }));
 
-    const groupOptions = (groupsData?.data || []).map((g) => ({ value: g._id, label: g.name }));
+
 
     const formatMoney = (n) => new Intl.NumberFormat('en-LK').format(n || 0);
 
@@ -105,18 +102,12 @@ export default function CustomersPage() {
             ),
         },
         {
-            key: 'customerGroupId', label: 'Group',
-            render: (r) =>
-                r.customerGroupId ? (
-                    <span
-                        className="inline-block px-2 py-0.5 rounded text-xs font-medium text-white"
-                        style={{ backgroundColor: r.customerGroupId.color || '#6b7280' }}
-                    >
-                        {r.customerGroupId.name}
-                    </span>
-                ) : (
-                    <span className="text-gray-400 text-xs">—</span>
-                ),
+            key: 'introducer', label: 'Introducer',
+            render: (r) => (
+                <span className="text-xs text-gray-700 font-medium">
+                    {r.introducerName || (r.introducer ? `${r.introducer.firstName || ''} ${r.introducer.lastName || ''}`.trim() : '—')}
+                </span>
+            ),
         },
         {
             key: 'contact', label: 'Contact',
@@ -238,14 +229,6 @@ export default function CustomersPage() {
                             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 text-sm"
                             value={filters.search}
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
-                        />
-                    </div>
-                    <div className="w-48">
-                        <Select
-                            placeholder="All Groups"
-                            options={groupOptions}
-                            value={filters.customerGroupId}
-                            onChange={(e) => setFilters((f) => ({ ...f, customerGroupId: e.target.value, page: 1 }))}
                         />
                     </div>
                     <div className="w-40">

@@ -8,8 +8,8 @@ import DailyPnL from '../../models/DailyPnL.js';
 import PettyCash from '../../models/PettyCash.js';
 import ProductionBatch from '../../models/ProductionBatch.js';
 import Attendance from '../../models/Attendance.js';
-import TripLog from '../../models/TripLog.js';
 import Employee from '../../models/Employee.js';
+import Expense from '../../models/Expense.js';
 
 /**
  * GET /api/reports/financial/snapshot
@@ -21,7 +21,7 @@ export const getFinancialSnapshot = asyncHandler(async (req, res) => {
     const end = endDate ? new Date(endDate) : new Date();
     end.setHours(23, 59, 59, 999);
 
-    const [revenue, expenses, collected, paid, arTotal, apTotal] = await Promise.all([
+    const [revenue, expenses, dedicatedExpenses, collected, paid, arTotal, apTotal, managerSales, employeeSales, managerPayroll, employeePayroll] = await Promise.all([
         Invoice.aggregate([
             { $match: { deletedAt: null, invoiceDate: { $gte: start, $lte: end } } },
             { $group: { _id: null, total: { $sum: '$grandTotal' } } },
@@ -29,6 +29,10 @@ export const getFinancialSnapshot = asyncHandler(async (req, res) => {
         Bill.aggregate([
             { $match: { deletedAt: null, billDate: { $gte: start, $lte: end } } },
             { $group: { _id: null, total: { $sum: '$grandTotal' } } },
+        ]),
+        Expense.aggregate([
+            { $match: { deletedAt: null, date: { $gte: start, $lte: end } } },
+            { $group: { _id: null, total: { $sum: '$amount' } } },
         ]),
         Payment.aggregate([
             { $match: { deletedAt: null, direction: 'received', paymentDate: { $gte: start, $lte: end } } },
@@ -66,12 +70,75 @@ export const getFinancialSnapshot = asyncHandler(async (req, res) => {
                 },
             },
         ]),
+        // Manager vs Employee Invoiced Sales Attribution
+        Invoice.aggregate([
+            { $match: { deletedAt: null, invoiceDate: { $gte: start, $lte: end } } },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'createdBy',
+                    foreignField: '_id',
+                    as: 'creator',
+                }
+            },
+            { $unwind: { path: '$creator', preserveNullAndEmptyArrays: true } },
+            { $match: { 'creator.role': { $in: ['manager', 'admin'] } } },
+            { $group: { _id: null, total: { $sum: '$grandTotal' } } }
+        ]),
+        Invoice.aggregate([
+            { $match: { deletedAt: null, invoiceDate: { $gte: start, $lte: end } } },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'createdBy',
+                    foreignField: '_id',
+                    as: 'creator',
+                }
+            },
+            { $unwind: { path: '$creator', preserveNullAndEmptyArrays: true } },
+            { $match: { 'creator.role': 'employee' } },
+            { $group: { _id: null, total: { $sum: '$grandTotal' } } }
+        ]),
+        // Manager vs Employee Payroll Earnings
+        Attendance.aggregate([
+            { $match: { date: { $gte: start, $lte: end } } },
+            {
+                $lookup: {
+                    from: 'employees',
+                    localField: 'employeeId',
+                    foreignField: '_id',
+                    as: 'emp',
+                }
+            },
+            { $unwind: { path: '$emp', preserveNullAndEmptyArrays: true } },
+            { $match: { 'emp.employeeCategory': 'Permanent' } },
+            { $group: { _id: null, totalOT: { $sum: '$overtimeAmount' }, totalPenalties: { $sum: '$latePenaltyAmount' } } }
+        ]),
+        Attendance.aggregate([
+            { $match: { date: { $gte: start, $lte: end } } },
+            {
+                $lookup: {
+                    from: 'employees',
+                    localField: 'employeeId',
+                    foreignField: '_id',
+                    as: 'emp',
+                }
+            },
+            { $unwind: { path: '$emp', preserveNullAndEmptyArrays: true } },
+            { $match: { 'emp.employeeCategory': { $ne: 'Permanent' } } },
+            { $group: { _id: null, totalOT: { $sum: '$overtimeAmount' }, totalPenalties: { $sum: '$latePenaltyAmount' } } }
+        ]),
     ]);
 
     const revenueTotal = revenue[0]?.total || 0;
-    const expensesTotal = expenses[0]?.total || 0;
+    const billsTotal = expenses[0]?.total || 0;
+    const directExpensesTotal = dedicatedExpenses[0]?.total || 0;
+    const expensesTotal = billsTotal + directExpensesTotal;
     const collectedTotal = collected[0]?.total || 0;
     const paidTotal = paid[0]?.total || 0;
+
+    const managerSalesTotal = managerSales[0]?.total || 0;
+    const employeeSalesTotal = employeeSales[0]?.total || 0;
 
     res.json({
         success: true,
@@ -79,6 +146,8 @@ export const getFinancialSnapshot = asyncHandler(async (req, res) => {
             period: { start, end },
             revenue: +revenueTotal.toFixed(2),
             expenses: +expensesTotal.toFixed(2),
+            billsExpenses: +billsTotal.toFixed(2),
+            dedicatedExpenses: +directExpensesTotal.toFixed(2),
             grossProfit: +(revenueTotal - expensesTotal).toFixed(2),
             collected: +collectedTotal.toFixed(2),
             paid: +paidTotal.toFixed(2),
@@ -86,6 +155,13 @@ export const getFinancialSnapshot = asyncHandler(async (req, res) => {
             collectionEfficiency: revenueTotal > 0 ? +((collectedTotal / revenueTotal) * 100).toFixed(1) : 0,
             accountsReceivable: arTotal[0] || { current: 0, b1_30: 0, b31_60: 0, b61_90: 0, b91_plus: 0, total: 0 },
             accountsPayable: apTotal[0] || { current: 0, b1_30: 0, b31_60: 0, b61_90: 0, b91_plus: 0, total: 0 },
+            roleEarnings: {
+                managerIncomeAttributed: +managerSalesTotal.toFixed(2),
+                employeeIncomeAttributed: +employeeSalesTotal.toFixed(2),
+                otherAttributed: +(revenueTotal - managerSalesTotal - employeeSalesTotal).toFixed(2),
+                managerOTEarnings: +(managerPayroll[0]?.totalOT || 0).toFixed(2),
+                employeeOTEarnings: +(employeePayroll[0]?.totalOT || 0).toFixed(2),
+            },
         },
     });
 });
@@ -411,31 +487,11 @@ export const getShiftWiseReport = asyncHandler(async (req, res) => {
         }
     });
 
-    // 3. Logistics / Trip logs by shift
-    const tripFilter = { deletedAt: null, startDate: { $gte: start, $lte: end } };
-    if (shiftFilter) tripFilter.shift = shiftFilter;
-
-    const trips = await TripLog.find(tripFilter);
+    // 3. Logistics / Trip logs by shift (Disabled)
     const logistics = {
         dayShift: { tripsCount: 0, distanceKm: 0, fuelConsumed: 0, cost: 0, items: [] },
         nightShift: { tripsCount: 0, distanceKm: 0, fuelConsumed: 0, cost: 0, items: [] }
     };
-
-    trips.forEach(trip => {
-        const isNight = trip.shift === 'night';
-        const targetLog = isNight ? logistics.nightShift : logistics.dayShift;
-
-        targetLog.tripsCount++;
-        targetLog.distanceKm += trip.distanceKm || 0;
-        targetLog.fuelConsumed += trip.fuelConsumed || 0;
-        targetLog.cost += trip.totalCost || 0;
-
-        if (trip.itemsTransported && trip.itemsTransported.length > 0) {
-            trip.itemsTransported.forEach(item => {
-                targetLog.items.push(`${item.item} (${item.quantity} ${item.uom || ''})`);
-            });
-        }
-    });
 
     // Clean decimals
     const sanitizeObj = (obj) => {

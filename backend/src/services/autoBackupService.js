@@ -90,11 +90,9 @@ class AutoBackupService {
         }
         if (module === 'customers') {
             const customers = await Customer.find({ deletedAt: null })
-                .populate('customerGroupId', 'name')
                 .lean();
             return customers.map(c => ({
                 ...c,
-                groupName: c.customerGroupId?.name || '—',
                 phone: c.primaryContact?.phone || '—',
             }));
         }
@@ -116,7 +114,6 @@ class AutoBackupService {
             return [
                 { header: 'Code', dataKey: 'customerCode' },
                 { header: 'Name', dataKey: 'displayName' },
-                { header: 'Group', dataKey: 'groupName' },
                 { header: 'Phone', dataKey: 'phone' },
                 { header: 'Balance', dataKey: 'balance' },
             ];

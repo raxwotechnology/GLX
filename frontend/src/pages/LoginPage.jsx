@@ -8,6 +8,8 @@ import { Eye, EyeOff, Package } from 'lucide-react';
 
 import { authApi } from '../features/auth/authApi';
 import { loginSchema } from '../features/auth/authSchemas';
+import logo from '../assets/logo.jpg';
+import blueprintImage from '../assets/lorry_body_blueprint.png';
 import { useAuthStore } from '../store/authStore';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -57,39 +59,33 @@ export default function LoginPage() {
 
             {/* Left Side Panel - Brand Pitch & Glassmorphism */}
             <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white p-12 flex-col justify-between relative overflow-hidden">
-                {/* Abstract Glass/Aluminium Vector Drawing Background */}
-                <div className="absolute inset-0 opacity-10 flex items-center justify-center pointer-events-none">
-                    <div className="w-[500px] h-[500px] border-[16px] border-white grid grid-cols-3 grid-rows-2 gap-4 p-4 rounded-3xl rotate-12">
-                        <div className="border-4 border-white rounded-xl"></div>
-                        <div className="border-4 border-white rounded-xl"></div>
-                        <div className="border-4 border-white rounded-xl"></div>
-                        <div className="border-4 border-white rounded-xl col-span-2"></div>
-                        <div className="border-4 border-white rounded-xl"></div>
-                    </div>
+                {/* Lorry Body Blueprint Background */}
+                <div className="absolute inset-0 opacity-15 flex items-center justify-center pointer-events-none">
+                    <img src={blueprintImage} className="w-[500px] h-[500px] object-contain rotate-6" alt="Lorry blueprint" />
                 </div>
 
                 <div className="z-10">
                     <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
-                        <Package className="w-5 h-5 text-emerald-400" />
-                        <span className="text-sm font-bold tracking-wider">ALUECO</span>
+                        <img src={logo} className="w-5 h-5 object-contain rounded-md" alt="Logo" />
+                        <span className="text-sm font-bold tracking-wider">GLX Industries</span>
                     </div>
                 </div>
 
                 <div className="space-y-6 z-10 max-w-lg">
                     <h1 className="text-5xl font-black tracking-tight leading-none bg-gradient-to-r from-white via-indigo-100 to-emerald-200 bg-clip-text text-transparent">
-                        Automated Quotation & Cost Calculation
+                        Quality Lorry Body Builders
                     </h1>
                     <p className="text-slate-300 text-base leading-relaxed">
-                        Design aluminium applications, dynamically calculate profile cuts, optimize waste with project-wide 1D packing solvers, and produce instant customer estimates.
+                        Lorry Body Manufacturing Sri Lanka. Design custom lorry cargo bodies, calculate structural steel & aluminium cuts, optimize profile waste, and manage technical costing estimates.
                     </p>
 
                     {/* Features checklist card */}
                     <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 space-y-3.5 shadow-xl">
                         {[
-                            'Dynamic BOM formulas by dimension entries',
-                            '1D packing solver minimizing profile waste',
+                            'Custom BOM calculations for lorry body dimensions',
+                            '1D packing solver minimizing steel & profile waste',
                             'Instant Customer & Internal costing PDF exports',
-                            'Preservation rate snapshots & revision manager'
+                            'Lorry body engineering specifications & revisions'
                         ].map((feat, idx) => (
                             <div key={idx} className="flex items-center gap-3">
                                 <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold">✓</div>
@@ -100,7 +96,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="z-10 text-xs text-slate-500 font-medium">
-                    © 2026 ALUECO Aluminium Systems. All rights reserved.
+                    © {new Date().getFullYear()} GLX Industries. All rights reserved.
                 </div>
             </div>
 
@@ -109,10 +105,10 @@ export default function LoginPage() {
                 <div className="w-full max-w-md space-y-8">
                     {/* Brand header for mobile */}
                     <div className="text-center lg:hidden space-y-2">
-                        <div className="inline-flex items-center justify-center w-12 h-12 bg-indigo-600 rounded-xl mb-2">
-                            <Package className="w-6 h-6 text-white" />
+                        <div className="inline-flex items-center justify-center w-12 h-12 bg-white rounded-xl mb-2 border border-slate-200 overflow-hidden">
+                            <img src={logo} className="w-10 h-10 object-contain" alt="Logo" />
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-800">ALUECO Aluminium Systems</h2>
+                        <h2 className="text-2xl font-bold text-slate-800">GLX Industries</h2>
                         <p className="text-sm text-slate-500">Automated Quotation & Calculation</p>
                     </div>
 

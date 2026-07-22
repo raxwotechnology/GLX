@@ -9,6 +9,7 @@ import {
     createHoliday, getHolidays, updateHoliday, deleteHoliday,
     createSalaryStructure, getSalaryStructures, updateSalaryStructure, deleteSalaryStructure,
     createLeaveStructure, getLeaveStructures, updateLeaveStructure, deleteLeaveStructure, getMyEmployeeProfile,
+    createAttendancePolicy, getAttendancePolicies, updateAttendancePolicy, deleteAttendancePolicy, importFingerprintAttendance,
 } from '../controllers/hrController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission, requireAnyPermission } from '../middleware/permissionMiddleware.js';
@@ -64,6 +65,16 @@ router.route('/attendance')
     .post(requirePermission('hr.attendance.manage'), markAttendance);
 
 router.post('/attendance/bulk', requirePermission('hr.attendance.manage'), bulkMarkAttendance);
+router.post('/attendance/import-fingerprint', requirePermission('hr.attendance.manage'), importFingerprintAttendance);
+
+// ── Attendance Policies ────────────────────────────────────────────────────────
+router.route('/attendance-policies')
+    .get(getAttendancePolicies)
+    .post(requirePermission('hr.attendance.manage'), createAttendancePolicy);
+
+router.route('/attendance-policies/:id')
+    .put(requirePermission('hr.attendance.manage'), updateAttendancePolicy)
+    .delete(requirePermission('hr.attendance.manage'), deleteAttendancePolicy);
 
 // ── Leave ──────────────────────────────────────────────────────────────────────
 router.route('/leaves')

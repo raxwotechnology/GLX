@@ -48,6 +48,7 @@ export default function PosPage() {
     const [chequeDate, setChequeDate] = useState('');
     const [bankName, setBankName] = useState('');
     const [chequeStatus, setChequeStatus] = useState('pending');
+    const [checkoutSuccessDetails, setCheckoutSuccessDetails] = useState(null);
 
     const cartDrawerRef = useRef(null);
     const searchRef = useRef(null);
@@ -349,12 +350,18 @@ export default function PosPage() {
         try {
             const result = await createOrder.mutateAsync(payload);
             toast.success(saveAsDraft ? 'Order saved as draft' : 'Order created!');
+            const completedCustomer = (customersData?.data || []).find(c => c._id === activeCustomerId) || { displayName: customerId };
+            setCheckoutSuccessDetails({
+                order: result.data,
+                customer: completedCustomer,
+                items: [...cart],
+                totals: { ...totals }
+            });
             setCart([]);
             setCustomerId('');
             setOrderDiscountPercent(0);
             setTaxMode('item');
             setIsCartOpen(false);
-            navigate(`/sales-orders/${result.data._id}`);
         } catch { }
     };
 
@@ -1031,6 +1038,93 @@ function CartPanel({
                             <span>⚠</span> Select a customer to checkout
                         </p>
                     )}
+                </div>
+            )}
+
+            {checkoutSuccessDetails && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 print:bg-white print:p-0">
+                    <style dangerouslySetInnerHTML={{__html: `
+                        @media print {
+                            body > * {
+                                display: none !important;
+                            }
+                            #pos-receipt-print-area {
+                                display: block !important;
+                                position: absolute;
+                                left: 0;
+                                top: 0;
+                                width: 100%;
+                                background: white;
+                                color: black;
+                                padding: 20px;
+                            }
+                        }
+                    `}} />
+                    <div id="pos-receipt-print-area" className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 print:shadow-none print:p-0 print:w-full print:max-w-none">
+                        <div className="text-center border-b pb-4">
+                            <h2 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-wider">GLX Industries</h2>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Ja-Ela, Sri Lanka · +94 11 223 3445</p>
+                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mt-2">POS SALES RECEIPT</p>
+                        </div>
+                        
+                        <div className="text-xs space-y-1 text-gray-600 dark:text-gray-300">
+                            <p><span className="font-bold">Bill To:</span> {checkoutSuccessDetails.customer.displayName || checkoutSuccessDetails.customer.companyName}</p>
+                            {checkoutSuccessDetails.customer.customerCode && <p><span className="font-bold">Customer Code:</span> {checkoutSuccessDetails.customer.customerCode}</p>}
+                            <p><span className="font-bold">Date:</span> {new Date().toLocaleString()}</p>
+                            <p><span className="font-bold">Order Ref:</span> {checkoutSuccessDetails.order?.orderNumber || checkoutSuccessDetails.order?._id}</p>
+                        </div>
+
+                        <div className="border-t border-b py-2 my-2">
+                            <table className="w-full text-xs text-left">
+                                <thead>
+                                    <tr className="border-b text-gray-400 font-bold">
+                                        <th className="py-1">Item Description</th>
+                                        <th className="py-1 text-right">Qty</th>
+                                        <th className="py-1 text-right">Price</th>
+                                        <th className="py-1 text-right">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {checkoutSuccessDetails.items.map((item, idx) => (
+                                        <tr key={idx} className="border-b border-gray-100">
+                                            <td className="py-2">{item.name}</td>
+                                            <td className="py-2 text-right font-mono">{item.qty}</td>
+                                            <td className="py-2 text-right font-mono">{fmt(item.price)}</td>
+                                            <td className="py-2 text-right font-mono">{fmt(item.qty * item.price)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="text-xs space-y-1 text-right font-mono">
+                            <p>Subtotal: {fmt(checkoutSuccessDetails.totals.subtotal)}</p>
+                            {checkoutSuccessDetails.totals.orderDiscount > 0 && <p className="text-red-500">Discount: -{fmt(checkoutSuccessDetails.totals.orderDiscount)}</p>}
+                            {checkoutSuccessDetails.totals.totalTax > 0 && <p>Tax: +{fmt(checkoutSuccessDetails.totals.totalTax)}</p>}
+                            <p className="text-sm font-bold text-slate-800 dark:text-white border-t pt-1">Grand Total: {fmt(checkoutSuccessDetails.totals.grandTotal)}</p>
+                        </div>
+
+                        <div className="flex gap-2 pt-4 print:hidden">
+                            <button
+                                onClick={() => {
+                                    window.print();
+                                }}
+                                className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition shadow-md flex items-center justify-center gap-1.5"
+                            >
+                                Print Receipt
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const orderId = checkoutSuccessDetails.order?._id;
+                                    setCheckoutSuccessDetails(null);
+                                    navigate(`/sales-orders/${orderId}`);
+                                }}
+                                className="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-sm font-bold transition"
+                            >
+                                Close & View Order
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </>

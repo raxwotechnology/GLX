@@ -112,6 +112,10 @@ export const createInvoice = asyncHandler(async (req, res) => {
         billingAddress: customer.billingAddress,
         shippingAddress: customer.shippingAddresses?.find((a) => a.isDefault) || customer.billingAddress,
         salesRepId: customer.assignedSalesRep,
+        introducer: rest.introducer || customer.introducer,
+        introducerName: rest.introducerName || customer.introducerName || '',
+        biller: rest.biller || req.user._id,
+        billerName: rest.billerName || `${req.user?.firstName || ''} ${req.user?.lastName || ''}`.trim(),
         paymentTerms: {
             type: customer.paymentTerms?.type || 'cod',
             creditDays: customer.paymentTerms?.creditDays || 0,
@@ -277,7 +281,9 @@ export const getInvoices = asyncHandler(async (req, res) => {
 
     const [invoices, total] = await Promise.all([
         Invoice.find(filter)
-            .populate('customerId', 'displayName customerCode')
+            .populate('customerId', 'displayName customerCode introducer introducerName')
+            .populate('introducer', 'firstName lastName callingName employeeCode')
+            .populate('biller', 'firstName lastName')
             .populate('salesOrderIds', 'orderNumber')
             .sort(sortObj).skip(skip).limit(Number(limit)),
         Invoice.countDocuments(filter),
@@ -296,7 +302,9 @@ export const getInvoices = asyncHandler(async (req, res) => {
  */
 export const getInvoiceById = asyncHandler(async (req, res) => {
     const invoice = await Invoice.findById(req.params.id)
-        .populate('customerId', 'displayName customerCode taxRegistrationNumber primaryContact paymentTerms creditStatus')
+        .populate('customerId', 'displayName customerCode taxRegistrationNumber primaryContact paymentTerms creditStatus introducer introducerName')
+        .populate('introducer', 'firstName lastName callingName employeeCode designation')
+        .populate('biller', 'firstName lastName')
         .populate('salesOrderIds', 'orderNumber orderDate')
         .populate('salesRepId', 'firstName lastName')
         .populate('createdBy', 'firstName lastName')

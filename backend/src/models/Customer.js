@@ -68,10 +68,7 @@ const customerSchema = new mongoose.Schema(
         firstName: { type: String, trim: true }, // for individuals
         lastName: { type: String, trim: true },
 
-        customerGroupId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'CustomerGroup',
-        },
+
         tags: [{ type: String, trim: true }],
 
         // Registration
@@ -99,6 +96,11 @@ const customerSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
         },
+        introducer: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Employee',
+        },
+        introducerName: { type: String, trim: true },
 
         // Commercial terms
         paymentTerms: {
@@ -153,7 +155,7 @@ const customerSchema = new mongoose.Schema(
 
 // Indexes
 customerSchema.index({ displayName: 'text', companyName: 'text', customerCode: 'text' });
-customerSchema.index({ customerGroupId: 1, status: 1 });
+
 customerSchema.index({ assignedSalesRep: 1 });
 customerSchema.index({ status: 1 });
 

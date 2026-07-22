@@ -326,11 +326,10 @@ export const exportModuleData = asyncHandler(async (req, res) => {
         title = 'Product Catalog Report';
         filename = 'products_export';
     } else if (module === 'customers') {
-        const data = await Customer.find().populate('customerGroupId');
+        const data = await Customer.find();
         rows = data.map(c => ({
             customerCode: c.customerCode || '',
             displayName: c.displayName || '',
-            groupName: c.customerGroupId?.name || '—',
             phone: c.primaryContact?.phone || '—',
             email: c.primaryContact?.email || '—',
             balance: c.balance || 0,
@@ -339,7 +338,6 @@ export const exportModuleData = asyncHandler(async (req, res) => {
         columns = [
             { header: 'Code', key: 'customerCode', width: 20 },
             { header: 'Name', key: 'displayName', width: 30 },
-            { header: 'Group', key: 'groupName', width: 20 },
             { header: 'Phone', key: 'phone', width: 18 },
             { header: 'Email', key: 'email', width: 25 },
             { header: 'Balance (LKR)', key: 'balance', width: 18 },

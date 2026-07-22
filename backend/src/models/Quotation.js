@@ -1,19 +1,46 @@
 import mongoose from 'mongoose';
 
 const quotationSchema = new mongoose.Schema({
+    documentType: { type: String, enum: ['quotation', 'estimate'], default: 'quotation' },
     quotationCode: { type: String, unique: true },
     quoteNumber: { type: String },
-    inquiry: { type: mongoose.Schema.Types.ObjectId, ref: 'Inquiry', set: v => v === '' ? undefined : v },
-    inquiryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Inquiry', set: v => v === '' ? undefined : v },
     // customerId can reference either Customer or be provided as a string name
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', set: v => v === '' ? undefined : v },
     customerName: { type: String },
     customerEmail: { type: String },
     customerPhone: { type: String },
     customerAddress: { type: String },
+    
+    // Vehicle & Body engineering metadata
+    insuranceCompany: { type: String, default: '' },
+    vehicleOwner: { type: String, default: '' },
+    vehicleNo: { type: String, default: '' },
+    vehicleModel: { type: String, default: '' },
+    jobCaption: { type: String, default: '' },
+    salesRep: { type: String, default: '' },
+    introducer: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
+    introducerName: { type: String, default: '' },
+    biller: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    billerName: { type: String, default: '' },
+    branch: { type: String, default: 'JA-ELA' },
+
+    // Photo Attachments (Number Plate photo & Lorry Body photo)
+    numberPlateImage: { type: String, default: '' },
+    lorryBodyImage: { type: String, default: '' },
+
+    // RMB Outside Body Dimensions & Warranty
+    bodyDimensions: {
+        length: { type: String, default: '' },
+        width: { type: String, default: '' },
+        height: { type: String, default: '' }
+    },
+    specifications: [{ type: String }],
+    warrantyInfo: { type: String, default: '' },
+    paymentConditions: [{ type: String }],
+
     version: { type: Number, default: 1 },
     items: [{
-        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', set: v => v === '' || !v ? undefined : v },
         productName: { type: String },
         description: { type: String },
         quantity: { type: Number, default: 1 },
@@ -31,7 +58,8 @@ const quotationSchema = new mongoose.Schema({
         validUntil: Date,
         notes: String,
     },
-    status: { type: String, default: 'draft' },
+    status: { type: String, default: 'draft' }, // draft, sent, accepted, rejected, converted
+    convertedInvoiceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Invoice' },
     sentAt: Date,
     acceptedAt: Date,
     notes: { type: String },
@@ -44,18 +72,15 @@ quotationSchema.pre('validate', async function () {
     if (this.customerId === '') {
         this.customerId = undefined;
     }
-    if (this.inquiryId === '') {
-        this.inquiryId = undefined;
-    }
-    if (this.inquiry === '') {
-        this.inquiry = undefined;
-    }
 
     if (!this.quotationCode) {
         const date = new Date();
-        const prefix = `QUO-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const count = await this.constructor.countDocuments({ quotationCode: { $regex: `^${prefix}` } });
-        this.quotationCode = `${prefix}-${String(count + 1).padStart(3, '0')}`;
+        const year = date.getFullYear();
+        const docPrefix = this.documentType === 'estimate' ? 'EST' : 'QUT';
+        const searchRegex = new RegExp(`^(${docPrefix}|QUO)-${year}`);
+        const count = await this.constructor.countDocuments({ quotationCode: { $regex: searchRegex } });
+        const seq = String(count + 1).padStart(4, '0');
+        this.quotationCode = `${docPrefix}-${year}-${seq}`;
         this.quoteNumber = this.quotationCode;
     }
     // Auto-calculate grand total

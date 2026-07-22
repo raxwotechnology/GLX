@@ -540,34 +540,22 @@ export default function DashboardPage() {
 
                         {/* 4. SALES TAB */}
                         {activeTab === 'sales' && (
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <Card className="lg:col-span-2 p-6 space-y-4">
-                                    <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5"><TrendingUp className="text-primary-600" /> Fabrication Leads & Quotations Funnel</h3>
-                                    <div className="grid grid-cols-4 gap-3">
-                                        {deptData?.sales?.pipelineFunnel?.slice(0, 4).map((stage, idx) => (
-                                            <div key={idx} className="bg-gray-50 border rounded-xl p-4 text-center">
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase">{stage.stage || 'new'}</p>
-                                                <p className="text-2xl font-black mt-1 text-gray-900">{stage.count}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {(!deptData?.sales?.pipelineFunnel || deptData.sales.pipelineFunnel.length === 0) && (
-                                        <p className="text-center py-6 text-xs text-gray-400 italic">No lead funnel data</p>
-                                    )}
-                                </Card>
-
-                                <Card className="p-6 space-y-4">
-                                    <h3 className="text-sm font-bold text-gray-700">Top Selling Profiles & Products</h3>
-                                    <div className="space-y-3">
+                            <div className="grid grid-cols-1 gap-6">
+                                <Card className="p-6 space-y-4 max-w-4xl mx-auto w-full">
+                                    <h3 className="text-base font-bold text-gray-700">Top Selling Products</h3>
+                                    <div className="space-y-3 divide-y divide-gray-100">
                                         {deptData?.sales?.topProducts?.map(prod => (
-                                            <div key={prod._id} className="flex justify-between items-center py-2 border-b last:border-0 text-xs">
+                                            <div key={prod._id} className="flex justify-between items-center py-3 text-sm">
                                                 <div>
                                                     <p className="font-bold text-gray-900">{prod.productName}</p>
-                                                    <p className="text-[10px] text-gray-400 mt-0.5">{prod.quantitySold} units sold</p>
+                                                    <p className="text-xs text-gray-500 mt-0.5">{prod.quantitySold} units sold</p>
                                                 </div>
                                                 <span className="font-bold text-gray-700">{fmt(prod.revenue)}</span>
                                             </div>
                                         ))}
+                                        {(!deptData?.sales?.topProducts || deptData.sales.topProducts.length === 0) && (
+                                            <p className="text-center py-6 text-xs text-gray-400 italic">No sales performance data available</p>
+                                        )}
                                     </div>
                                 </Card>
                             </div>

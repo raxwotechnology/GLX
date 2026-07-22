@@ -20,6 +20,8 @@ import { useWarehouses } from '../features/warehouses/useWarehouses';
 import { useAuthStore } from '../store/authStore';
 import { usePermission } from '../hooks/usePermission';
 
+import InternalConsumptionModal from '../features/stock/InternalConsumptionModal';
+
 export default function StockPage() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
@@ -32,6 +34,7 @@ export default function StockPage() {
         page: 1, limit: 20,
     });
 
+    const [isInternalConsumptionOpen, setIsInternalConsumptionOpen] = useState(false);
     const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
     const [selectedItemForRelease, setSelectedItemForRelease] = useState(null);
     const [releaseQty, setReleaseQty] = useState('');
@@ -171,9 +174,12 @@ export default function StockPage() {
 
                 {/* Action buttons — wrap on mobile */}
                 {canAdjust && (
-                    <div className="flex flex-wrap gap-2 mt-4">
+                    <div className="flex gap-2 flex-wrap mt-4">
+                        <Button variant="outline" size="sm" onClick={() => setIsInternalConsumptionOpen(true)} className="bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 font-semibold">
+                            <Boxes size={15} className="mr-1.5 text-amber-600" /> Internal Usage (Expense)
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => navigate('/stock/opening')}>
-                            <PackagePlus size={15} className="mr-1.5" /> Opening Stock
+                            <PackagePlus size={15} className="mr-1.5" /> Opening
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => navigate('/stock/transfer')}>
                             <ArrowRightLeft size={15} className="mr-1.5" /> Transfer
@@ -599,6 +605,11 @@ export default function StockPage() {
                             confirmText="Delete"
                             variant="danger"
                             loading={deleteMutation.isLoading}
+                        />
+                        {/* Internal Consumption Modal */}
+                        <InternalConsumptionModal
+                            isOpen={isInternalConsumptionOpen}
+                            onClose={() => setIsInternalConsumptionOpen(false)}
                         />
                     </>
                 )}

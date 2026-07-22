@@ -31,7 +31,6 @@ export const customerFormSchema = z.object({
     displayName: z.string().min(1, 'Display name is required').max(100),
     firstName: z.string().optional().or(z.literal('')),
     lastName: z.string().optional().or(z.literal('')),
-    customerGroupId: z.string().optional().or(z.literal('')),
     taxRegistrationNumber: z.string().optional().or(z.literal('')),
     businessRegistrationNumber: z.string().optional().or(z.literal('')),
     industry: z.string().optional().or(z.literal('')),
@@ -48,6 +47,8 @@ export const customerFormSchema = z.object({
     contacts: z.array(contactSchema).optional(),
 
     assignedSalesRep: z.string().optional().or(z.literal('')),
+    introducer: z.string().optional().or(z.literal('')),
+    introducerName: z.string().optional().or(z.literal('')),
 
     paymentTermsType: z.enum(['advance', 'cod', 'credit']),
     creditDays: z.coerce.number().min(0).optional(),
@@ -56,17 +57,4 @@ export const customerFormSchema = z.object({
 
     status: z.enum(['active', 'inactive', 'blacklisted', 'on_hold', 'prospect']),
     notes: z.string().max(2000).optional().or(z.literal('')),
-});
-
-export const customerGroupFormSchema = z.object({
-    name: z.string().min(1, 'Name is required').max(100),
-    code: z.string().min(1, 'Code is required').max(20),
-    description: z.string().max(500).optional().or(z.literal('')),
-    paymentType: z.enum(['advance', 'cod', 'credit']),
-    creditDays: z.coerce.number().min(0).optional(),
-    defaultCreditLimit: z.coerce.number().min(0).optional(),
-    defaultDiscountPercent: z.coerce.number().min(0).max(100).optional(),
-    priority: z.coerce.number().optional(),
-    color: z.string().optional(),
-    isActive: z.boolean().optional(),
 });

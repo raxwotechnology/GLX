@@ -8,6 +8,7 @@ import LeaveRequest from '../models/LeaveRequest.js';
 import Holiday from '../models/Holiday.js';
 import SalaryStructure from '../models/SalaryStructure.js';
 import LeaveStructure from '../models/LeaveStructure.js';
+import AttendancePolicy from '../models/AttendancePolicy.js';
 
 // ============================================================
 // DEPARTMENTS
@@ -651,3 +652,241 @@ export const getMyEmployeeProfile = asyncHandler(async (req, res) => {
     }
     res.json({ success: true, data: emp });
 });
+
+// ============================================================
+// ATTENDANCE & LEAVE POLICIES
+// ============================================================
+
+export const createAttendancePolicy = asyncHandler(async (req, res) => {
+    const policy = new AttendancePolicy({
+        ...req.body,
+        createdBy: req.user._id,
+    });
+    await policy.save();
+    res.status(201).json({ success: true, data: policy });
+});
+
+export const getAttendancePolicies = asyncHandler(async (req, res) => {
+    const policies = await AttendancePolicy.find()
+        .populate('assignedEmployees', 'firstName lastName employeeCode')
+        .sort({ isDefault: -1, createdAt: -1 });
+    res.json({ success: true, count: policies.length, data: policies });
+});
+
+export const updateAttendancePolicy = asyncHandler(async (req, res) => {
+    const policy = await AttendancePolicy.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!policy) { res.status(404); throw new Error('Attendance policy not found'); }
+    res.json({ success: true, data: policy });
+});
+
+export const deleteAttendancePolicy = asyncHandler(async (req, res) => {
+    const policy = await AttendancePolicy.findById(req.params.id);
+    if (!policy) { res.status(404); throw new Error('Attendance policy not found'); }
+    policy.deletedAt = new Date();
+    await policy.save();
+    res.json({ success: true, message: 'Attendance policy deleted' });
+});
+
+// Helper: Resolve effective AttendancePolicy for employee
+const resolveEmployeePolicy = async (empId, empCategory) => {
+    // 1. Specific employee policy
+    let policy = await AttendancePolicy.findOne({
+        applicableScope: 'SPECIFIC_EMPLOYEE',
+        assignedEmployees: empId,
+    });
+    if (policy) return policy;
+
+    // 2. Category policy (e.g. Permanent)
+    if (empCategory) {
+        policy = await AttendancePolicy.findOne({
+            applicableScope: 'PERMANENT',
+        });
+        if (policy) return policy;
+    }
+
+    // 3. Default or Global policy
+    policy = await AttendancePolicy.findOne({
+        $or: [{ isDefault: true }, { applicableScope: 'ALL' }],
+    }).sort({ isDefault: -1 });
+
+    // Fallback default structure
+    return policy || {
+        shiftStartTime: '09:00',
+        shiftEndTime: '17:00',
+        standardWorkHours: 8,
+        overtimeRatePerHour: 100,
+        earlyLeavePenaltyRatePerHour: 100,
+        lateArrivalPenaltyRatePerHour: 100,
+    };
+};
+
+/**
+ * Import Fingerprint Attendance Sheet & Auto-Calculate OT/Penalties using Policies
+ */
+export const importFingerprintAttendance = asyncHandler(async (req, res) => {
+    const { records } = req.body; // Array of parsed row objects from Excel/CSV
+
+    if (!records || !Array.isArray(records) || records.length === 0) {
+        res.status(400);
+        throw new Error('No attendance records provided in request');
+    }
+
+    let successCount = 0;
+    let errors = [];
+
+    for (let i = 0; i < records.length; i++) {
+        const row = records[i];
+        try {
+            const empCode = (row.employeeCode || row.empCode || row.employeeId || row.code || '').trim();
+            const empName = (row.employeeName || row.name || '').trim();
+            const rawDate = row.date || row.punchDate;
+
+            if (!empCode && !empName) {
+                errors.push(`Row ${i + 1}: Missing employee identifier`);
+                continue;
+            }
+
+            // Find employee
+            let emp = null;
+            if (empCode) {
+                emp = await Employee.findOne({
+                    $or: [
+                        { employeeCode: { $regex: `^${empCode}$`, $options: 'i' } },
+                        { nationalIdNumber: { $regex: `^${empCode}$`, $options: 'i' } }
+                    ]
+                });
+            }
+            if (!emp && empName) {
+                emp = await Employee.findOne({
+                    $or: [
+                        { fullName: { $regex: empName, $options: 'i' } },
+                        { firstName: { $regex: empName, $options: 'i' } }
+                    ]
+                });
+            }
+
+            if (!emp) {
+                errors.push(`Row ${i + 1}: Employee '${empCode || empName}' not found`);
+                continue;
+            }
+
+            // Parse Date
+            const attDate = new Date(rawDate);
+            if (isNaN(attDate.getTime())) {
+                errors.push(`Row ${i + 1}: Invalid date '${rawDate}'`);
+                continue;
+            }
+            attDate.setHours(0, 0, 0, 0);
+
+            // Parse CheckIn / CheckOut
+            let checkIn = null;
+            let checkOut = null;
+
+            if (row.checkIn) {
+                if (typeof row.checkIn === 'string' && row.checkIn.includes(':')) {
+                    const [h, m] = row.checkIn.split(':').map(Number);
+                    checkIn = new Date(attDate);
+                    checkIn.setHours(h, m, 0, 0);
+                } else {
+                    checkIn = new Date(row.checkIn);
+                }
+            }
+
+            if (row.checkOut) {
+                if (typeof row.checkOut === 'string' && row.checkOut.includes(':')) {
+                    const [h, m] = row.checkOut.split(':').map(Number);
+                    checkOut = new Date(attDate);
+                    checkOut.setHours(h, m, 0, 0);
+                } else {
+                    checkOut = new Date(row.checkOut);
+                }
+            }
+
+            // Resolve Attendance Policy
+            const policy = await resolveEmployeePolicy(emp._id, emp.employeeCategory);
+
+            // Calculate shift timestamps
+            const [sh, sm] = (policy.shiftStartTime || '09:00').split(':').map(Number);
+            const [eh, em] = (policy.shiftEndTime || '17:00').split(':').map(Number);
+
+            const shiftStart = new Date(attDate); shiftStart.setHours(sh, sm, 0, 0);
+            const shiftEnd = new Date(attDate); shiftEnd.setHours(eh, em, 0, 0);
+
+            let totalWorkedMinutes = 0;
+            let overtimeMinutes = 0;
+            let overtimeAmount = 0;
+            let lateMinutes = 0;
+            let latePenaltyAmount = 0;
+            let earlyLeaveMinutes = 0;
+            let earlyLeavePenaltyAmount = 0;
+
+            if (checkIn && checkOut) {
+                totalWorkedMinutes = Math.max(0, Math.floor((checkOut - checkIn) / 60000));
+
+                // Late arrival
+                if (checkIn > shiftStart) {
+                    lateMinutes = Math.floor((checkIn - shiftStart) / 60000);
+                    const lateHours = Math.ceil(lateMinutes / 60);
+                    latePenaltyAmount = lateHours * (policy.lateArrivalPenaltyRatePerHour || 100);
+                }
+
+                // Early leave
+                if (checkOut < shiftEnd) {
+                    earlyLeaveMinutes = Math.floor((shiftEnd - checkOut) / 60000);
+                    const earlyHours = Math.ceil(earlyLeaveMinutes / 60);
+                    earlyLeavePenaltyAmount = earlyHours * (policy.earlyLeavePenaltyRatePerHour || 100);
+                }
+
+                // Overtime
+                if (checkOut > shiftEnd) {
+                    overtimeMinutes = Math.floor((checkOut - shiftEnd) / 60000);
+                    const otHours = overtimeMinutes / 60;
+                    overtimeAmount = Math.round(otHours * (policy.overtimeRatePerHour || 100));
+                }
+            }
+
+            // Status determination
+            let status = row.status || 'present';
+            if (!checkIn && !checkOut) status = 'absent';
+
+            // Next day date threshold for lookup
+            const nextDay = new Date(attDate); nextDay.setDate(nextDay.getDate() + 1);
+
+            await Attendance.findOneAndUpdate(
+                { employeeId: emp._id, date: { $gte: attDate, $lt: nextDay } },
+                {
+                    employeeId: emp._id,
+                    employeeCode: emp.employeeCode,
+                    employeeName: emp.fullName,
+                    date: attDate,
+                    checkInTime: checkIn,
+                    checkOutTime: checkOut,
+                    totalWorkedMinutes,
+                    overtimeMinutes,
+                    overtimeAmount,
+                    lateMinutes,
+                    latePenaltyAmount,
+                    earlyLeaveMinutes,
+                    earlyLeavePenaltyAmount,
+                    status,
+                    policyId: policy._id || null,
+                    importedViaFingerprint: true,
+                    markedBy: req.user._id,
+                },
+                { upsert: true, new: true }
+            );
+
+            successCount++;
+        } catch (err) {
+            errors.push(`Row ${i + 1}: ${err.message}`);
+        }
+    }
+
+    res.json({
+        success: true,
+        message: `Successfully processed ${successCount} fingerprint attendance records`,
+        successCount,
+        errorCount: errors.length,
+        errors,
+    });
+});

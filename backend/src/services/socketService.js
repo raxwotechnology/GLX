@@ -7,6 +7,8 @@ export const initSocket = (httpServer) => {
         cors: {
             origin: function (origin, callback) {
                 const defaultOrigins = [
+                    'https://glx-raxwo.netlify.app',
+                    'https://glx-4a76.onrender.com',
                     'https://alueco.netlify.app',
                     'https://alueco.onrender.com',
                     'https://export-lanka.netlify.app',

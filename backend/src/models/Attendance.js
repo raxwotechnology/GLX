@@ -16,6 +16,12 @@ const attendanceSchema = new mongoose.Schema({
     earlyLeaveMinutes: { type: Number, default: 0 },
     overtimeMinutes: { type: Number, default: 0 },
 
+    overtimeAmount: { type: Number, default: 0 },
+    earlyLeavePenaltyAmount: { type: Number, default: 0 },
+    latePenaltyAmount: { type: Number, default: 0 },
+    policyId: { type: mongoose.Schema.Types.ObjectId, ref: 'AttendancePolicy' },
+    importedViaFingerprint: { type: Boolean, default: false },
+
     status: {
         type: String,
         default: 'present',

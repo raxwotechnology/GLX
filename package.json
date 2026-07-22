@@ -1,7 +1,7 @@
 {
-  "name": "alueco-monorepo",
+  "name": "glx-monorepo",
   "version": "1.0.0",
-  "description": "Root package.json for AluEco ERP",
+  "description": "Root package.json for GLX Industries ERP",
   "private": true,
   "scripts": {
     "install-backend": "npm install --prefix backend",

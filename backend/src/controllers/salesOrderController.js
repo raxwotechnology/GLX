@@ -31,7 +31,7 @@ export const createSalesOrder = asyncHandler(async (req, res) => {
     }
 
     // Fetch customer
-    const foundCustomer = await Customer.findById(targetCustomerId).populate('customerGroupId');
+    const foundCustomer = await Customer.findById(targetCustomerId);
     if (!foundCustomer) {
         res.status(404); throw new Error('Customer not found');
     }
@@ -120,6 +120,10 @@ export const createSalesOrder = asyncHandler(async (req, res) => {
         shippingAddress,
         shippingAddressLabel,
         salesRepId: foundCustomer.assignedSalesRep || req.user._id,
+        introducer: rest.introducer || foundCustomer.introducer,
+        introducerName: rest.introducerName || foundCustomer.introducerName || '',
+        biller: rest.biller || req.user._id,
+        billerName: rest.billerName || `${req.user?.firstName || ''} ${req.user?.lastName || ''}`.trim(),
         items: enrichedItems,
         paymentTerms: {
             type: foundCustomer.paymentTerms?.type || 'cod',
@@ -408,7 +412,7 @@ export const getSalesOrders = asyncHandler(async (req, res) => {
 
     const [orders, total] = await Promise.all([
         SalesOrder.find(filter)
-            .populate('customerId', 'displayName customerCode customerGroupId')
+            .populate('customerId', 'displayName customerCode')
             .populate('salesRepId', 'firstName lastName')
             .sort(sortObj)
             .skip(skip)

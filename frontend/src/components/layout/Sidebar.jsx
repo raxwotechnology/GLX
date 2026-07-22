@@ -8,10 +8,12 @@ import {
     ClipboardList, UserPlus, Ship, Layers, History, FileSpreadsheet,
     ChevronDown, ChevronRight, CheckSquare, ClipboardCheck, BadgeCheck,
     PackageCheck, CreditCard, Tag, Mail, Sparkles, Home, Search, Scale,
-    Plus, ArrowLeftRight, Sliders, LineChart, PieChart, TrendingUp, UserCheck
+    Plus, ArrowLeftRight, Sliders, LineChart, PieChart, TrendingUp, UserCheck,
+    MapPin, Download
 } from 'lucide-react';
 import { usePermission } from '../../hooks/usePermission';
 import { useSettings } from '../../features/settings/useSettings';
+import logo from '../../assets/logo.jpg';
 
 // ── Regular grouped menu structure ─────────────────────────────────────────
 const menuGroups = [
@@ -20,19 +22,8 @@ const menuGroups = [
         icon: LayoutDashboard,
         items: [
             { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'dashboard.view' },
-            { label: 'My Profile', icon: UserCheck, path: '/profile' },
-        ],
-    },
-    {
-        label: 'ALUECO ALUMINIUM',
-        icon: Layers,
-        items: [
-            { label: 'Alu Quotations', icon: FileText, path: '/alu/quotations', permission: 'sales.view' },
-            { label: 'Alu Scrap Inventory', icon: History, path: '/alu/scrap', permission: 'sales.view' },
-            { label: 'Production Kanban', icon: ClipboardList, path: '/alu/kanban', permission: 'sales.view' },
-            { label: '2D Visual Configurator', icon: Sparkles, path: '/alu/configurator', permission: 'sales.view' },
-            { label: 'On-Site Site Surveys', icon: Navigation, path: '/alu/surveys', permission: 'sales.view' },
-            { label: 'Alu Database', icon: Settings, path: '/alu/database', permission: 'sales.view' },
+            { label: 'Analytics', icon: BarChart3, path: '/analytics', permission: 'dashboard.view' },
+            { label: 'AI Analyzer', icon: Sparkles, path: '/ai-analyzer', permission: 'dashboard.view' },
         ],
     },
     {
@@ -48,7 +39,6 @@ const menuGroups = [
         label: 'INVENTORY & STOCK',
         icon: Boxes,
         items: [
-            { label: 'Warehouses', icon: Warehouse, path: '/warehouses', permission: 'inventory.view' },
             { label: 'Stock Overview', icon: Boxes, path: '/stock', permission: 'inventory.view' },
             { label: 'Opening Stock', icon: Plus, path: '/stock/opening', permission: 'inventory.opening' },
             { label: 'Stock Transfer', icon: ArrowLeftRight, path: '/stock/transfer', permission: 'inventory.transfer' },
@@ -62,7 +52,7 @@ const menuGroups = [
         items: [
             { label: 'Suppliers', icon: Truck, path: '/suppliers', permission: 'suppliers.view' },
             { label: 'Purchase Orders', icon: ShoppingBag, path: '/purchase-orders', permission: 'purchasing.view' },
-            { label: 'Goods Receipt Notes (GRN)', icon: PackageCheck, path: '/grns', permission: 'grn.manage' },
+            { label: 'GRN', icon: PackageCheck, path: '/grns', permission: 'grn.manage' },
             { label: 'Supplier Bills', icon: Receipt, path: '/bills', permission: 'bills.view' },
         ],
     },
@@ -70,11 +60,15 @@ const menuGroups = [
         label: 'FINANCE',
         icon: DollarSign,
         items: [
+            { label: 'Income & Expenses', icon: Wallet, path: '/finance/expenses', permission: 'payments.view' },
+            { label: 'Petty Cash', icon: DollarSign, path: '/finance/petty-cash', permission: 'payments.view' },
+            { label: 'Cheques', icon: FileSpreadsheet, path: '/finance/cheques', permission: 'payments.view' },
+            { label: 'Bank Management', icon: Building2, path: '/finance/bank-accounts', permission: 'payments.view' },
+            { label: 'Bank Transactions', icon: CreditCard, path: '/finance/bank-transactions', permission: 'payments.view' },
+            { label: 'Income Tax', icon: Scale, path: '/finance/income-tax', permission: 'payments.view' },
+            { label: 'Export Centre', icon: Download, path: '/export-centre', permission: 'dashboard.view' },
             { label: 'Customer Invoices', icon: FileText, path: '/invoices', permission: 'invoices.view' },
             { label: 'Payments', icon: Wallet, path: '/payments', permission: 'payments.view' },
-            { label: 'Cheque Ledger', icon: FileSpreadsheet, path: '/finance/cheques', permission: 'payments.view' },
-            { label: 'Bank Accounts', icon: Building2, path: '/finance/bank-accounts', permission: 'payments.view' },
-            { label: 'Petty Cash', icon: DollarSign, path: '/finance/petty-cash', permission: 'payments.view' },
             { label: 'Capital Expenditure (CapEx)', icon: Tag, path: '/finance/fixed-assets', permission: 'payments.view' },
             { label: 'Credit Notes', icon: FileMinus, path: '/credit-notes', permission: 'credit_notes.view' },
         ],
@@ -84,11 +78,8 @@ const menuGroups = [
         icon: ShoppingCart,
         items: [
             { label: 'Customers', icon: UserCircle, path: '/customers', permission: 'customers.view' },
-            { label: 'Customer Groups', icon: Tags, path: '/customer-groups', permission: 'customers.view' },
-            { label: 'Sales Inquiries', icon: UserPlus, path: '/crm/inquiries', permission: 'customers.view' },
             { label: 'Quotations', icon: FileText, path: '/crm/quotations', permission: 'sales.view' },
             { label: 'Sales Orders', icon: ShoppingCart, path: '/sales-orders', permission: 'sales.view' },
-            { label: 'Sales Pipeline', icon: TrendingUp, path: '/crm/inquiries', permission: 'customers.view' },
             { label: 'POS', icon: Calculator, path: '/pos', permission: 'pos.access' },
             { label: 'Customer Returns', icon: RotateCcw, path: '/returns', permission: 'returns.view' },
             { label: 'Supplier Returns', icon: RotateCcw, path: '/supplier-returns', permission: 'supplier_returns.view' },
@@ -96,34 +87,24 @@ const menuGroups = [
             { label: 'Repairs', icon: Wrench, path: '/repairs', permission: 'repairs.view' },
         ],
     },
+
     {
-        label: 'LOGISTICS & TRANSPORT',
-        icon: Truck,
-        items: [
-            { label: 'Shipment Tracking', icon: Ship, path: '/logistics/shipments', permission: 'inventory.view' },
-            { label: 'Export Logistics', icon: Warehouse, path: '/warehouses', permission: 'inventory.view' },
-            { label: 'Gate Pass Management', icon: ShieldCheck, path: '/logistics/gate-passes', permission: 'inventory.view' },
-            { label: 'Gate Screen', icon: ShieldCheck, path: '/gate-screen', permission: 'inventory.view' },
-            { label: 'Vehicle Management', icon: Truck, path: '/fleet/vehicles', permission: 'inventory.view' },
-            { label: 'Trip Logs', icon: Navigation, path: '/fleet/trips', permission: 'inventory.view' },
-            { label: 'Vehicle Maintenance', icon: Wrench, path: '/maintenance/requests', permission: 'admin.settings' },
-        ],
-    },
-    {
-        label: 'HR & PAYROLL',
+        label: 'HUMAN RESOURCES',
         icon: UsersIcon,
         items: [
             { label: 'Employees', icon: UsersIcon, path: '/employees', permission: 'hr.employees.view' },
+            { label: 'Attendance', icon: CalendarIcon, path: '/attendance', permission: 'hr.attendance.view' },
+            { label: 'Leave Management', icon: Plane, path: '/leaves', permission: 'hr.leaves.view' },
+            { label: 'Policy Management', icon: Clock, path: '/attendance-policies', permission: 'hr.attendance.view' },
+            { label: 'Payroll', icon: DollarSign, path: '/payroll', permission: 'hr.payroll.view' },
+            { label: 'EPF / ETF', icon: Calculator, path: '/hr/epf-etf', permission: 'hr.payroll.view' },
             { label: 'Departments', icon: Building2, path: '/departments', permission: 'hr.employees.view' },
             { label: 'Designations', icon: Award, path: '/designations', permission: 'hr.employees.view' },
             { label: 'Shifts', icon: Clock, path: '/shifts', permission: 'hr.employees.view' },
-            { label: 'Attendance', icon: CalendarIcon, path: '/attendance', permission: 'hr.attendance.view' },
             { label: 'Employee of Month', icon: Award, path: '/employees/month', permission: 'hr.employees.view' },
-            { label: 'Leave Requests', icon: Plane, path: '/leaves', permission: 'hr.leaves.view' },
             { label: 'Leave Structures', icon: CalendarIcon, path: '/leave-structures', permission: 'hr.leaves.view' },
             { label: 'Holidays', icon: CalendarIcon, path: '/holidays', permission: 'hr.employees.view' },
             { label: 'Salary Structures', icon: Calculator, path: '/salary-structures', permission: 'hr.salary.view' },
-            { label: 'Payroll', icon: DollarSign, path: '/payroll', permission: 'hr.payroll.view' },
         ],
     },
     {
@@ -160,6 +141,7 @@ const menuGroups = [
             { label: 'Data Import', icon: Upload, path: '/import', permission: 'admin.settings' },
             { label: 'Audit Logs', icon: History, path: '/audit-logs', permission: 'view_audit_logs' },
             { label: 'SMS Logs', icon: Mail, path: '/audit-logs/sms', permission: 'view_audit_logs' },
+            { label: 'My Profile', icon: UserCheck, path: '/profile' },
             { label: 'Settings', icon: Settings, path: '/settings', permission: 'admin.settings' },
         ],
     },
@@ -175,7 +157,7 @@ const approvalCategories = [
         description: 'GRN Quality & Quantity',
         items: [
             { label: 'Purchase Orders', icon: ShoppingBag, path: '/purchase-orders', permission: 'purchasing.view' },
-            { label: 'Goods Receipts (GRN)', icon: ClipboardCheck, path: '/bills', permission: 'bills.view' },
+            { label: 'GRNs', icon: ClipboardCheck, path: '/bills', permission: 'bills.view' },
             { label: 'Supplier Returns', icon: RotateCcw, path: '/supplier-returns', permission: 'supplier_returns.view' },
         ],
     },
@@ -519,16 +501,18 @@ export default function Sidebar({ isOpen, onClose }) {
                                     alt="Logo"
                                 />
                             ) : (
-                                <div className="w-9 h-9 bg-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <Package className="w-5 h-5 text-white" />
-                                </div>
+                                <img
+                                    src={logo}
+                                    className="w-9 h-9 object-contain rounded-lg flex-shrink-0 border border-slate-800 p-0.5 bg-slate-900"
+                                    alt="Logo"
+                                />
                             )}
                             <div>
-                                <h2 className="font-extrabold text-white leading-none truncate max-w-[145px]" title={settings?.companyName || 'ALUECO'}>
-                                    {settings?.companyName || 'ALUECO'}
+                                <h2 className="font-extrabold text-white leading-none truncate max-w-[145px]" title={settings?.companyName || 'GLX Industries'}>
+                                    {settings?.companyName || 'GLX Industries'}
                                 </h2>
-                                <p className="text-[10px] text-slate-500 mt-1 truncate max-w-[145px]" title="ALUMINIUM SYSTEMS">
-                                    ALUMINIUM SYSTEMS
+                                <p className="text-[10px] text-slate-500 mt-1 truncate max-w-[145px]" title="TRUCK BODY ENGINEERS">
+                                    TRUCK BODY ENGINEERS
                                 </p>
                             </div>
                         </div>

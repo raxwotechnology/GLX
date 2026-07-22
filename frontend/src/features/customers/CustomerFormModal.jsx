@@ -9,7 +9,8 @@ import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Textarea from '../../components/ui/Textarea';
 import { customerFormSchema } from './customerSchemas';
-import { useCustomerGroups, useCreateCustomer, useUpdateCustomer } from './useCustomers';
+import { useCreateCustomer, useUpdateCustomer } from './useCustomers';
+import { useEmployees } from '../hr/useHr';
 import { useQuery } from '@tanstack/react-query';
 import { usersApi } from '../users/usersApi';
 
@@ -35,7 +36,7 @@ export default function CustomerFormModal({ isOpen, onClose, customer = null }) 
     const [activeTab, setActiveTab] = useState('basic');
     const isEdit = !!customer;
 
-    const { data: groupsData } = useCustomerGroups();
+    const { data: employeesData } = useEmployees({ limit: 200 });
     const { data: usersData } = useQuery({
         queryKey: ['users', 'sales_reps'],
         queryFn: () => usersApi.list({ role: 'sales_rep', isActive: true }),
@@ -88,7 +89,6 @@ export default function CustomerFormModal({ isOpen, onClose, customer = null }) 
                 displayName: customer.displayName || '',
                 firstName: customer.firstName || '',
                 lastName: customer.lastName || '',
-                customerGroupId: customer.customerGroupId?._id || customer.customerGroupId || '',
                 taxRegistrationNumber: customer.taxRegistrationNumber || '',
                 businessRegistrationNumber: customer.businessRegistrationNumber || '',
                 industry: customer.industry || '',
@@ -99,6 +99,8 @@ export default function CustomerFormModal({ isOpen, onClose, customer = null }) 
                     : [{ ...emptyAddress, isDefault: true }],
                 contacts: customer.contacts || [],
                 assignedSalesRep: customer.assignedSalesRep?._id || customer.assignedSalesRep || '',
+                introducer: customer.introducer?._id || customer.introducer || '',
+                introducerName: customer.introducerName || '',
                 paymentTermsType: customer.paymentTerms?.type || 'cod',
                 creditDays: customer.paymentTerms?.creditDays || 0,
                 creditLimit: customer.paymentTerms?.creditLimit || 0,
@@ -118,12 +120,18 @@ export default function CustomerFormModal({ isOpen, onClose, customer = null }) 
                 shippingAddresses: [{ ...emptyAddress, isDefault: true }],
                 contacts: [],
                 billingAddress: { ...emptyAddress, isDefault: true },
+                introducer: '',
+                introducerName: '',
             });
         }
         setActiveTab('basic');
     }, [isOpen, customer, reset]);
 
     const onSubmit = async (data) => {
+        const empList = employeesData?.data || [];
+        const selEmp = empList.find(e => e._id === data.introducer);
+        const introducerName = selEmp ? `${selEmp.firstName} ${selEmp.lastName || ''}`.trim() : (data.introducerName || undefined);
+
         const payload = {
             customerType: data.customerType,
             businessType: data.businessType,
@@ -131,7 +139,6 @@ export default function CustomerFormModal({ isOpen, onClose, customer = null }) 
             displayName: data.displayName,
             firstName: data.firstName || undefined,
             lastName: data.lastName || undefined,
-            customerGroupId: data.customerGroupId || undefined,
             taxRegistrationNumber: data.taxRegistrationNumber || undefined,
             businessRegistrationNumber: data.businessRegistrationNumber || undefined,
             industry: data.industry || undefined,
@@ -140,6 +147,8 @@ export default function CustomerFormModal({ isOpen, onClose, customer = null }) 
             shippingAddresses: data.shippingAddresses?.filter((a) => a.line1),
             contacts: data.contacts?.filter((c) => c.name),
             assignedSalesRep: data.assignedSalesRep || undefined,
+            introducer: data.introducer || undefined,
+            introducerName,
             paymentTerms: {
                 type: data.paymentTermsType,
                 creditDays: data.creditDays || 0,
@@ -160,13 +169,13 @@ export default function CustomerFormModal({ isOpen, onClose, customer = null }) 
         } catch { }
     };
 
-    const groupOptions = (groupsData?.data || []).map((g) => ({
-        value: g._id,
-        label: `${g.name} (${g.code})`,
-    }));
     const repOptions = (usersData?.data || []).map((u) => ({
         value: u._id,
         label: `${u.firstName} ${u.lastName}`,
+    }));
+    const introducerOptions = (employeesData?.data || []).map((e) => ({
+        value: e._id,
+        label: `${e.firstName} ${e.lastName || ''} (${e.employeeCode || e.callingName || 'Staff'})`,
     }));
 
     const isLoading = createMutation.isPending || updateMutation.isPending;
@@ -255,13 +264,7 @@ export default function CustomerFormModal({ isOpen, onClose, customer = null }) 
 
                             <Input label="Industry" {...register('industry')} />
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <Select
-                                    label="Customer Group"
-                                    placeholder="-- No group --"
-                                    options={groupOptions}
-                                    {...register('customerGroupId')}
-                                />
+                            <div className="grid grid-cols-1">
                                 <Select
                                     label="Assigned Sales Rep"
                                     placeholder="-- Unassigned --"
@@ -269,6 +272,13 @@ export default function CustomerFormModal({ isOpen, onClose, customer = null }) 
                                     {...register('assignedSalesRep')}
                                 />
                             </div>
+
+                            <Select
+                                label="Introducer (Staff / Agent)"
+                                placeholder="-- Select Introducer Employee --"
+                                options={introducerOptions}
+                                {...register('introducer')}
+                            />
 
                             <Select
                                 label="Status" required

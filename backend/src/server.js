@@ -17,7 +17,6 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import brandRoutes from './routes/brandRoutes.js';
 import uomRoutes from './routes/uomRoutes.js';
 import productRoutes from './routes/productRoutes.js';
-import customerGroupRoutes from './routes/customerGroupRoutes.js';
 import customerRoutes from './routes/customerRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import salesOrderRoutes from './routes/salesOrderRoutes.js';
@@ -38,8 +37,6 @@ import supplierReturnRoutes from './routes/supplierReturnRoutes.js';
 import repairRoutes from './routes/repairRoutes.js';
 import hrRoutes from './routes/hrRoutes.js';
 import payrollRoutes from './routes/payrollRoutes.js';
-import farmRoutes from './routes/farmRoutes.js';
-import farmHarvestRoutes from './routes/farmHarvestRoutes.js';
 import inventoryRecipeRoutes from './routes/inventoryRecipeRoutes.js';
 
 import reportsRoutes from './routes/reportsRoutes.js';
@@ -56,15 +53,13 @@ import crmRoutes from './routes/crmRoutes.js';
 import exportShipmentRoutes from './routes/exportShipmentRoutes.js';
 import pettyCashRoutes from './routes/pettyCashRoutes.js';
 import fixedAssetRoutes from './routes/fixedAssetRoutes.js';
-import fleetRoutes from './routes/fleetRoutes.js';
-import maintenanceRoutes from './routes/maintenanceRoutes.js';
 import bankAccountRoutes from './routes/bankAccountRoutes.js';
 import machineRoutes from './routes/machineRoutes.js';
 import { initSocket } from './services/socketService.js';
 import './services/autoBackupService.js'; // Initialize automated backup listener
 import { initCertificationAlerts } from './services/certificationAlertService.js';
 import gatePassRoutes from './routes/gatePassRoutes.js';
-import aluRoutes from './routes/aluRoutes.js';
+import expenseRoutes from './routes/expenseRoutes.js';
 
 import { seedDefaults } from './utils/seedDefaults.js';
 
@@ -100,6 +95,8 @@ app.use(helmet());
 app.use(cors({
     origin: function (origin, callback) {
         const defaultOrigins = [
+            'https://glx-raxwo.netlify.app',
+            'https://glx-4a76.onrender.com',
             'https://alueco.netlify.app',
             'https://alueco.onrender.com',
             'https://export-lanka.netlify.app',
@@ -142,7 +139,6 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/uoms', uomRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/customer-groups', customerGroupRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sales-orders', salesOrderRoutes);
@@ -151,8 +147,6 @@ app.use('/api/stock', stockRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/purchase-orders', purchaseOrderRoutes);
 app.use('/api/grns', grnRoutes);
-app.use('/api/farms', farmRoutes);
-app.use('/api/farm-harvests', farmHarvestRoutes);
 app.use('/api/inventory-recipes', inventoryRecipeRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/bills', billRoutes);
@@ -178,18 +172,16 @@ app.use('/api/production-batches', productionBatchRoutes);
 app.use('/api/qc', qcRoutes);
 app.use('/api/crm', crmRoutes);
 app.use('/api/export-shipments', exportShipmentRoutes);
-app.use('/api/finance/petty-cash', pettyCashRoutes);
+app.use('/api/petty-cash', pettyCashRoutes);
+app.use('/api/expenses', expenseRoutes);
 app.use('/api/finance/fixed-assets', fixedAssetRoutes);
 app.use('/api/finance/bank-accounts', bankAccountRoutes);
-app.use('/api/fleet', fleetRoutes);
-app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/production/machines', machineRoutes);
-app.use('/api/gate-passes', gatePassRoutes);
-app.use('/api/alu', aluRoutes);
+
 
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get(['/', '/api/health'], (req, res) => {
     res.json({
         success: true,
         message: 'Server is running',

@@ -6,7 +6,6 @@ import ProductsPage from './pages/ProductsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import BrandsPage from './pages/BrandsPage';
 import CustomersPage from './pages/CustomersPage';
-import CustomerGroupsPage from './pages/CustomerGroupsPage';
 import SalesOrdersPage from './pages/SalesOrdersPage';
 import SalesOrderFormPage from './pages/SalesOrderFormPage';
 import SalesOrderDetailPage from './pages/SalesOrderDetailPage';
@@ -15,7 +14,6 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 import AuditLogPage from './pages/AuditLogPage';
 import SmsLogsPage from './pages/SmsLogsPage';
-import WarehousesPage from './pages/WarehousesPage';
 import StockPage from './pages/StockPage';
 import OpeningStockPage from './pages/OpeningStockPage';
 import StockTransferPage from './pages/StockTransferPage';
@@ -25,8 +23,6 @@ import SuppliersPage from './pages/SuppliersPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import PurchaseOrderFormPage from './pages/PurchaseOrderFormPage';
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage';
-import FarmsPage from './pages/FarmsPage';
-import FarmHarvestsPage from './pages/FarmHarvestsPage';
 import GrnsPage from './pages/GrnsPage';
 import RawMaterialsPage from './pages/RawMaterialsPage';
 import InventoryConverterPage from './pages/InventoryConverterPage';
@@ -53,24 +49,10 @@ import ProductionOrderDetailPage from './pages/ProductionOrderDetailPage';
 import BatchesPage from './pages/BatchesPage';
 import ProcessTemplatesPage from './pages/ProcessTemplatesPage';
 import MachinesPage from './pages/MachinesPage';
-import InquiriesPage from './pages/InquiriesPage';
 import QuotationsPage from './pages/QuotationsPage';
-import AluQuotationsPage from './pages/AluQuotationsPage';
-import AluQuotationFormPage from './pages/AluQuotationFormPage';
-import AluQuotationDetailPage from './pages/AluQuotationDetailPage';
-import AluDatabasePage from './pages/AluDatabasePage';
-import AluScrapPage from './pages/AluScrapPage';
-import AluKanbanPage from './pages/AluKanbanPage';
-import AluConfiguratorPage from './pages/AluConfiguratorPage';
-import AluSurveyPage from './pages/AluSurveyPage';
-import ShipmentsPage from './pages/ShipmentsPage';
 import PettyCashPage from './pages/PettyCashPage';
 import FixedAssetsPage from './pages/FixedAssetsPage';
-import FleetPage from './pages/FleetPage';
-import GatePassPage from './pages/GatePassPage';
-import GateScreenPage from './pages/GateScreenPage';
 import EmployeeOfMonthPage from './pages/EmployeeOfMonthPage';
-import MaintenancePage from './pages/MaintenancePage';
 import UsersPage from './pages/UsersPage';
 import RolesPage from './pages/RolesPage';
 import ProfilePage from './pages/ProfilePage';
@@ -88,6 +70,16 @@ import RepairsPage from './pages/RepairsPage';
 import RepairDetailPage from './pages/RepairDetailPage';
 import DailyPnLPage from './pages/DailyPnLPage';
 import PosPage from './pages/PosPage';
+
+import AnalyticsPage from './pages/AnalyticsPage';
+import AIAnalyzerPage from './pages/AIAnalyzerPage';
+import EpfEtfPage from './pages/EpfEtfPage';
+import BankTransactionsPage from './pages/BankTransactionsPage';
+import IncomeTaxPage from './pages/IncomeTaxPage';
+import ExportCentrePage from './pages/ExportCentrePage';
+
+import ExpensesPage from './pages/ExpensesPage';
+import AttendancePoliciesPage from './pages/AttendancePoliciesPage';
 
 import EmployeesPage from './pages/EmployeesPage';
 import EmployeeFormPage from './pages/EmployeeFormPage';
@@ -145,11 +137,9 @@ function App() {
         <Route path="/categories" element={<ProtectedRoute requiredPermission="products.view"><CategoriesPage /></ProtectedRoute>} />
         <Route path="/brands" element={<ProtectedRoute requiredPermission="products.view"><BrandsPage /></ProtectedRoute>} />
         <Route path="/customers" element={<ProtectedRoute requiredPermission="customers.view"><CustomersPage /></ProtectedRoute>} />
-        <Route path="/customer-groups" element={<ProtectedRoute requiredPermission="customers.view"><CustomerGroupsPage /></ProtectedRoute>} />
         <Route path="/sales-orders" element={<ProtectedRoute requiredPermission="sales.view"><SalesOrdersPage /></ProtectedRoute>} />
         <Route path="/sales-orders/new" element={<ProtectedRoute requiredPermission="sales.create"><SalesOrderFormPage /></ProtectedRoute>} />
         <Route path="/sales-orders/:id" element={<ProtectedRoute requiredPermission="sales.view"><SalesOrderDetailPage /></ProtectedRoute>} />
-        <Route path="/warehouses" element={<ProtectedRoute requiredPermission="inventory.view"><WarehousesPage /></ProtectedRoute>} />
         <Route path="/stock" element={<ProtectedRoute requiredPermission="inventory.view"><StockPage /></ProtectedRoute>} />
         <Route path="/stock/opening" element={<ProtectedRoute requiredPermission="inventory.opening"><OpeningStockPage /></ProtectedRoute>} />
         <Route path="/stock/transfer" element={<ProtectedRoute requiredPermission="inventory.transfer"><StockTransferPage /></ProtectedRoute>} />
@@ -159,8 +149,6 @@ function App() {
         <Route path="/purchase-orders" element={<ProtectedRoute requiredPermission="purchasing.view"><PurchaseOrdersPage /></ProtectedRoute>} />
         <Route path="/purchase-orders/new" element={<ProtectedRoute requiredPermission="purchasing.view"><PurchaseOrderFormPage /></ProtectedRoute>} />
         <Route path="/purchase-orders/:id" element={<ProtectedRoute requiredPermission="purchasing.view"><PurchaseOrderDetailPage /></ProtectedRoute>} />
-        <Route path="/farms" element={<ProtectedRoute requiredPermission="grn.manage"><FarmsPage /></ProtectedRoute>} />
-        <Route path="/farms/harvests" element={<ProtectedRoute requiredPermission="grn.manage"><FarmHarvestsPage /></ProtectedRoute>} />
         <Route path="/grns" element={<ProtectedRoute requiredPermission="grn.manage"><GrnsPage /></ProtectedRoute>} />
         <Route path="/inventory/raw-materials" element={<ProtectedRoute requiredPermission="inventory.view"><RawMaterialsPage /></ProtectedRoute>} />
         <Route path="/inventory/converter" element={<ProtectedRoute requiredPermission="inventory.adjust"><InventoryConverterPage /></ProtectedRoute>} />
@@ -191,28 +179,14 @@ function App() {
         <Route path="/manufacturing/templates" element={<ProtectedRoute requiredPermission="production.view"><ProcessTemplatesPage /></ProtectedRoute>} />
         <Route path="/manufacturing/machines" element={<ProtectedRoute requiredPermission="production.view"><MachinesPage /></ProtectedRoute>} />
 
-        <Route path="/crm/inquiries" element={<ProtectedRoute requiredPermission="customers.view"><InquiriesPage /></ProtectedRoute>} />
         <Route path="/crm/quotations" element={<ProtectedRoute requiredPermission="sales.view"><QuotationsPage /></ProtectedRoute>} />
         
-        {/* ALUECO Aluminium System Routes */}
-        <Route path="/alu/quotations" element={<ProtectedRoute requiredPermission="sales.view"><AluQuotationsPage /></ProtectedRoute>} />
-        <Route path="/alu/quotations/new" element={<ProtectedRoute requiredPermission="sales.view"><AluQuotationFormPage /></ProtectedRoute>} />
-        <Route path="/alu/quotations/:id" element={<ProtectedRoute requiredPermission="sales.view"><AluQuotationDetailPage /></ProtectedRoute>} />
-        <Route path="/alu/quotations/:id/edit" element={<ProtectedRoute requiredPermission="sales.view"><AluQuotationFormPage /></ProtectedRoute>} />
-        <Route path="/alu/database" element={<ProtectedRoute requiredPermission="sales.view"><AluDatabasePage /></ProtectedRoute>} />
-        <Route path="/alu/scrap" element={<ProtectedRoute requiredPermission="sales.view"><AluScrapPage /></ProtectedRoute>} />
-        <Route path="/alu/kanban" element={<ProtectedRoute requiredPermission="sales.view"><AluKanbanPage /></ProtectedRoute>} />
-        <Route path="/alu/configurator" element={<ProtectedRoute requiredPermission="sales.view"><AluConfiguratorPage /></ProtectedRoute>} />
-        <Route path="/alu/surveys" element={<ProtectedRoute requiredPermission="sales.view"><AluSurveyPage /></ProtectedRoute>} />
 
-        <Route path="/logistics/shipments" element={<ProtectedRoute requiredPermission="inventory.view"><ShipmentsPage /></ProtectedRoute>} />
-        <Route path="/logistics/gate-passes" element={<ProtectedRoute requiredPermission="inventory.view"><GatePassPage /></ProtectedRoute>} />
 
         <Route path="/finance/petty-cash" element={<ProtectedRoute requiredPermission="payments.view"><PettyCashPage /></ProtectedRoute>} />
+        <Route path="/finance/expenses" element={<ProtectedRoute requiredPermission="payments.view"><ExpensesPage /></ProtectedRoute>} />
         <Route path="/finance/fixed-assets" element={<ProtectedRoute requiredPermission="payments.view"><FixedAssetsPage /></ProtectedRoute>} />
-        <Route path="/fleet/vehicles" element={<ProtectedRoute requiredPermission="inventory.view"><FleetPage defaultView="vehicles" /></ProtectedRoute>} />
-        <Route path="/fleet/trips" element={<ProtectedRoute requiredPermission="inventory.view"><FleetPage defaultView="history" /></ProtectedRoute>} />
-        <Route path="/maintenance/requests" element={<ProtectedRoute requiredPermission="admin.settings"><MaintenancePage /></ProtectedRoute>} />
+
 
         <Route path="/returns" element={<ProtectedRoute requiredPermission="returns.view"><ReturnsPage /></ProtectedRoute>} />
         <Route path="/returns/new" element={<ProtectedRoute requiredPermission="returns.manage"><ReturnFormPage /></ProtectedRoute>} />
@@ -237,6 +211,7 @@ function App() {
         <Route path="/designations" element={<ProtectedRoute requiredPermission="hr.employees.view" excludeRoles={['employee']}><DesignationsPage /></ProtectedRoute>} />
         <Route path="/shifts" element={<ProtectedRoute requiredPermission="hr.employees.view" excludeRoles={['employee']}><ShiftsPage /></ProtectedRoute>} />
         <Route path="/attendance" element={<ProtectedRoute requiredPermission="hr.attendance.view" excludeRoles={['employee']}><AttendancePage /></ProtectedRoute>} />
+        <Route path="/attendance-policies" element={<ProtectedRoute requiredPermission="hr.attendance.view" excludeRoles={['employee']}><AttendancePoliciesPage /></ProtectedRoute>} />
         <Route path="/employees/month" element={<ProtectedRoute requiredPermission="hr.employees.view" excludeRoles={['employee']}><EmployeeOfMonthPage /></ProtectedRoute>} />
         <Route path="/leaves" element={<ProtectedRoute requiredPermission="hr.leaves.view" excludeRoles={['employee']}><LeaveRequestsPage /></ProtectedRoute>} />
         <Route path="/holidays" element={<ProtectedRoute requiredPermission="hr.employees.view" excludeRoles={['employee']}><HolidaysPage /></ProtectedRoute>} />
@@ -275,10 +250,19 @@ function App() {
         <Route path="/audit-logs" element={<ProtectedRoute requiredPermission="view_audit_logs"><AuditLogPage /></ProtectedRoute>} />
         <Route path="/audit-logs/sms" element={<ProtectedRoute requiredPermission="view_audit_logs"><SmsLogsPage /></ProtectedRoute>} />
 
+        {/* Added sidebar routes */}
+        <Route path="/analytics" element={<ProtectedRoute requiredPermission="dashboard.view"><AnalyticsPage /></ProtectedRoute>} />
+        <Route path="/ai-analyzer" element={<ProtectedRoute requiredPermission="dashboard.view"><AIAnalyzerPage /></ProtectedRoute>} />
+        <Route path="/hr/epf-etf" element={<ProtectedRoute requiredPermission="hr.payroll.view" excludeRoles={['employee']}><EpfEtfPage /></ProtectedRoute>} />
+        <Route path="/finance/bank-transactions" element={<ProtectedRoute requiredPermission="payments.view"><BankTransactionsPage /></ProtectedRoute>} />
+        <Route path="/finance/income-tax" element={<ProtectedRoute requiredPermission="payments.view"><IncomeTaxPage /></ProtectedRoute>} />
+        <Route path="/export-centre" element={<ProtectedRoute requiredPermission="dashboard.view"><ExportCentrePage /></ProtectedRoute>} />
+
+
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 
-      <Route path="/gate-screen" element={<GateScreenPage />} />
+
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

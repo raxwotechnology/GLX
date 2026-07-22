@@ -14,13 +14,14 @@ async function run() {
             settings = new Settings();
         }
 
-        settings.companyName = 'ALUECO Aluminium Systems';
+        settings.companyName = 'GLX Industries';
         settings.companyAddress = 'No. 123, Negoda Road, Weliweriya, Sri Lanka';
         settings.companyPhone = '0777 140 680';
-        settings.companyEmail = 'info@alueco.lk';
+        settings.companyEmail = 'info@glxindustries.lk';
+        settings.companyLogo = '/logo.jpg';
         
         await settings.save();
-        console.log('✓ System branding settings updated to ALUECO Aluminium Systems!');
+        console.log('✓ System branding settings updated to GLX Industries!');
     } catch (error) {
         console.error(error);
     } finally {

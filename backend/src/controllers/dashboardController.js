@@ -10,7 +10,6 @@ import Bill from '../models/Bill.js';
 import ProductionOrder from '../models/ProductionOrder.js';
 import CustomerReturn from '../models/CustomerReturn.js';
 import BankAccount from '../models/BankAccount.js';
-import Inquiry from '../models/Inquiry.js';
 import Attendance from '../models/Attendance.js';
 import Payroll from '../models/Payroll.js';
 import GoodsReceiptNote from '../models/GoodsReceiptNote.js';
@@ -401,14 +400,7 @@ export const getDepartmentDashboardMetrics = asyncHandler(async (req, res) => {
     })).sort((a, b) => b.amount - a.amount);
 
     // 4. Sales
-    const funnelStages = await Inquiry.aggregate([
-        { $match: { deletedAt: null } },
-        { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
-    const pipelineFunnel = funnelStages.map(s => ({
-        stage: s._id,
-        count: s.count
-    }));
+    const pipelineFunnel = [];
 
     const topProducts = await SalesOrder.aggregate([
         {

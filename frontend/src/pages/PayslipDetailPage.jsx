@@ -1,5 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer } from 'lucide-react';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -15,6 +17,27 @@ export default function PayslipDetailPage() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
     const { data } = usePayslip(payrollId, employeeId);
+
+    useEffect(() => {
+        if (user?.role === 'employee') {
+            const handleKeyDown = (e) => {
+                if ((e.ctrlKey && e.key === 'p') || e.key === 'PrintScreen') {
+                    e.preventDefault();
+                    toast.error('Printing and screenshots are restricted for employees');
+                }
+            };
+            const handleContextMenu = (e) => {
+                e.preventDefault();
+                toast.error('Copy actions are disabled on this document');
+            };
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('contextmenu', handleContextMenu);
+            return () => {
+                window.removeEventListener('keydown', handleKeyDown);
+                window.removeEventListener('contextmenu', handleContextMenu);
+            };
+        }
+    }, [user]);
 
     const d = data?.data;
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 2 }).format(n || 0);
@@ -37,13 +60,30 @@ export default function PayslipDetailPage() {
                         }}>
                             <ArrowLeft size={16} className="mr-1.5" /> Back
                         </Button>
-                        <Button variant="outline" onClick={() => window.print()}>
-                            <Printer size={16} className="mr-1.5" /> Print
-                        </Button>
+                        {user?.role !== 'employee' && (
+                            <Button variant="outline" onClick={() => window.print()}>
+                                <Printer size={16} className="mr-1.5" /> Print
+                            </Button>
+                        )}
                     </div>
                 } />
 
-            <Card className="p-8 max-w-3xl">
+            {user?.role === 'employee' && (
+                <style dangerouslySetInnerHTML={{ __html: `
+                    @media print {
+                        body {
+                            display: none !important;
+                        }
+                    }
+                    .select-none {
+                        user-select: none !important;
+                        -webkit-user-select: none !important;
+                        -moz-user-select: none !important;
+                        -ms-user-select: none !important;
+                    }
+                `}} />
+            )}
+            <Card className={`p-8 max-w-3xl ${user?.role === 'employee' ? 'select-none' : ''}`}>
                 <div className="border-b pb-4 mb-4 flex justify-between">
                     <div>
                         <h2 className="text-xl font-bold">PAYSLIP</h2>

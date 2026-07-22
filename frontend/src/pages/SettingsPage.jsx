@@ -85,7 +85,7 @@ export default function SettingsPage() {
     const { register, handleSubmit, reset, formState: { errors } } = useForm({
         resolver: zodResolver(settingsSchema),
         defaultValues: {
-            companyName: 'ALUECO Aluminium Systems',
+            companyName: 'GLX Industries',
             currency: 'LKR',
             currencySymbol: 'Rs.',
             defaultTaxRate: 0,
@@ -183,8 +183,8 @@ export default function SettingsPage() {
                         <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-3">
                             <Building2 size={18} className="text-emerald-500" />
                         </div>
-                        <p className="text-xs font-bold text-gray-800">ALUECO</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">Aluminium Systems</p>
+                        <p className="text-xs font-bold text-gray-800">GLX Industries</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Truck Body Engineers</p>
                         <div className="mt-3 pt-3 border-t border-gray-100">
                             <p className="text-[10px] text-gray-400">v1.0.0 · ERP Platform</p>
                         </div>
@@ -222,7 +222,7 @@ export default function SettingsPage() {
                                             label="Email Address"
                                             icon={Mail}
                                             type="email"
-                                            placeholder="info@alueco.lk"
+                                            placeholder="info@glxindustries.lk"
                                             error={errors.companyEmail?.message}
                                             registration={register('companyEmail')}
                                         />

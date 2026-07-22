@@ -6,7 +6,6 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import { useCreateCustomer } from './useCustomers';
-import { useCustomerGroups } from './useCustomers';
 
 /**
  * Lightweight modal to quickly create a customer with minimum required fields.
@@ -16,7 +15,6 @@ export default function QuickCreateCustomerModal({ isOpen, onClose, onCreated })
     const [form, setForm] = useState({
         displayName: '',
         legalName: '',
-        customerGroupId: '',
         phone: '',
         email: '',
         addressLine1: '',
@@ -27,8 +25,6 @@ export default function QuickCreateCustomerModal({ isOpen, onClose, onCreated })
     });
 
     const createMutation = useCreateCustomer();
-    const { data: groupsData } = useCustomerGroups({ isActive: 'true' });
-    const groups = groupsData?.data || [];
 
     const submit = async () => {
         if (!form.displayName) { toast.error('Customer name required'); return; }
@@ -38,7 +34,6 @@ export default function QuickCreateCustomerModal({ isOpen, onClose, onCreated })
             const result = await createMutation.mutateAsync({
                 displayName: form.displayName,
                 legalName: form.legalName || form.displayName,
-                customerGroupId: form.customerGroupId || undefined,
                 primaryContact: {
                     name: form.displayName,
                     phone: form.phone || undefined,
@@ -59,7 +54,7 @@ export default function QuickCreateCustomerModal({ isOpen, onClose, onCreated })
 
             // Reset and close
             setForm({
-                displayName: '', legalName: '', customerGroupId: '',
+                displayName: '', legalName: '',
                 phone: '', email: '', addressLine1: '', city: '',
                 paymentTermsType: 'cash', creditLimit: 0, creditDays: 0,
             });
@@ -85,10 +80,7 @@ export default function QuickCreateCustomerModal({ isOpen, onClose, onCreated })
                     value={form.legalName}
                     onChange={(e) => setForm((f) => ({ ...f, legalName: e.target.value }))} />
 
-                <Select label="Customer Group" placeholder="None"
-                    options={groups.map((g) => ({ value: g._id, label: g.name }))}
-                    value={form.customerGroupId}
-                    onChange={(e) => setForm((f) => ({ ...f, customerGroupId: e.target.value }))} />
+
 
                 <div className="grid grid-cols-2 gap-3">
                     <Input label="Phone" placeholder="+94 71 XXX XXXX"

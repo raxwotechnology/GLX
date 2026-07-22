@@ -51,6 +51,38 @@ const invoiceSchema = new mongoose.Schema({
     convertedToCommercial:  { type: mongoose.Schema.Types.ObjectId, ref: 'Invoice' },
     paymentReceivedDate:    { type: Date }, // Date TT/LC confirmed
 
+    // Source Document reference (if converted from quotation or estimate)
+    sourceDocumentType: { type: String, enum: ['quotation', 'estimate', 'sales_order', 'direct'] },
+    sourceDocumentId: { type: mongoose.Schema.Types.ObjectId },
+    sourceDocumentCode: { type: String },
+
+    // Vehicle & Body engineering metadata
+    insuranceCompany: { type: String, default: '' },
+    vehicleOwner: { type: String, default: '' },
+    vehicleNo: { type: String, default: '' },
+    vehicleModel: { type: String, default: '' },
+    jobCaption: { type: String, default: '' },
+    salesRep: { type: String, default: '' },
+    introducer: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
+    introducerName: { type: String, default: '' },
+    biller: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    billerName: { type: String, default: '' },
+    branch: { type: String, default: 'JA-ELA' },
+
+    // Photo Attachments (Number Plate photo & Lorry Body photo)
+    numberPlateImage: { type: String, default: '' },
+    lorryBodyImage: { type: String, default: '' },
+
+    // RMB Outside Body Dimensions & Warranty
+    bodyDimensions: {
+        length: { type: String, default: '' },
+        width: { type: String, default: '' },
+        height: { type: String, default: '' }
+    },
+    specifications: [{ type: String }],
+    warrantyInfo: { type: String, default: '' },
+    paymentConditions: [{ type: String }],
+
     // Parties
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: false },
     customerSnapshot: {

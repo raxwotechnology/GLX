@@ -101,6 +101,10 @@ const salesOrderSchema = new mongoose.Schema(
         shippingAddressLabel: { type: String, trim: true },
 
         salesRepId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        introducer: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
+        introducerName: { type: String, default: '' },
+        biller: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        billerName: { type: String, default: '' },
 
         // Dates
         orderDate: { type: Date, default: Date.now },

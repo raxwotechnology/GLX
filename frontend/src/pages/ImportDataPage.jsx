@@ -18,6 +18,7 @@ const IMPORT_MODULES = [
     { value: 'petty-cash', label: 'Petty Cash Expenses (DHY)' },
     { value: 'production', label: 'Production Batches (DHY)' },
     { value: 'pnl', label: 'Daily P&L Performance (DHY)' },
+    { value: 'attendance', label: 'Fingerprint Attendance Log (Excel/CSV)' },
 ];
 
 export default function ImportDataPage() {
@@ -41,6 +42,10 @@ export default function ImportDataPage() {
     }, [viewMode, selectedModule]);
 
     const fetchLiveData = async () => {
+        if (selectedModule === 'attendance') {
+            setLiveData([]);
+            return;
+        }
         setIsLoadingData(true);
         try {
             const response = await api.get(`/sync/${selectedModule}`);
@@ -88,19 +93,54 @@ export default function ImportDataPage() {
 
     const handleConfirmImport = async () => {
         if (!file) return;
-        const formData = new FormData();
-        formData.append('file', file);
         setIsUploading(true);
         try {
-            await api.post(`/import/${selectedModule}`, formData);
-            toast.success('Data Imported and Synchronized');
-            setIsPreviewOpen(false);
-            setFile(null);
-            setViewMode('sync');
-            fetchLiveData();
+            if (selectedModule === 'attendance') {
+                const reader = new FileReader();
+                reader.onload = async (evt) => {
+                    try {
+                        const bstr = evt.target.result;
+                        const workbook = XLSX.read(bstr, { type: 'binary' });
+                        const wsname = workbook.SheetNames[0];
+                        const ws = workbook.Sheets[wsname];
+                        const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+                        if (json.length === 0) {
+                            toast.error('The uploaded sheet is empty.');
+                            setIsUploading(false);
+                            return;
+                        }
+
+                        const res = await api.post('/hr/attendance/import-fingerprint', { records: json });
+                        if (res.data.success) {
+                            toast.success(res.data.message);
+                            setIsPreviewOpen(false);
+                            setFile(null);
+                            setViewMode('sync');
+                            fetchLiveData();
+                        } else {
+                            toast.error(res.data.message || 'Biometric import failed');
+                        }
+                    } catch (err) {
+                        toast.error('Failed to parse fingerprint file. Check format.');
+                    } finally {
+                        setIsUploading(false);
+                    }
+                };
+                reader.readAsBinaryString(file);
+            } else {
+                const formData = new FormData();
+                formData.append('file', file);
+                await api.post(`/import/${selectedModule}`, formData);
+                toast.success('Data Imported and Synchronized');
+                setIsPreviewOpen(false);
+                setFile(null);
+                setViewMode('sync');
+                fetchLiveData();
+                setIsUploading(false);
+            }
         } catch (err) {
             toast.error('Import failed');
-        } finally {
             setIsUploading(false);
         }
     };
@@ -165,13 +205,15 @@ export default function ImportDataPage() {
                                     <span className="text-xs font-bold text-gray-900">Connected to Database</span>
                                 </div>
                             </div>
-                            <Button
-                                variant="primary"
-                                className="w-full py-4 rounded-2xl shadow-xl shadow-primary-200 font-black uppercase text-[10px] tracking-widest"
-                                onClick={handleExport}
-                            >
-                                <Download size={16} className="mr-2" /> Sync to Excel
-                            </Button>
+                            {selectedModule !== 'attendance' && (
+                                <Button
+                                    variant="primary"
+                                    className="w-full py-4 rounded-2xl shadow-xl shadow-primary-200 font-black uppercase text-[10px] tracking-widest"
+                                    onClick={handleExport}
+                                >
+                                    <Download size={16} className="mr-2" /> Sync to Excel
+                                </Button>
+                            )}
                         </div>
                     </Card>
                 </div>
@@ -195,6 +237,17 @@ export default function ImportDataPage() {
                                 {isLoadingData ? (
                                     <div className="flex items-center justify-center h-full">
                                         <Loader2 size={40} className="animate-spin text-primary-200" />
+                                    </div>
+                                ) : selectedModule === 'attendance' ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-indigo-50/20 rounded-2xl border border-indigo-100/50 space-y-4">
+                                        <CheckCircle2 className="w-16 h-16 text-indigo-600 animate-bounce" />
+                                        <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Biometric Attendance Importer</h3>
+                                        <p className="text-sm text-slate-600 max-w-md tracking-tight leading-relaxed">
+                                            Fingerprint logs imported via this panel automatically parse punch cards, assign shifts, calculate overtime pay, apply late/early-departure deductions, and mark unpaid leave wages.
+                                        </p>
+                                        <p className="text-xs text-indigo-600 font-bold bg-indigo-50 px-3 py-1.5 rounded-full">
+                                            Manage attendance logs under the HR &gt; Attendance page.
+                                        </p>
                                     </div>
                                 ) : (
                                     <EditableDataGrid

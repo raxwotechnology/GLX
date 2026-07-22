@@ -26,23 +26,6 @@ const contactSchema = z.object({
     notes: z.string().optional(),
 });
 
-export const createCustomerGroupSchema = z.object({
-    name: z.string().min(1).max(100),
-    code: z.string().min(1).max(20),
-    description: z.string().max(500).optional(),
-    defaultPaymentTerms: z.object({
-        type: z.enum(['advance', 'cod', 'credit']).optional(),
-        creditDays: z.number().min(0).optional(),
-        defaultCreditLimit: z.number().min(0).optional(),
-    }).optional(),
-    defaultDiscountPercent: z.number().min(0).max(100).optional(),
-    priority: z.number().optional(),
-    color: z.string().optional(),
-    isActive: z.boolean().optional(),
-});
-
-export const updateCustomerGroupSchema = createCustomerGroupSchema.partial();
-
 export const createCustomerSchema = z.object({
     customerType: z.enum(['company', 'individual']).optional(),
     businessType: z.enum(['wholesaler', 'retailer', 'distributor', 'reseller', 'end_user', 'other']).optional(),
@@ -52,7 +35,6 @@ export const createCustomerSchema = z.object({
     firstName: z.string().optional(),
     lastName: z.string().optional(),
 
-    customerGroupId: objectId.optional().or(z.literal('')),
     tags: z.array(z.string()).optional(),
 
     businessRegistrationNumber: z.string().optional(),

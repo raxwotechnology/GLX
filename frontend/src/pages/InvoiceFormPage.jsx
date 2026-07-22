@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, ArrowLeft, Save } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Save, Image as ImageIcon, X } from 'lucide-react';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -14,19 +14,27 @@ import Textarea from '../components/ui/Textarea';
 import { customersApi } from '../features/customers/customersApi';
 import { productsApi } from '../features/products/productsApi';
 import { useCreateInvoice } from '../features/invoices/useInvoices';
+import api from '../api/axios';
 
 export default function InvoiceFormPage() {
     const navigate = useNavigate();
     const createMutation = useCreateInvoice();
 
-    const [customerId, setCustomerId] = useState('');
-    const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
-    const [dueDate, setDueDate] = useState('');
-    const [invoiceType, setInvoiceType] = useState('standard');
-    const [notes, setNotes] = useState('');
-    const [paymentInstructions, setPaymentInstructions] = useState('');
-    const [shippingCost, setShippingCost] = useState(0);
-    const [items, setItems] = useState([{ productName: '', quantity: 1, unitPrice: 0, taxRate: 18, taxable: true }]);
+     const [customerId, setCustomerId] = useState('');
+     const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
+     const [dueDate, setDueDate] = useState('');
+     const [invoiceType, setInvoiceType] = useState('standard');
+     const [notes, setNotes] = useState('');
+     const [paymentInstructions, setPaymentInstructions] = useState('');
+     const [shippingCost, setShippingCost] = useState(0);
+     const [items, setItems] = useState([{ productName: '', quantity: 1, unitPrice: 0, taxRate: 18, taxable: true }]);
+ 
+     const [introducer, setIntroducer] = useState('');
+     const [introducerName, setIntroducerName] = useState('');
+     const [biller, setBiller] = useState('');
+     const [billerName, setBillerName] = useState('');
+     const [numberPlateImage, setNumberPlateImage] = useState('');
+     const [lorryBodyImage, setLorryBodyImage] = useState('');
 
     const { data: customersData } = useQuery({
         queryKey: ['customers', 'active'],
@@ -35,6 +43,20 @@ export default function InvoiceFormPage() {
     const { data: productsData } = useQuery({
         queryKey: ['products', 'active'],
         queryFn: () => productsApi.list({ status: 'active', limit: 500 }),
+    });
+    const { data: employeesData } = useQuery({
+        queryKey: ['employees', 'active'],
+        queryFn: async () => {
+            const { data } = await api.get('/hr/employees?limit=500&status=active');
+            return data.data || [];
+        }
+    });
+    const { data: usersData } = useQuery({
+        queryKey: ['users'],
+        queryFn: async () => {
+            const { data } = await api.get('/users?limit=500');
+            return data.data || [];
+        }
     });
 
     const customerOptions = (customersData?.data || []).map((c) => ({
@@ -94,6 +116,12 @@ export default function InvoiceFormPage() {
                 invoiceType,
                 invoiceDate,
                 dueDate: dueDate || undefined,
+                introducer: introducer || undefined,
+                introducerName: introducerName || undefined,
+                biller: biller || undefined,
+                billerName: billerName || undefined,
+                numberPlateImage: numberPlateImage || undefined,
+                lorryBodyImage: lorryBodyImage || undefined,
                 items: items.map((i) => ({
                     productId: i.productId || undefined,
                     productCode: i.productCode || undefined,
@@ -127,7 +155,18 @@ export default function InvoiceFormPage() {
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Customer & Dates</h3>
                         <div className="space-y-4">
                             <Select label="Customer" required placeholder="Select customer..."
-                                options={customerOptions} value={customerId} onChange={(e) => setCustomerId(e.target.value)} />
+                                options={customerOptions} value={customerId} onChange={(e) => {
+                                    const custId = e.target.value;
+                                    setCustomerId(custId);
+                                    const cust = (customersData?.data || []).find((c) => c._id === custId);
+                                    if (cust && cust.introducer) {
+                                        setIntroducer(cust.introducer);
+                                        setIntroducerName(cust.introducerName || '');
+                                    } else {
+                                        setIntroducer('');
+                                        setIntroducerName('');
+                                    }
+                                }} />
                             <div className="grid grid-cols-3 gap-4">
                                 <Input label="Invoice Date" type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
                                 <Input label="Due Date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
@@ -138,6 +177,102 @@ export default function InvoiceFormPage() {
                                         { value: 'service', label: 'Service' },
                                     ]}
                                     value={invoiceType} onChange={(e) => setInvoiceType(e.target.value)} />
+                            </div>
+
+                            {/* Introducer and Biller dropdowns */}
+                            <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Introducer (Employee)</label>
+                                    <select
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                        value={introducer || ''}
+                                        onChange={(e) => {
+                                            const empId = e.target.value;
+                                            const emp = (employeesData || []).find(x => x._id === empId);
+                                            setIntroducer(empId);
+                                            setIntroducerName(emp ? `${emp.firstName} ${emp.lastName}` : '');
+                                        }}
+                                    >
+                                        <option value="">-- Select Introducer --</option>
+                                        {(employeesData || []).map(emp => (
+                                            <option key={emp._id} value={emp._id}>{emp.firstName} {emp.lastName} ({emp.employeeCode})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Biller (User)</label>
+                                    <select
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                        value={biller || ''}
+                                        onChange={(e) => {
+                                            const userId = e.target.value;
+                                            const usr = (usersData || []).find(x => x._id === userId);
+                                            setBiller(userId);
+                                            setBillerName(usr ? `${usr.firstName} ${usr.lastName}` : '');
+                                        }}
+                                    >
+                                        <option value="">-- Select Biller --</option>
+                                        {(usersData || []).map(u => (
+                                            <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Image uploads for Number Plate & Lorry Body */}
+                    <Card className="p-6">
+                        <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-1.5">
+                            <ImageIcon size={16} /> Photo Attachments (Displayed on Print & PDF)
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Number Plate Photo */}
+                            <div className="bg-slate-50 p-3 rounded-lg border border-gray-200 space-y-2">
+                                <label className="block text-xs font-bold text-gray-700 uppercase">Number Plate Photo</label>
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    className="text-xs text-gray-500 w-full file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            const r = new FileReader();
+                                            r.onloadend = () => setNumberPlateImage(r.result);
+                                            r.readAsDataURL(file);
+                                        }
+                                    }}
+                                />
+                                {numberPlateImage && (
+                                    <div className="relative border rounded p-1 bg-white">
+                                        <img src={numberPlateImage} alt="Plate Preview" className="h-24 object-contain mx-auto" />
+                                        <button type="button" onClick={() => setNumberPlateImage('')} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5"><X size={12} /></button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Lorry Body Photo */}
+                            <div className="bg-slate-50 p-3 rounded-lg border border-gray-200 space-y-2">
+                                <label className="block text-xs font-bold text-gray-700 uppercase">Lorry Body Photo</label>
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    className="text-xs text-gray-500 w-full file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            const r = new FileReader();
+                                            r.onloadend = () => setLorryBodyImage(r.result);
+                                            r.readAsDataURL(file);
+                                        }
+                                    }}
+                                />
+                                {lorryBodyImage && (
+                                    <div className="relative border rounded p-1 bg-white">
+                                        <img src={lorryBodyImage} alt="Body Preview" className="h-24 object-contain mx-auto" />
+                                        <button type="button" onClick={() => setLorryBodyImage('')} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5"><X size={12} /></button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </Card>

@@ -82,6 +82,11 @@ const productSchema = new mongoose.Schema(
             required: false,
             min: 0,
         },
+        minPrice: {
+            type: Number,
+            min: 0,
+            default: 0,
+        },
         mrp: {
             type: Number,
             min: 0,

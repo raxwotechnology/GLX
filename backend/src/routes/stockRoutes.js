@@ -3,7 +3,7 @@ import {
     getStockItems, getStockByProduct, getStockMovements,
     createOpeningStock, transferStock, adjustStock,
     getReservations, convertStock, convertStockBom, convertStockRecipe,
-    releaseStock, updateStockItem, deleteStockItem,
+    releaseStock, updateStockItem, deleteStockItem, recordInternalConsumption,
 } from '../controllers/stockController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
@@ -23,6 +23,7 @@ router.post('/convert', requirePermission('inventory.adjust'), convertStock);
 router.post('/convert-bom', requirePermission('inventory.adjust'), convertStockBom);
 router.post('/convert-recipe', requirePermission('inventory.adjust'), convertStockRecipe);
 router.post('/release', requirePermission('inventory.adjust'), releaseStock);
+router.post('/internal-consumption', requirePermission('inventory.adjust'), recordInternalConsumption);
 
 router.put('/:id', requirePermission('inventory.adjust'), updateStockItem);
 router.delete('/:id', requirePermission('inventory.adjust'), deleteStockItem);

@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import StockItem from '../models/StockItem.js';
 import StockMovement from '../models/StockMovement.js';
 import StockReservation from '../models/StockReservation.js';
+import PettyCash from '../models/PettyCash.js';
+import { syncPettyCashToPnL } from './pettyCashController.js';
 import {
     increaseStock, decreaseStock,
 } from '../services/stockService.js';
@@ -904,4 +906,102 @@ export const deleteStockItem = asyncHandler(async (req, res) => {
 
     await StockItem.deleteOne({ _id: req.params.id });
     res.json({ success: true, message: 'Stock item deleted successfully' });
+});
+
+/**
+ * @desc    Record Internal Stock Consumption (Company Expense)
+ *          Deducts stock items for internal use (e.g. rivets, aluminum profiles for lorry body building)
+ *          Calculates total expense and automatically logs an approved Petty Cash / Expense record.
+ * @route   POST /api/stock/internal-consumption
+ * @access  Private
+ */
+export const recordInternalConsumption = asyncHandler(async (req, res) => {
+    const { warehouseId, items, category = 'Row materials', description = 'Internal Stock Consumption / Body Building', notes = '' } = req.body;
+
+    if (!warehouseId) {
+        res.status(400);
+        throw new Error('Warehouse ID is required');
+    }
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        res.status(400);
+        throw new Error('Items array is required');
+    }
+
+    let totalExpenseAmount = 0;
+    let totalQuantityUsed = 0;
+    const movements = [];
+    const itemDetails = [];
+
+    for (const item of items) {
+        const { productId, quantity, costPerUnit, batchNumber } = item;
+        const qty = Number(quantity);
+        if (!productId || isNaN(qty) || qty <= 0) {
+            continue;
+        }
+
+        // Decrease stock using decreaseStock service
+        const { stockItem, movement } = await decreaseStock({
+            productId,
+            warehouseId,
+            quantity: qty,
+            movementType: 'internal_consumption',
+            batchNumber: batchNumber || null,
+            reason: `Internal Usage: ${description}`,
+            notes: notes || '',
+            userId: req.user?._id,
+            allowNegative: false,
+        });
+
+        const unitCost = Number(costPerUnit) > 0 ? Number(costPerUnit) : (stockItem.costPerUnit || 0);
+        const itemTotalCost = +(qty * unitCost).toFixed(2);
+
+        totalExpenseAmount += itemTotalCost;
+        totalQuantityUsed += qty;
+        movements.push(movement);
+        itemDetails.push({
+            productId,
+            productCode: stockItem.productCode,
+            productName: stockItem.productName,
+            quantity: qty,
+            costPerUnit: unitCost,
+            totalCost: itemTotalCost,
+        });
+    }
+
+    totalExpenseAmount = +totalExpenseAmount.toFixed(2);
+
+    // Automatically create approved PettyCash expense entry
+    let pettyCashEntry = null;
+    if (totalExpenseAmount > 0) {
+        const summaryItemText = itemDetails.map(i => `${i.productName} (${i.quantity} @ Rs ${i.costPerUnit})`).join(', ');
+
+        pettyCashEntry = await PettyCash.create({
+            date: new Date(),
+            item: `${description}: ${summaryItemText.substring(0, 150)}`,
+            supplier: 'Internal Stock / Warehouse',
+            amount: totalExpenseAmount,
+            category: category,
+            transactionType: 'expense',
+            status: 'approved',
+            rawMaterial_nos: totalQuantityUsed,
+            rawMaterial_cost: totalExpenseAmount,
+            createdBy: req.user?._id,
+        });
+
+        // Trigger PnL sync so this expense instantly reflects in DailyPnL & Financial Balance
+        await syncPettyCashToPnL(pettyCashEntry.date);
+    }
+
+    res.status(201).json({
+        success: true,
+        message: 'Internal stock consumption recorded and logged as company expense successfully',
+        data: {
+            totalExpenseAmount,
+            totalQuantityUsed,
+            itemDetails,
+            movements,
+            pettyCashEntry,
+        },
+    });
 });
