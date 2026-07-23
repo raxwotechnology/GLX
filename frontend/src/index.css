@@ -10,23 +10,36 @@ body {
 
 /* Print styles */
 @media print {
+  body {
+    font-family: Calibri, 'Segoe UI', Arial, sans-serif !important;
+  }
+
   body * {
     visibility: hidden;
   }
 
   .print-container,
-  .print-container * {
+  .print-container *,
+  .print-page,
+  .print-page * {
     visibility: visible;
   }
 
-  .print-container {
+  .print-container,
+  .print-page {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     margin: 0;
-    padding: 20mm;
     box-shadow: none;
+  }
+
+  .print-page {
+    page-break-after: always;
+    position: relative;
+    display: block;
+    margin-bottom: 20mm;
   }
 
   /* Hide app shell when printing */
@@ -36,7 +49,7 @@ body {
 
   @page {
     size: A4 portrait;
-    margin: 0;
+    margin: 10mm;
   }
 }
 

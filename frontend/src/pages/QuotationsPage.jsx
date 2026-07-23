@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
 import { format } from 'date-fns';
 import {
-    Plus, FileText, Trash2,
+    Plus, FileText, Trash2, Send,
     MapPin, Clock, X, ShoppingCart, Edit, Eye, Download, Search, Image as ImageIcon, Printer, CheckCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -12,6 +12,8 @@ import Button from '../components/ui/Button';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { useSettings } from '../features/settings/useSettings';
 import DocumentPrintView from '../components/print/DocumentPrintView';
+import ShareDocumentSmsModal from '../components/ShareDocumentSmsModal';
+import { translateText, detectLanguage } from '../utils/translationService';
 
 const formatDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -38,6 +40,7 @@ const QuotationsPage = () => {
     const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [shareModalOpen, setShareModalOpen] = useState(false);
     const [previewQuote, setPreviewQuote] = useState(null);
     const [editing, setEditing] = useState(null);
     const [deleting, setDeleting] = useState(null);
@@ -70,7 +73,7 @@ const QuotationsPage = () => {
         specifications: ['Non Rivet White Color Body', 'Japan Model Original Corner Set Bar', 'Rear 2 Doors (Waterproof Board)', 'Rear Gutter & Footboard'],
         warrantyInfo: '10 Years For Body Structure, 10 Years Full Body Waterproofing, 03 Years For All Doors.',
         status: 'draft',
-        items: [{ product: '', productName: '', quantity: 1, unitPrice: 0, subtotal: 0 }],
+        items: [{ product: '', productName: '', productTranslation: '', quantity: 1, unitPrice: 0, subtotal: 0 }],
         totalAmount: 0, 
         discount: 0,
         tax: 0,
@@ -166,6 +169,28 @@ const QuotationsPage = () => {
         const newItems = formData.items.filter((_, i) => i !== index);
         const { subtotal, grandTotal } = calculateTotals(newItems, formData.discount, formData.tax);
         setFormData({ ...formData, items: newItems, totalAmount: subtotal, grandTotal });
+    };
+
+    
+    const handleTranslate = async (index) => {
+        const item = formData.items[index];
+        const text = item.productName || '';
+        if (!text.trim()) return;
+        try {
+            const detected = detectLanguage(text);
+            if (detected === 'si' || detected === 'ta') {
+                const translated = await translateText(text, 'en');
+                handleItemChange(index, 'productName', translated);
+                handleItemChange(index, 'productTranslation', text);
+                toast.success('Translated Sinhala/Tamil to English!');
+            } else {
+                const translated = await translateText(text, 'si');
+                handleItemChange(index, 'productTranslation', translated);
+                toast.success('Translated English to Sinhala!');
+            }
+        } catch (err) {
+            toast.error('Translation failed: ' + err.message);
+        }
     };
 
     const openForm = (quote = null, defaultType = 'quotation') => {
@@ -777,14 +802,30 @@ const QuotationsPage = () => {
                         {formData.items.map((item, index) => (
                             <div key={index} className="grid grid-cols-12 gap-3 items-end bg-gray-50/80 p-2.5 rounded-xl relative border border-gray-200">
                                 <div className="col-span-12 md:col-span-6 space-y-1">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Item Description</label>
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Item Description</label>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => handleTranslate(index)} 
+                                            className="text-[10px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-0.5 bg-blue-50 px-2 py-0.5 rounded"
+                                        >
+                                            Translate
+                                        </button>
+                                    </div>
                                     <input 
                                         type="text" 
                                         required
-                                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white"
+                                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white font-calibri"
                                         placeholder="e.g. Set Bar Corner (21 feet) / Labour Charges / Paint Works"
                                         value={item.productName}
                                         onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
+                                    />
+                                    <input 
+                                        type="text" 
+                                        className="w-full px-3 py-1 border border-dashed border-gray-300 rounded-lg text-xs bg-slate-50 text-blue-700 mt-1 font-calibri"
+                                        placeholder="Translation (Sinhala/Tamil)"
+                                        value={item.productTranslation || ''}
+                                        onChange={(e) => handleItemChange(index, 'productTranslation', e.target.value)}
                                     />
                                 </div>
 
@@ -846,6 +887,15 @@ const QuotationsPage = () => {
                 </form>
             </Modal>
 
+            {previewQuote && (
+                <ShareDocumentSmsModal
+                    isOpen={shareModalOpen}
+                    onClose={() => setShareModalOpen(false)}
+                    documentId={previewQuote._id}
+                    documentType={previewQuote.documentType || 'quotation'}
+                    defaultPhone={previewQuote.customerPhone || ''}
+                />
+            )}
             {/* A4 Print & QR Preview Modal */}
             <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} title={`${previewQuote?.documentType === 'estimate' ? 'Estimate' : 'Quotation'} Printable View & QR Code`} size="xl">
                 {previewQuote && (
@@ -859,6 +909,9 @@ const QuotationsPage = () => {
                             <div className="flex gap-2">
                                 <Button variant="outline" onClick={handlePrintDocument}>
                                     <Printer size={16} className="mr-1.5" /> Print Document
+                                </Button>
+                                <Button variant="outline" onClick={() => setShareModalOpen(true)}>
+                                    <Send size={16} className="mr-1.5" /> Share SMS
                                 </Button>
                                 {previewQuote.status !== 'converted' && (
                                     <Button variant="primary" className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => handleConvertToInvoice(previewQuote._id)}>

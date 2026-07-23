@@ -1,3 +1,4 @@
+import path from 'path';
 import mongoose from 'mongoose';
 import SmsLog from '../models/SmsLog.js';
 import Supplier from '../models/Supplier.js';
@@ -241,5 +242,172 @@ export const sendGrnCreationSms = async (grn) => {
         return log;
     } catch (error) {
         console.error('[SMS Service] Failed to send/log GRN Creation SMS:', error.message);
+    }
+};
+
+/**
+ * Share a public document link via SMS and send a duplicate copy to the manager.
+ */
+export const sendPublicDocumentSms = async (doc, clientPhone, documentType, hostOrigin) => {
+    try {
+        const token = doc.publicToken;
+        const link = `${hostOrigin}/public/documents/${token}`;
+        const docCode = doc.quotationCode || doc.invoiceNumber || doc._id.toString();
+        const clientName = doc.customerName || doc.vehicleOwner || 'Valued Customer';
+        
+        const message = `Dear ${clientName}, here is the link to view your GLX Industries ${documentType} (${docCode}): ${link}`;
+        
+        // Send SMS to client
+        let formattedContact = formatSmsContact(clientPhone);
+        let status = 'sent';
+        
+        const { SMS_USER_ID, SMS_API_KEY, SMS_SENDER_ID, SMS_GATEWAY_URL } = process.env;
+        
+        if (SMS_USER_ID && SMS_API_KEY && SMS_SENDER_ID && SMS_GATEWAY_URL && formattedContact) {
+            console.log(`[SMS Gateway] Dispatched Document Link SMS to: ${formattedContact}`);
+            try {
+                const response = await fetch(SMS_GATEWAY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: SMS_USER_ID,
+                        api_key: SMS_API_KEY,
+                        sender_id: SMS_SENDER_ID,
+                        contact: formattedContact,
+                        message: message
+                    })
+                });
+                const data = await response.json();
+                if (response.status !== 200 || !data.success) {
+                    status = 'failed';
+                }
+            } catch (err) {
+                status = 'failed';
+            }
+        } else {
+            console.log(`[SMS Gateway Simulated Document Link] To: ${clientPhone} | Msg: ${message}`);
+        }
+        
+        // Log original SMS
+        await SmsLog.create({
+            supplierName: clientName,
+            supplierPhone: clientPhone,
+            message: message,
+            status: status
+        });
+
+        // Send duplicate copy to Manager
+        const Settings = mongoose.model('Settings');
+        const settings = await Settings.findOne();
+        if (settings && settings.managerSmsPhone) {
+            let managerContact = formatSmsContact(settings.managerSmsPhone);
+            const managerMsg = `[Manager Copy] Document link sent to ${clientPhone} (${clientName}): ${link}`;
+            
+            if (SMS_USER_ID && SMS_API_KEY && SMS_SENDER_ID && SMS_GATEWAY_URL && managerContact) {
+                console.log(`[SMS Gateway] Duplicate Copy sent to Manager: ${managerContact}`);
+                await fetch(SMS_GATEWAY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: SMS_USER_ID,
+                        api_key: SMS_API_KEY,
+                        sender_id: SMS_SENDER_ID,
+                        contact: managerContact,
+                        message: managerMsg
+                    })
+                }).catch(err => console.error('[SMS Service] Manager copy failed:', err.message));
+            } else {
+                console.log(`[SMS Gateway Simulated Manager Duplicate] To: ${settings.managerSmsPhone} | Msg: ${managerMsg}`);
+            }
+        }
+        
+    } catch (err) {
+        console.error('[SMS Service] Failed to send document share SMS:', err.message);
+    }
+};
+
+/**
+ * PDF Auto-backup: Generates a raw PDF copy and saves it locally.
+ */
+export const backupDocumentAsPdf = async (doc, docType) => {
+    try {
+        const dir = path.resolve('backend/backups/pdfs');
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        const docCode = doc.quotationCode || doc.invoiceNumber || doc._id.toString();
+        const filename = `${docType}_${docCode.replace(/[\\/:*?"<>|]/g, '_')}.pdf`;
+        const dest = path.join(dir, filename);
+        
+        const content = `%PDF-1.4
+%âãÏÓ
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/Resources <<
+/Font <<
+/F1 <<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+>>
+>>
+/MediaBox [0 0 595 842]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<< /Length 500 >>
+stream
+BT
+/F1 12 Tf
+70 800 Td
+(GLX INDUSTRIES - ${docType.toUpperCase()} BACKUP) Tj
+70 780 Td
+(Document Code: ${docCode}) Tj
+70 760 Td
+(Date: ${new Date(doc.createdAt || Date.now()).toLocaleDateString('en-GB')}) Tj
+70 740 Td
+(Customer: ${doc.customerName || doc.customerSnapshot?.name || 'Valued Customer'}) Tj
+70 720 Td
+(Total Amount: LKR ${doc.grandTotal || doc.totalAmount || 0}) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000015 00000 n 
+0000000074 00000 n 
+0000000134 00000 n 
+0000000300 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+450
+%%EOF`;
+        
+        fs.writeFileSync(dest, content, 'utf8');
+        console.log(`✓ Backup PDF successfully saved: ${dest}`);
+    } catch (err) {
+        console.error('[Backup Service] Failed to create PDF backup:', err.message);
     }
 };

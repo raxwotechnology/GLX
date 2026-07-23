@@ -228,6 +228,7 @@ export const createSalesOrder = asyncHandler(async (req, res) => {
                     productId: orderItem.productId,
                     productCode: orderItem.productCode,
                     productName: orderItem.productName,
+                    productTranslation: orderItem.productTranslation,
                     description: orderItem.description,
                     quantity: orderItem.orderedQuantity,
                     unitOfMeasure: orderItem.unitOfMeasure,

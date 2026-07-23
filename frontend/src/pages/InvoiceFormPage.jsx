@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { Plus, Trash2, ArrowLeft, Save, Image as ImageIcon, X } from 'lucide-react';
 
 import PageHeader from '../components/ui/PageHeader';
+import { translateText, detectLanguage } from '../utils/translationService';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
@@ -126,6 +127,7 @@ export default function InvoiceFormPage() {
                     productId: i.productId || undefined,
                     productCode: i.productCode || undefined,
                     productName: i.productName,
+                    productTranslation: i.productTranslation || undefined,
                     quantity: +i.quantity,
                     unitOfMeasure: i.unitOfMeasure || undefined,
                     unitPrice: +i.unitPrice,

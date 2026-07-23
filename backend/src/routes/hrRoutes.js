@@ -10,6 +10,7 @@ import {
     createSalaryStructure, getSalaryStructures, updateSalaryStructure, deleteSalaryStructure,
     createLeaveStructure, getLeaveStructures, updateLeaveStructure, deleteLeaveStructure, getMyEmployeeProfile,
     createAttendancePolicy, getAttendancePolicies, updateAttendancePolicy, deleteAttendancePolicy, importFingerprintAttendance,
+    getEmployeePaymentSheet, createSalaryAdvance, getSalaryAdvances,
 } from '../controllers/hrController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission, requireAnyPermission } from '../middleware/permissionMiddleware.js';
@@ -191,5 +192,14 @@ router.get('/employee-of-month', requirePermission('hr.employees.view'), async (
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+
+// ── Salary Advances & Payment Sheets
+router.route('/employees/:id/payment-sheet')
+    .get(requirePermission('hr.employees.view'), getEmployeePaymentSheet);
+
+router.route('/employees/:id/advances')
+    .get(requirePermission('hr.employees.view'), getSalaryAdvances)
+    .post(requirePermission('hr.employees.manage'), createSalaryAdvance);
 
 export default router;

@@ -95,6 +95,8 @@ import LeaveStructuresPage from './pages/LeaveStructuresPage';
 import PayrollsPage from './pages/PayrollsPage';
 import PayrollDetailPage from './pages/PayrollDetailPage';
 import PayslipDetailPage from './pages/PayslipDetailPage';
+import EmployeePaymentSheetPage from './pages/EmployeePaymentSheetPage';
+import PublicDocumentViewPage from './pages/PublicDocumentViewPage';
 
 import ReportsPage from './pages/ReportsPage';
 import SalesSummaryReportPage from './pages/reports/SalesSummaryReportPage';
@@ -123,6 +125,7 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <Route path="/public/documents/:token" element={<PublicDocumentViewPage />} />
 
       <Route
         element={
@@ -206,6 +209,7 @@ function App() {
         <Route path="/employees" element={<ProtectedRoute requiredPermission="hr.employees.view" excludeRoles={['employee']}><EmployeesPage /></ProtectedRoute>} />
         <Route path="/employees/new" element={<ProtectedRoute requiredPermission="hr.employees.manage" excludeRoles={['employee']}><EmployeeFormPage /></ProtectedRoute>} />
         <Route path="/employees/:id" element={<ProtectedRoute requiredPermission="hr.employees.view" excludeRoles={['employee']}><EmployeeDetailPage /></ProtectedRoute>} />
+        <Route path="/employees/:id/payment-sheet" element={<ProtectedRoute requiredPermission="hr.employees.view" excludeRoles={['employee']}><EmployeePaymentSheetPage /></ProtectedRoute>} />
         <Route path="/employees/:id/edit" element={<ProtectedRoute requiredPermission="hr.employees.manage" excludeRoles={['employee']}><EmployeeFormPage /></ProtectedRoute>} />
         <Route path="/departments" element={<ProtectedRoute requiredPermission="hr.employees.view" excludeRoles={['employee']}><DepartmentsPage /></ProtectedRoute>} />
         <Route path="/designations" element={<ProtectedRoute requiredPermission="hr.employees.view" excludeRoles={['employee']}><DesignationsPage /></ProtectedRoute>} />

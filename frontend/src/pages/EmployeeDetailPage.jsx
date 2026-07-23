@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Mail, Phone, MapPin, CreditCard, User, Briefcase } from 'lucide-react';
+import { ArrowLeft, Edit, Mail, Phone, MapPin, CreditCard, User, Briefcase, FileText } from 'lucide-react';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';

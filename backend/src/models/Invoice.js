@@ -11,6 +11,7 @@ const invoiceLineItemSchema = new mongoose.Schema({
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
     productCode: String,
     productName: String,
+    productTranslation: String,
     description: String,
 
     quantity: { type: Number, required: false, min: 0.01 },
@@ -37,6 +38,7 @@ const invoiceLineItemSchema = new mongoose.Schema({
 
 const invoiceSchema = new mongoose.Schema({
     invoiceNumber: { type: String, unique: true, trim: true, uppercase: true },
+    publicToken: { type: String, default: () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) },
 
     invoiceType: {
         type: String,

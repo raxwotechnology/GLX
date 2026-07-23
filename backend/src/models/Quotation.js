@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const quotationSchema = new mongoose.Schema({
     documentType: { type: String, enum: ['quotation', 'estimate'], default: 'quotation' },
+    publicToken: { type: String, default: () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) },
     quotationCode: { type: String, unique: true },
     quoteNumber: { type: String },
     // customerId can reference either Customer or be provided as a string name
@@ -42,6 +43,7 @@ const quotationSchema = new mongoose.Schema({
     items: [{
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', set: v => v === '' || !v ? undefined : v },
         productName: { type: String },
+        productTranslation: { type: String },
         description: { type: String },
         quantity: { type: Number, default: 1 },
         unitPrice: { type: Number, default: 0 },

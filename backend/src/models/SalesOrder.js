@@ -25,7 +25,8 @@ const lineItemSchema = new mongoose.Schema(
             required: false,
         },
         productCode: { type: String, trim: true }, // denormalized
-        productName: { type: String, trim: true }, // denormalized
+        productName: { type: String, trim: true },
+        productTranslation: { type: String, trim: true }, // denormalized
         description: { type: String, trim: true },
 
         orderedQuantity: { type: Number, required: false, min: 0.01 },

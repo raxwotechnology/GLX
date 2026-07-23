@@ -21,6 +21,7 @@ const settingsSchema = z.object({
     currencySymbol: z.string().min(1, 'Symbol required'),
     defaultTaxRate: z.coerce.number().min(0),
     lowStockThreshold: z.coerce.number().min(0),
+    managerSmsPhone: z.string().optional(),
 });
 
 const TABS = [
@@ -90,6 +91,7 @@ export default function SettingsPage() {
             currencySymbol: 'Rs.',
             defaultTaxRate: 0,
             lowStockThreshold: 10,
+            managerSmsPhone: '',
         },
     });
 
@@ -232,6 +234,13 @@ export default function SettingsPage() {
                                             placeholder="0777 140 680"
                                             error={errors.companyPhone?.message}
                                             registration={register('companyPhone')}
+                                        />
+                                        <StyledInput
+                                            label="Manager SMS Phone"
+                                            icon={Phone}
+                                            placeholder="+94716666888"
+                                            error={errors.managerSmsPhone?.message}
+                                            registration={register('managerSmsPhone')}
                                         />
                                         <div className="col-span-2">
                                             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Company Address</label>

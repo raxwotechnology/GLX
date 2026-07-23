@@ -64,6 +64,8 @@ const employeeSchema = new mongoose.Schema({
         type: Number,
         default: 3, // employer contribution %
     },
+    hourlyRate: { type: Number, default: 260 },
+    isSalesStaff: { type: Boolean, default: false },
     basicWageRate: {
         type: Number,
         default: 0, // rate per hour/day

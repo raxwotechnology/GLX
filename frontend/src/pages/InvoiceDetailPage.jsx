@@ -12,6 +12,7 @@ import { useAuthStore } from '../store/authStore';
 
 import { useRef } from 'react';
 import PrintableInvoice from '../components/print/PrintableInvoice';
+import ShareDocumentSmsModal from '../components/ShareDocumentSmsModal';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsApi } from '../features/payments/paymentsApi';
 
@@ -28,6 +29,7 @@ export default function InvoiceDetailPage() {
     const [reason, setReason] = useState('');
 
     const { data, isLoading } = useInvoice(id);
+    const [shareModalOpen, setShareModalOpen] = useState(false);
     const changeStatus = useChangeInvoiceStatus();
     const inv = data?.data;
 
@@ -95,6 +97,9 @@ export default function InvoiceDetailPage() {
                         </Button>
                         <Button variant="outline" onClick={handlePrint}>
                             <Printer size={16} className="mr-1.5" /> Print
+                        </Button>
+                        <Button variant="outline" onClick={() => setShareModalOpen(true)}>
+                            <Send size={16} className="mr-1.5" /> Share SMS
                         </Button>
                         {inv.balanceDue > 0 && inv.paymentStatus !== 'cancelled' && (
                             <Button variant="outline" onClick={() => navigate(`/payments/new?invoiceId=${inv._id}`)}>
@@ -308,6 +313,15 @@ export default function InvoiceDetailPage() {
                     payments={payments}
                 />
             </div>
+            {inv && (
+                <ShareDocumentSmsModal
+                    isOpen={shareModalOpen}
+                    onClose={() => setShareModalOpen(false)}
+                    documentId={inv._id}
+                    documentType="invoice"
+                    defaultPhone={inv.customerSnapshot?.phone || ''}
+                />
+            )}
         </div>
     );
 }

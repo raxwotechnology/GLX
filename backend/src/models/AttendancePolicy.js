@@ -7,6 +7,8 @@ const attendancePolicySchema = new mongoose.Schema({
   shiftStartTime: { type: String, default: '09:00' }, // "HH:mm"
   shiftEndTime: { type: String, default: '17:00' },   // "HH:mm"
   standardWorkHours: { type: Number, default: 8 },
+  hourlyRate: { type: Number, default: 260 },
+  isOfficeStaffPolicy: { type: Boolean, default: true },
 
   overtimeRatePerHour: { type: Number, default: 100 },       // LKR per extra hour
   earlyLeavePenaltyRatePerHour: { type: Number, default: 100 }, // LKR cut per early hour

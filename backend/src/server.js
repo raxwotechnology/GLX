@@ -18,6 +18,12 @@ import brandRoutes from './routes/brandRoutes.js';
 import uomRoutes from './routes/uomRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import customerRoutes from './routes/customerRoutes.js';
+import publicRoutes from './routes/publicRoutes.js';
+import { sendPublicDocumentSms } from './services/smsService.js';
+import Quotation from './models/Quotation.js';
+import Invoice from './models/Invoice.js';
+import asyncHandler from 'express-async-handler';
+import { protect } from './middleware/authMiddleware.js';
 import userRoutes from './routes/userRoutes.js';
 import salesOrderRoutes from './routes/salesOrderRoutes.js';
 import warehouseRoutes from './routes/warehouseRoutes.js';
@@ -203,6 +209,36 @@ if (fs.existsSync(frontendDistPath)) {
 }
 
 // Error handling (must be LAST)
+
+// Unified sharing endpoint
+app.post('/api/documents/:id/share-sms', protect, asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { phone, documentType } = req.body;
+    
+    let doc;
+    if (documentType === 'invoice') {
+        doc = await Invoice.findById(id);
+    } else {
+        doc = await Quotation.findById(id);
+    }
+    
+    if (!doc) {
+        res.status(404);
+        throw new Error('Document not found');
+    }
+    
+    if (!doc.publicToken) {
+        doc.publicToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        await doc.save();
+    }
+    
+    const hostOrigin = req.headers.referer || req.headers.origin || 'http://localhost:5173';
+    
+    await sendPublicDocumentSms(doc, phone, documentType || 'document', hostOrigin);
+    
+    res.json({ success: true, message: 'Document shared via SMS successfully' });
+}));
+
 app.use(notFound);
 app.use(errorHandler);
 

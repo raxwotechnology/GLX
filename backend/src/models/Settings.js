@@ -19,6 +19,10 @@ const settingsSchema = new mongoose.Schema({
         type: String,
         default: 'Rs.'
     },
+    managerSmsPhone: {
+        type: String,
+        default: '+94716666888'
+    },
     defaultTaxRate: {
         type: Number,
         default: 0

@@ -4,6 +4,7 @@ import Employee from '../models/Employee.js';
 import Attendance from '../models/Attendance.js';
 import LeaveRequest from '../models/LeaveRequest.js';
 import Holiday from '../models/Holiday.js';
+import SalaryAdvance from '../models/SalaryAdvance.js';
 import { calculatePayslip } from '../services/payrollCalculator.js';
 
 /**
@@ -79,6 +80,7 @@ const getEmployeeMonthAttendance = async (employeeId, year, month) => {
         leaveDays,
         unpaidLeaveDays,
         overtimeHours: +(overtimeMinutes / 60).toFixed(2),
+        totalWorkedHours,
     };
 };
 
@@ -152,7 +154,7 @@ export const processPayroll = asyncHandler(async (req, res) => {
         const calc = calculatePayslip({
             basicSalary: basic,
             earnings: structureEarnings,
-            otherDeductions: [], // advances/loans can be added per-employee later
+            otherDeductions: otherDeductions,
             attendance: {
                 workingDays,
                 daysPresent: attendance.daysPresent,

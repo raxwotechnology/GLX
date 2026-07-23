@@ -9,6 +9,7 @@ import Holiday from '../models/Holiday.js';
 import SalaryStructure from '../models/SalaryStructure.js';
 import LeaveStructure from '../models/LeaveStructure.js';
 import AttendancePolicy from '../models/AttendancePolicy.js';
+import SalaryAdvance from '../models/SalaryAdvance.js';
 
 // ============================================================
 // DEPARTMENTS
@@ -889,4 +890,150 @@ export const importFingerprintAttendance = asyncHandler(async (req, res) => {
         errorCount: errors.length,
         errors,
     });
-});
+});
+// ============================================================
+// SALARY ADVANCES & PAYMENT SHEETS
+// ============================================================
+
+export const createSalaryAdvance = asyncHandler(async (req, res) => {
+    const { employeeId, date, amount, reason } = req.body;
+    const advance = await SalaryAdvance.create({
+        employeeId,
+        date: new Date(date),
+        amount: Number(amount) || 0,
+        reason: reason || '',
+        createdBy: req.user._id,
+        status: 'approved'
+    });
+    res.status(201).json({ success: true, data: advance });
+});
+
+export const getSalaryAdvances = asyncHandler(async (req, res) => {
+    const { employeeId } = req.params;
+    const advances = await SalaryAdvance.find({ employeeId }).sort({ date: -1 });
+    res.json({ success: true, data: advances });
+});
+
+export const getEmployeePaymentSheet = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { startDate, endDate } = req.query;
+
+    const employee = await Employee.findById(id);
+    if (!employee) {
+        res.status(404);
+        throw new Error('Employee not found');
+    }
+
+    const start = new Date(startDate || new Date(new Date().setDate(new Date().getDate() - 30)));
+    const end = new Date(endDate || new Date());
+    end.setHours(23, 59, 59, 999);
+
+    // Fetch attendance records and advances
+    const [attendanceLogs, advances] = await Promise.all([
+        Attendance.find({
+            employeeId: id,
+            date: { $gte: start, $lte: end },
+            status: { $in: ['present', 'late', 'half_day'] }
+        }).sort({ date: 1 }),
+        SalaryAdvance.find({
+            employeeId: id,
+            date: { $gte: start, $lte: end },
+            status: 'approved'
+        }).sort({ date: 1 })
+    ]);
+
+    const hourlyRate = employee.hourlyRate || 260;
+
+    // Create a date-wise mapping
+    const rows = [];
+    const dateMap = {};
+
+    // Standard loop day by day
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toLocaleDateString('en-GB'); // dd/mm/yyyy
+        dateMap[dateStr] = {
+            date: dateStr,
+            inTime: '—',
+            outTime: '—',
+            hours: '00:00:00',
+            hoursDecimal: 0,
+            daySalary: 0,
+            advance: 0
+        };
+    }
+
+    // Populate attendance logs
+    attendanceLogs.forEach(log => {
+        const dateStr = new Date(log.date).toLocaleDateString('en-GB');
+        if (dateMap[dateStr]) {
+            let inStr = '—';
+            let outStr = '—';
+            let workedHrs = 0;
+            let durationStr = '00:00:00';
+
+            if (log.checkInTime && log.checkOutTime) {
+                const inDate = new Date(log.checkInTime);
+                const outDate = new Date(log.checkOutTime);
+                
+                inStr = inDate.toTimeString().split(' ')[0]; // HH:MM:SS
+                outStr = outDate.toTimeString().split(' ')[0]; // HH:MM:SS
+                
+                const diffMs = outDate - inDate;
+                const totalSec = Math.max(0, Math.floor(diffMs / 1000));
+                
+                const hrs = Math.floor(totalSec / 3600);
+                const mins = Math.floor((totalSec % 3600) / 60);
+                const secs = totalSec % 60;
+                
+                durationStr = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                workedHrs = totalSec / 3600;
+            }
+
+            dateMap[dateStr].inTime = inStr;
+            dateMap[dateStr].outTime = outStr;
+            dateMap[dateStr].hours = durationStr;
+            dateMap[dateStr].hoursDecimal = workedHrs;
+            dateMap[dateStr].daySalary = +(workedHrs * hourlyRate).toFixed(2);
+        }
+    });
+
+    // Populate advances
+    advances.forEach(adv => {
+        const dateStr = new Date(adv.date).toLocaleDateString('en-GB');
+        if (dateMap[dateStr]) {
+            dateMap[dateStr].advance = adv.amount;
+        }
+    });
+
+    // Convert dateMap to sorted list
+    const sortedDates = Object.keys(dateMap).sort((a, b) => {
+        const [dayA, monthA, yearA] = a.split('/').map(Number);
+        const [dayB, monthB, yearB] = b.split('/').map(Number);
+        return new Date(yearA, monthA - 1, dayA) - new Date(yearB, monthB - 1, dayB);
+    });
+
+    const paymentRows = sortedDates.map(dateKey => dateMap[dateKey]);
+
+    // Totals
+    const totalSalary = paymentRows.reduce((sum, r) => sum + r.daySalary, 0);
+    const totalAdvances = paymentRows.reduce((sum, r) => sum + r.advance, 0);
+    const netSalary = totalSalary - totalAdvances;
+
+    res.json({
+        success: true,
+        data: {
+            employee: {
+                id: employee._id,
+                code: employee.employeeCode,
+                name: employee.fullName,
+                hourlyRate: hourlyRate
+            },
+            startDate: start.toLocaleDateString('en-GB'),
+            endDate: end.toLocaleDateString('en-GB'),
+            rows: paymentRows,
+            totalSalary: +totalSalary.toFixed(2),
+            totalAdvances: +totalAdvances.toFixed(2),
+            netSalary: +netSalary.toFixed(2)
+        }
+    });
+});
