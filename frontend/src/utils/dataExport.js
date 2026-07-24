@@ -1,22 +1,13 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import QRCode from 'qrcode';
 
-/**
- * Export data to CSV
- * @param {Array} data - Array of objects
- * @param {string} fileName - File name with extension
- */
 export const exportToCSV = (data, fileName = 'export.csv') => {
     if (!data.length) return;
-    
     const headers = Object.keys(data[0]);
     const csvRows = [];
-    
-    // Add headers
     csvRows.push(headers.join(','));
-    
-    // Add data rows
     for (const row of data) {
         const values = headers.map(header => {
             const escaped = ('' + row[header]).replace(/"/g, '\\"');
@@ -129,7 +120,24 @@ export const exportToPDF = (title, columns, data, fileName = 'report', metadata 
 /**
  * Export a complete Invoice/Quotation document to a high-fidelity PDF locally in browser.
  */
-export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
+const loadImageBase64 = (url) => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/jpeg'));
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+    });
+};
+
+export const exportDocumentToPDF = async (docData, documentType = 'invoice') => {
     const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -140,73 +148,144 @@ export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
     const fmt = (n) => new Intl.NumberFormat('en-LK', { minimumFractionDigits: 2 }).format(n || 0);
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-LK') : '—';
     
-    // Draw Border
-    doc.setDrawColor(200);
+    // Draw Elegant Page Border
+    doc.setDrawColor(220);
+    doc.setLineWidth(0.2);
     doc.rect(5, 5, pageWidth - 10, doc.internal.pageSize.height - 10);
     
-    // 1. Header (Black & White sleek layout matching GLX style)
+    // Load logo
+    const logoBase64 = await loadImageBase64('/logo.jpg');
+    if (logoBase64) {
+        doc.addImage(logoBase64, 'JPEG', 12, 10, 16, 16);
+    }
+    
+    // 1. Header Details (GLS / GLX Grid Layout matching print layout)
     doc.setFont('times', 'bold');
-    doc.setFontSize(18);
-    doc.text("GLS INDUSTRIES (PVT) LTD", 14, 18);
+    doc.setFontSize(13);
+    doc.text("GLS INDUSTRIES (PVT) LTD", 32, 13);
     
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
+    doc.setTextColor(80, 80, 80);
     
-    // Left: Head Office Address
+    // Left Column Address
     const leftText = [
-        'HEAD OFFICE:',
-        'No. 14 Negombo Road,',
-        'Ja-Ela, Sri Lanka.'
-    ];
-    doc.text(leftText.join('\n'), 14, 24);
+        'No.14, Negambo Road,',
+        'Thudella, Ja-Ela,',
+        'Sri Lanka.',
+        '(11350)'
+    ].join('\n');
+    doc.text(leftText, 32, 16.5, { lineHeight: 1.3 });
     
-    // Center: Factory Address
-    const centerText = [
-        'FACTORY / BRANCH:',
-        'No. 2020/3L, 2 Seeduwa Road,',
-        'Kotugoda, Sri Lanka.'
-    ];
-    doc.text(centerText.join('\n'), 75, 24);
-    
-    // Right: Contact Details Block
-    const rightText = [
-        'Mobile: +94 77 714 0680',
-        'Tel: +94 11 224 4567',
-        'Email: info@glxindustries.lk',
-        'Web: www.glxindustries.lk'
-    ];
-    doc.text(rightText.join('\n'), 140, 24);
-    
-    doc.setDrawColor(100);
-    doc.line(10, 36, pageWidth - 10, 36);
-    
-    // 2. Document Title
-    const title = (docData.documentType || documentType).toUpperCase();
+    // Center Column Address
     doc.setFont('times', 'bold');
-    doc.setFontSize(14);
-    doc.text(title, pageWidth / 2, 44, { align: 'center' });
+    doc.setFontSize(9.5);
+    doc.setTextColor(0, 0, 0);
+    doc.text("GLX TRUCK BODY", 95, 12);
+    doc.text("ENGINEERS", 95, 15.5);
     
-    // 3. Metadata Section
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5);
+    doc.setTextColor(100, 100, 100);
+    doc.text("ALUMINIUM, STEEL & FREEZER BOX MANUFACTURE", 95, 19.2);
+    
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(7);
+    const centerText = [
+        'No.2020/3L, 2, Seeduwa Road,',
+        'Kotugoda, Ja-Ela.',
+        'Sri Lanka.',
+        '(11390)'
+    ].join('\n');
+    doc.text(centerText, 95, 23, { lineHeight: 1.3 });
     
-    const docCode = docData.quotationCode || docData.invoiceNumber || (docData._id ? docData._id.toString() : 'document');
-    const docDate = docData.createdAt || docData.invoiceDate || Date.now();
+    // Right Column Contacts
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(0, 0, 0);
+    const rightText = [
+        'Mobile : 071 6666 888',
+        'Tel      : 011 740 4446',
+        'Email  : glx.engi@gmail.com',
+        'Web    : www.glx.lk'
+    ].join('\n');
+    doc.text(rightText, 152, 12, { lineHeight: 1.4 });
     
-    doc.text(`Document No: ${docCode}`, 14, 52);
-    doc.text(`Date: ${fmtDate(docDate)}`, 14, 57);
-    if (docData.vehicleNo) {
-        doc.text(`Vehicle No: ${docData.vehicleNo}`, 14, 62);
-    }
+    // Thin divider line
+    doc.setDrawColor(200);
+    doc.setLineWidth(0.3);
+    doc.line(10, 37, pageWidth - 10, 37);
     
-    const clientName = docData.customerName || docData.customerSnapshot?.name || docData.vehicleOwner || 'Valued Customer';
-    doc.text(`Bill To / Customer: ${clientName}`, 110, 52);
-    if (docData.vehicleModel) {
-        doc.text(`Vehicle Model: ${docData.vehicleModel}`, 110, 57);
-    }
+    // Determine title
+    const isEstimate = docData.documentType === 'estimate' || (docData.quoteNumber && docData.quoteNumber.startsWith('EST'));
+    const isInvoice = !!docData.invoiceNumber || docData.documentType === 'invoice';
+    let title = 'QUOTATION';
+    if (isEstimate) title = 'ESTIMATE';
+    if (isInvoice) title = 'INVOICE';
+    
+    // 3. Metadata Section inside a rounded box
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    
+    const docCode = docData.invoiceNumber || docData.quoteNumber || docData.quotationCode || docData._id.toString();
+    const docDate = docData.date || docData.invoiceDate || docData.createdAt || Date.now();
+    const customerName = docData.customerName || docData.vehicleOwner || docData.customerSnapshot?.name || 'Valued Client';
+    const contactPhone = docData.customerPhone || docData.customerSnapshot?.contactName || '';
+    
+    // Metadata Info Box
+    doc.setDrawColor(210);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(10, 42, pageWidth - 20, 26, 1.5, 1.5, 'FD');
+    
+    // Left column properties
+    doc.setFont('helvetica', 'bold');
+    doc.text("Insurance Company:", 14, 47);
+    doc.setFont('helvetica', 'normal');
+    doc.text(docData.insuranceCompany || 'N/A', 43, 47);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text("Customer Name:", 14, 52);
+    doc.setFont('helvetica', 'normal');
+    doc.text(customerName, 39, 52);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text("Contact Number:", 14, 57);
+    doc.setFont('helvetica', 'normal');
+    doc.text(contactPhone || 'N/A', 39, 57);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text("Vehicle No:", 14, 62);
+    doc.setFont('helvetica', 'normal');
+    doc.text(docData.vehicleNo || 'N/A', 31, 62);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text("Vehicle Model:", 14, 66);
+    doc.setFont('helvetica', 'normal');
+    doc.text(docData.vehicleModel || 'N/A', 35, 66);
+    
+    // Right column properties
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.text(`${title} No : ${docCode}`, 130, 47);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.text("Sales Rep:", 130, 52);
+    doc.setFont('helvetica', 'normal');
+    doc.text(docData.salesRep || 'Asanka', 147, 52);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text("Branch:", 130, 57);
+    doc.setFont('helvetica', 'normal');
+    doc.text(docData.branch || 'JA-ELA', 142, 57);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text("Date:", 130, 62);
+    doc.setFont('helvetica', 'normal');
+    doc.text(fmtDate(docDate), 139, 62);
     
     // 4. Line Items Table
-    const tableColumns = ['No', 'Description & Specifications', 'Qty', 'Unit Price (LKR)', 'Amount (LKR)'];
+    const tableColumns = ['#', 'DESCRIPTION', 'RATE', 'QTY', 'AMOUNT'];
     const tableRows = (docData.items || [])
         .filter(item => !!item)
         .map((item, idx) => {
@@ -220,74 +299,150 @@ export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
             return [
                 idx + 1,
                 desc,
-                qty,
                 fmt(price),
+                qty,
                 fmt(total)
             ];
         });
     
-    // Add Summary Row
-    const subtotal = docData.totalAmount || (docData.items || []).reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
-    const discount = docData.discount || 0;
-    const tax = docData.tax || 0;
-    const grandTotal = docData.grandTotal || (subtotal + tax - discount);
-    
     autoTable(doc, {
-        startY: docData.vehicleNo ? 68 : 62,
+        startY: 73,
         head: [tableColumns],
         body: tableRows,
         theme: 'grid',
         headStyles: {
-            fillColor: [50, 50, 50],
-            textColor: [255, 255, 255],
-            fontSize: 8.5,
-            fontStyle: 'bold'
+            fillColor: [243, 244, 246],
+            textColor: [107, 114, 128],
+            fontSize: 8,
+            fontStyle: 'bold',
+            halign: 'left'
         },
         styles: {
-            fontSize: 8,
-            cellPadding: 3,
-            valign: 'middle'
+            fontSize: 7.5,
+            cellPadding: 2.5,
+            valign: 'middle',
+            lineColor: [229, 231, 235],
+            lineWidth: 0.2,
+            textColor: [31, 41, 55]
         },
-        margin: { left: 14, right: 14 },
+        margin: { left: 10, right: 10 },
         columnStyles: {
             0: { cellWidth: 10, halign: 'center' },
-            1: { cellWidth: 95 },
-            2: { cellWidth: 15, halign: 'center' },
-            3: { cellWidth: 30, halign: 'right' },
+            1: { cellWidth: 100 },
+            2: { cellWidth: 35, halign: 'right' },
+            3: { cellWidth: 15, halign: 'center' },
             4: { cellWidth: 30, halign: 'right' }
         }
     });
     
-    const finalY = doc.lastAutoTable.finalY + 8;
+    let finalY = doc.lastAutoTable.finalY + 8;
     
-    // Summary Right Aligned
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Subtotal : LKR ${fmt(subtotal)}`, pageWidth - 14, finalY, { align: 'right' });
-    if (discount > 0) {
-        doc.text(`Discount : LKR -${fmt(discount)}`, pageWidth - 14, finalY + 5, { align: 'right' });
+    // 5. Totals & Summary Block
+    const subtotal = docData.subtotal || docData.totalAmount || (docData.items || []).reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+    const discount = (docData.discount || 0) + (docData.specialDiscount || 0);
+    const grandTotal = docData.grandTotal || docData.finalSellingPrice || (subtotal - discount);
+    
+    // Check page space for totals block
+    if (finalY > doc.internal.pageSize.height - 75) {
+        doc.addPage();
+        finalY = 15;
+        // Border on page 2
+        doc.setDrawColor(220);
+        doc.rect(5, 5, pageWidth - 10, doc.internal.pageSize.height - 10);
     }
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Grand Total : LKR ${fmt(grandTotal)}`, pageWidth - 14, finalY + (discount > 0 ? 10 : 5), { align: 'right' });
     
-    // 5. Terms & Bank details (If Quotation)
-    if (title.includes('QUOTATION') || title.includes('ESTIMATE')) {
+    // Summary Right Box
+    doc.setDrawColor(210);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(pageWidth - 95, finalY, 85, 20, 1.5, 1.5, 'FD');
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(`SUB TOTAL:`, pageWidth - 90, finalY + 6);
+    doc.text(`LKR ${fmt(subtotal)}`, pageWidth - 15, finalY + 6, { align: 'right' });
+    
+    // Thin divider line inside totals box
+    doc.setDrawColor(220);
+    doc.line(pageWidth - 93, finalY + 10, pageWidth - 12, finalY + 10);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(`GRAND TOTAL:`, pageWidth - 90, finalY + 15);
+    doc.text(`LKR ${fmt(grandTotal)}`, pageWidth - 15, finalY + 15, { align: 'right' });
+    
+    // Draw double underlines below Grand Total value
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.4);
+    doc.line(pageWidth - 45, finalY + 16.5, pageWidth - 15, finalY + 16.5);
+    doc.line(pageWidth - 45, finalY + 17.5, pageWidth - 15, finalY + 17.5);
+    
+    // Bank & Warranty Info (Quotations & Estimates)
+    if (!isInvoice) {
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        doc.text('Bank details for payments:', 14, finalY);
-        doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
-        doc.text([
+        doc.text('Payment & Bank Details:', 10, finalY + 5);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        const bankDetails = [
             'Account Name: GLX Truck Body Engineers',
             'Bank: Nations Trust Bank, Ja-Ela Branch',
-            'Account No: 1001-XXXX-XXXX'
-        ].join('\n'), 14, finalY + 4);
+            'Account No: 1001-XXXX-XXXX',
+            'Terms: 70% Advance with Order, balance on Completion.'
+        ].join('\n');
+        doc.text(bankDetails, 10, finalY + 9);
     }
     
-    // Signature
+    const bottomY = doc.internal.pageSize.height - 40;
+    
+    // 6. Signatures & QR Code Footer
+    // Printed Time
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.text('Prepared By: ............................', 14, doc.internal.pageSize.height - 20);
-    doc.text('Authorized By: ............................', pageWidth - 70, doc.internal.pageSize.height - 20);
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Printed at: ${new Date().toLocaleString('en-GB')}`, 10, bottomY + 8);
+    
+    // Signature Line
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.4);
+    doc.line(10, bottomY + 22, 75, bottomY + 22);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(0, 0, 0);
+    doc.text('GLX INDUSTRIES - JA ELA', 10, bottomY + 26);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text('Authorized Signature', 10, bottomY + 29.5);
+    
+    // QR Code Box (Right Side)
+    doc.setDrawColor(210);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(pageWidth - 38, bottomY, 28, 33, 1, 1, 'D');
+    
+    // Generate QR
+    const qrDataObj = {
+        type: title,
+        number: docCode,
+        date: fmtDate(docDate),
+        customer: customerName,
+        vehicleNo: docData.vehicleNo || 'N/A',
+        grandTotal: grandTotal,
+        status: docData.status || 'Active'
+    };
+    try {
+        const qrBase64 = await QRCode.toDataURL(JSON.stringify(qrDataObj));
+        doc.addImage(qrBase64, 'PNG', pageWidth - 34, bottomY + 2, 20, 20);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6);
+        doc.setTextColor(50, 50, 50);
+        doc.text('SCAN TO VERIFY', pageWidth - 24, bottomY + 25.5, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5.5);
+        doc.text(docCode, pageWidth - 24, bottomY + 29, { align: 'center' });
+    } catch (e) {
+        console.warn('Failed to render QR on PDF', e);
+    }
     
     doc.save(`${title.toLowerCase()}_${docCode.replace(/[\\/:*?"<>|]/g, '_')}.pdf`);
 };
