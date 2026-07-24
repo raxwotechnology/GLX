@@ -13,6 +13,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { useSettings } from '../features/settings/useSettings';
 import DocumentPrintView from '../components/print/DocumentPrintView';
 import ShareDocumentSmsModal from '../components/ShareDocumentSmsModal';
+import { exportDocumentToPDF } from '../utils/dataExport';
 import { getApiUrl } from '../api/config';
 import { translateText, detectLanguage } from '../utils/translationService';
 
@@ -914,7 +915,7 @@ const QuotationsPage = () => {
                                 <Button variant="outline" onClick={() => setShareModalOpen(true)}>
                                     <Send size={16} className="mr-1.5" /> Share SMS
                                 </Button>
-                                <Button variant="outline" onClick={() => window.open(`${getApiUrl()}/api/documents/${previewQuote._id}/download-pdf?documentType=${previewQuote.documentType || 'quotation'}`.replace('/api/api', '/api'), '_blank')}>
+                                <Button variant="outline" onClick={() => exportDocumentToPDF(previewQuote, previewQuote.documentType || 'quotation')}>
                                     <Download size={16} className="mr-1.5" /> Download PDF
                                 </Button>
                                 {previewQuote.status !== 'converted' && (

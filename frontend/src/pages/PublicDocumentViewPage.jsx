@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import DocumentPrintView from '../components/print/DocumentPrintView';
+import { exportDocumentToPDF } from '../utils/dataExport';
 import { getApiUrl } from '../api/config';
 
 export default function PublicDocumentViewPage() {
@@ -75,7 +76,7 @@ export default function PublicDocumentViewPage() {
                         Print Document
                     </button>
                     <button 
-                        onClick={() => window.open(`${getApiUrl()}/public/documents/${token}/download`, '_blank')} 
+                        onClick={() => exportDocumentToPDF(doc, docType)} 
                         className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition"
                     >
                         Download PDF

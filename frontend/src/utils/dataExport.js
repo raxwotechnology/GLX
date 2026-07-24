@@ -125,3 +125,167 @@ export const exportToPDF = (title, columns, data, fileName = 'report', metadata 
     
     doc.save(`${fileName}.pdf`);
 };
+
+/**
+ * Export a complete Invoice/Quotation document to a high-fidelity PDF locally in browser.
+ */
+export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+    
+    const pageWidth = doc.internal.pageSize.width;
+    const fmt = (n) => new Intl.NumberFormat('en-LK', { minimumFractionDigits: 2 }).format(n || 0);
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-LK') : '—';
+    
+    // Draw Border
+    doc.setDrawColor(200);
+    doc.rect(5, 5, pageWidth - 10, doc.internal.pageSize.height - 10);
+    
+    // 1. Header (Black & White sleek layout matching GLX style)
+    doc.setFont('times', 'bold');
+    doc.setFontSize(18);
+    doc.text("GLS INDUSTRIES (PVT) LTD", 14, 18);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    
+    // Left: Head Office Address
+    const leftText = [
+        'HEAD OFFICE:',
+        'No. 14 Negombo Road,',
+        'Ja-Ela, Sri Lanka.'
+    ];
+    doc.text(leftText, 14, 24);
+    
+    // Center: Factory Address
+    const centerText = [
+        'FACTORY / BRANCH:',
+        'No. 2020/3L, 2 Seeduwa Road,',
+        'Kotugoda, Sri Lanka.'
+    ];
+    doc.text(centerText, 75, 24);
+    
+    // Right: Contact Details Block
+    const rightText = [
+        'Mobile: +94 77 714 0680',
+        'Tel: +94 11 224 4567',
+        'Email: info@glxindustries.lk',
+        'Web: www.glxindustries.lk'
+    ];
+    doc.text(rightText, 140, 24);
+    
+    doc.setDrawColor(100);
+    doc.line(10, 36, pageWidth - 10, 36);
+    
+    // 2. Document Title
+    const title = (docData.documentType || documentType).toUpperCase();
+    doc.setFont('times', 'bold');
+    doc.setFontSize(14);
+    doc.text(title, pageWidth / 2, 44, { align: 'center' });
+    
+    // 3. Metadata Section
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    
+    const docCode = docData.quotationCode || docData.invoiceNumber || docData._id.toString();
+    const docDate = docData.createdAt || docData.invoiceDate || Date.now();
+    
+    doc.text(`Document No: ${docCode}`, 14, 52);
+    doc.text(`Date: ${fmtDate(docDate)}`, 14, 57);
+    if (docData.vehicleNo) {
+        doc.text(`Vehicle No: ${docData.vehicleNo}`, 14, 62);
+    }
+    
+    const clientName = docData.customerName || docData.customerSnapshot?.name || docData.vehicleOwner || 'Valued Customer';
+    doc.text(`Bill To / Customer: ${clientName}`, 110, 52);
+    if (docData.vehicleModel) {
+        doc.text(`Vehicle Model: ${docData.vehicleModel}`, 110, 57);
+    }
+    
+    // 4. Line Items Table
+    const tableColumns = ['No', 'Description & Specifications', 'Qty', 'Unit Price (LKR)', 'Amount (LKR)'];
+    const tableRows = (docData.items || []).map((item, idx) => {
+        let desc = item.productName || item.description || 'Lorry Body';
+        if (item.productTranslation) {
+            desc += `\n(${item.productTranslation})`;
+        }
+        const qty = item.quantity || 1;
+        const price = item.unitPrice || 0;
+        const total = qty * price;
+        return [
+            idx + 1,
+            desc,
+            qty,
+            fmt(price),
+            fmt(total)
+        ];
+    });
+    
+    // Add Summary Row
+    const subtotal = docData.totalAmount || (docData.items || []).reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+    const discount = docData.discount || 0;
+    const tax = docData.tax || 0;
+    const grandTotal = docData.grandTotal || (subtotal + tax - discount);
+    
+    autoTable(doc, {
+        startY: docData.vehicleNo ? 68 : 62,
+        head: [tableColumns],
+        body: tableRows,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [50, 50, 50],
+            textColor: [255, 255, 255],
+            fontSize: 8.5,
+            fontStyle: 'bold'
+        },
+        styles: {
+            fontSize: 8,
+            cellPadding: 3,
+            valign: 'middle'
+        },
+        margin: { left: 14, right: 14 },
+        columnStyles: {
+            0: { width: 10, halign: 'center' },
+            1: { width: 95 },
+            2: { width: 15, halign: 'center' },
+            3: { width: 30, halign: 'right' },
+            4: { width: 30, halign: 'right' }
+        }
+    });
+    
+    const finalY = doc.previousAutoTable.finalY + 8;
+    
+    // Summary Right Aligned
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Subtotal : LKR ${fmt(subtotal)}`, pageWidth - 14, finalY, { align: 'right' });
+    if (discount > 0) {
+        doc.text(`Discount : LKR -${fmt(discount)}`, pageWidth - 14, finalY + 5, { align: 'right' });
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Grand Total : LKR ${fmt(grandTotal)}`, pageWidth - 14, finalY + (discount > 0 ? 10 : 5), { align: 'right' });
+    
+    // 5. Terms & Bank details (If Quotation)
+    if (title.includes('QUOTATION') || title.includes('ESTIMATE')) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text('Bank details for payments:', 14, finalY);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text([
+            'Account Name: GLX Truck Body Engineers',
+            'Bank: Nations Trust Bank, Ja-Ela Branch',
+            'Account No: 1001-XXXX-XXXX'
+        ], 14, finalY + 4);
+    }
+    
+    // Signature
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.text('Prepared By: ............................', 14, doc.internal.pageSize.height - 20);
+    doc.text('Authorized By: ............................', pageWidth - 70, doc.internal.pageSize.height - 20);
+    
+    doc.save(`${title.toLowerCase()}_${docCode.replace(/[\\/:*?"<>|]/g, '_')}.pdf`);
+};
