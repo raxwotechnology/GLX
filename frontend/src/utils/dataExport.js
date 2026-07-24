@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import QRCode from 'qrcode';
+import html2canvas from 'html2canvas';
 
 export const exportToCSV = (data, fileName = 'export.csv') => {
     if (!data.length) return;
@@ -445,4 +446,50 @@ export const exportDocumentToPDF = async (docData, documentType = 'invoice') => 
     }
     
     doc.save(`${title.toLowerCase()}_${docCode.replace(/[\\/:*?"<>|]/g, '_')}.pdf`);
+};
+
+/**
+ * Capture an actual DOM element (exactly as rendered on screen) and download as PDF.
+ */
+export const exportElementToPDF = async (element, filename = 'document.pdf') => {
+    if (!element) {
+        console.error("No element provided to exportElementToPDF");
+        return;
+    }
+    
+    const canvas = await html2canvas(element, {
+        scale: 2.5, // Crisp, professional high-DPI scaling
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+    });
+    
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+    
+    const pdfWidth = pdf.internal.pageSize.width;
+    const pdfHeight = pdf.internal.pageSize.height;
+    
+    // Fit canvas exactly onto A4 page width
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+    
+    let heightLeft = imgHeight;
+    let position = 0;
+    
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pdfHeight;
+    
+    while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+    }
+    
+    pdf.save(filename);
 };

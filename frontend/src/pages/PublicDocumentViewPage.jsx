@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import DocumentPrintView from '../components/print/DocumentPrintView';
-import { exportDocumentToPDF } from '../utils/dataExport';
+import { exportDocumentToPDF, exportElementToPDF } from '../utils/dataExport';
 import { getApiUrl } from '../api/config';
 
 export default function PublicDocumentViewPage() {
@@ -11,6 +11,7 @@ export default function PublicDocumentViewPage() {
     const [docType, setDocType] = useState('quotation');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const printRef = useRef(null);
 
     useEffect(() => {
         const fetchDoc = async () => {
@@ -76,7 +77,7 @@ export default function PublicDocumentViewPage() {
                         Print Document
                     </button>
                     <button 
-                        onClick={() => exportDocumentToPDF(doc, docType)} 
+                        onClick={() => exportElementToPDF(printRef.current, `${docType}_${(doc.invoiceNumber || doc.quoteNumber || doc.quotationCode || 'document').replace(/[\/\\:]/g, '_')}.pdf`)} 
                         className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition"
                     >
                         Download PDF
@@ -85,7 +86,7 @@ export default function PublicDocumentViewPage() {
             </div>
             
             <div className="max-w-[850px] mx-auto bg-white p-8 shadow border print:shadow-none print:border-0 print:p-0">
-                <DocumentPrintView doc={printDoc} type={docType} />
+                <DocumentPrintView ref={printRef} document={printDoc} />
             </div>
         </div>
     );
