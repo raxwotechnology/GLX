@@ -66,12 +66,20 @@ export default function PublicDocumentViewPage() {
                 <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">
                     GLX Document Portal (Client View)
                 </span>
-                <button 
-                    onClick={() => window.print()} 
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition"
-                >
-                    Print / Download PDF
-                </button>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => window.print()} 
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-800 border font-bold text-xs px-4 py-1.5 rounded-lg transition"
+                    >
+                        Print Document
+                    </button>
+                    <button 
+                        onClick={() => window.open(`/api/public/documents/${token}/download`, '_blank')} 
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition"
+                    >
+                        Download PDF
+                    </button>
+                </div>
             </div>
             
             <div className="max-w-[850px] mx-auto bg-white p-8 shadow border print:shadow-none print:border-0 print:p-0">

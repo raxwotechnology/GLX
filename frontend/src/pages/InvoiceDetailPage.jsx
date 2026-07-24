@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Ban, Printer, Receipt } from 'lucide-react';
+import { ArrowLeft, Send, Ban, Printer, Receipt, Download } from 'lucide-react';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -100,6 +100,9 @@ export default function InvoiceDetailPage() {
                         </Button>
                         <Button variant="outline" onClick={() => setShareModalOpen(true)}>
                             <Send size={16} className="mr-1.5" /> Share SMS
+                        </Button>
+                        <Button variant="outline" onClick={() => window.open(`/api/documents/${inv._id}/download-pdf?documentType=invoice`, '_blank')}>
+                            <Download size={16} className="mr-1.5" /> Download PDF
                         </Button>
                         {inv.balanceDue > 0 && inv.paymentStatus !== 'cancelled' && (
                             <Button variant="outline" onClick={() => navigate(`/payments/new?invoiceId=${inv._id}`)}>

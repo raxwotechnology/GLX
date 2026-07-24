@@ -125,6 +125,65 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Recursive request body sanitizer to prevent Mongoose Date/ID casting errors
+const cleanRequestBody = (obj) => {
+    if (!obj || typeof obj !== 'object') return;
+    if (Array.isArray(obj)) {
+        obj.forEach(item => cleanRequestBody(item));
+        return;
+    }
+    if (obj.hasOwnProperty('createdAt')) {
+        delete obj.createdAt;
+    }
+    if (obj.hasOwnProperty('updatedAt')) {
+        delete obj.updatedAt;
+    }
+    if (obj._id === '' || (obj._id && typeof obj._id === 'object' && Object.keys(obj._id).length === 0)) {
+        delete obj._id;
+    }
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
+            cleanRequestBody(obj[key]);
+        }
+    }
+};
+
+
+// Recursive query sanitizer to prevent invalid Date/ID casting errors from empty objects
+const cleanRequestQuery = (obj) => {
+    if (!obj || typeof obj !== 'object') return;
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            const val = obj[key];
+            if (val && typeof val === 'object') {
+                if (Object.keys(val).length === 0) {
+                    delete obj[key];
+                } else {
+                    cleanRequestQuery(val);
+                }
+            } else if (val === 'undefined' || val === 'null' || val === '' || val === '{}') {
+                delete obj[key];
+            }
+        }
+    }
+};
+
+app.use((req, res, next) => {
+    if (req.query) {
+        cleanRequestQuery(req.query);
+    }
+    next();
+});
+
+
+app.use((req, res, next) => {
+    if (req.body) {
+        cleanRequestBody(req.body);
+    }
+    next();
+});
+
+
 // Logging in dev
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
@@ -237,6 +296,37 @@ app.post('/api/documents/:id/share-sms', protect, asyncHandler(async (req, res) 
     await sendPublicDocumentSms(doc, phone, documentType || 'document', hostOrigin);
     
     res.json({ success: true, message: 'Document shared via SMS successfully' });
+}));
+
+
+// Authenticated PDF document download endpoint
+app.get('/api/documents/:id/download-pdf', protect, asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { documentType } = req.query;
+    const { backupDocumentAsPdf } = await import('./services/smsService.js');
+    
+    let doc;
+    if (documentType === 'invoice') {
+        doc = await Invoice.findById(id);
+    } else {
+        doc = await Quotation.findById(id);
+    }
+    
+    if (!doc) {
+        res.status(404);
+        throw new Error('Document not found');
+    }
+    
+    const docCode = doc.quotationCode || doc.invoiceNumber || doc._id.toString();
+    const filename = `${documentType || 'document'}_${docCode.replace(/[\\/:*?"<>|]/g, '_')}.pdf`;
+    const dir = path.resolve('backend/backups/pdfs');
+    const filePath = path.join(dir, filename);
+    
+    if (!fs.existsSync(filePath)) {
+        await backupDocumentAsPdf(doc, documentType || 'quotation');
+    }
+    
+    res.download(filePath, filename);
 }));
 
 app.use(notFound);

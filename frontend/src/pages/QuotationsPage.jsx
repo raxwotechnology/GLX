@@ -913,6 +913,9 @@ const QuotationsPage = () => {
                                 <Button variant="outline" onClick={() => setShareModalOpen(true)}>
                                     <Send size={16} className="mr-1.5" /> Share SMS
                                 </Button>
+                                <Button variant="outline" onClick={() => window.open(`/api/documents/${previewQuote._id}/download-pdf?documentType=${previewQuote.documentType || 'quotation'}`, '_blank')}>
+                                    <Download size={16} className="mr-1.5" /> Download PDF
+                                </Button>
                                 {previewQuote.status !== 'converted' && (
                                     <Button variant="primary" className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => handleConvertToInvoice(previewQuote._id)}>
                                         <ShoppingCart size={16} className="mr-1.5" /> Convert to Invoice (INV)
