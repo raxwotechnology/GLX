@@ -132,17 +132,17 @@ const cleanRequestBody = (obj) => {
         obj.forEach(item => cleanRequestBody(item));
         return;
     }
-    if (obj.hasOwnProperty('createdAt')) {
+    if (Object.prototype.hasOwnProperty.call(obj, 'createdAt')) {
         delete obj.createdAt;
     }
-    if (obj.hasOwnProperty('updatedAt')) {
+    if (Object.prototype.hasOwnProperty.call(obj, 'updatedAt')) {
         delete obj.updatedAt;
     }
     if (obj._id === '' || (obj._id && typeof obj._id === 'object' && Object.keys(obj._id).length === 0)) {
         delete obj._id;
     }
     for (const key in obj) {
-        if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
+        if (Object.prototype.hasOwnProperty.call(obj, key) && typeof obj[key] === 'object') {
             cleanRequestBody(obj[key]);
         }
     }
@@ -153,7 +153,7 @@ const cleanRequestBody = (obj) => {
 const cleanRequestQuery = (obj) => {
     if (!obj || typeof obj !== 'object') return;
     for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
             const val = obj[key];
             if (val && typeof val === 'object') {
                 if (Object.keys(val).length === 0) {
