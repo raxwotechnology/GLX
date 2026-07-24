@@ -158,7 +158,7 @@ export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
         'No. 14 Negombo Road,',
         'Ja-Ela, Sri Lanka.'
     ];
-    doc.text(leftText, 14, 24);
+    doc.text(leftText.join('\n'), 14, 24);
     
     // Center: Factory Address
     const centerText = [
@@ -166,7 +166,7 @@ export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
         'No. 2020/3L, 2 Seeduwa Road,',
         'Kotugoda, Sri Lanka.'
     ];
-    doc.text(centerText, 75, 24);
+    doc.text(centerText.join('\n'), 75, 24);
     
     // Right: Contact Details Block
     const rightText = [
@@ -175,7 +175,7 @@ export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
         'Email: info@glxindustries.lk',
         'Web: www.glxindustries.lk'
     ];
-    doc.text(rightText, 140, 24);
+    doc.text(rightText.join('\n'), 140, 24);
     
     doc.setDrawColor(100);
     doc.line(10, 36, pageWidth - 10, 36);
@@ -190,7 +190,7 @@ export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     
-    const docCode = docData.quotationCode || docData.invoiceNumber || docData._id.toString();
+    const docCode = docData.quotationCode || docData.invoiceNumber || (docData._id ? docData._id.toString() : 'document');
     const docDate = docData.createdAt || docData.invoiceDate || Date.now();
     
     doc.text(`Document No: ${docCode}`, 14, 52);
@@ -207,22 +207,24 @@ export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
     
     // 4. Line Items Table
     const tableColumns = ['No', 'Description & Specifications', 'Qty', 'Unit Price (LKR)', 'Amount (LKR)'];
-    const tableRows = (docData.items || []).map((item, idx) => {
-        let desc = item.productName || item.description || 'Lorry Body';
-        if (item.productTranslation) {
-            desc += `\n(${item.productTranslation})`;
-        }
-        const qty = item.quantity || 1;
-        const price = item.unitPrice || 0;
-        const total = qty * price;
-        return [
-            idx + 1,
-            desc,
-            qty,
-            fmt(price),
-            fmt(total)
-        ];
-    });
+    const tableRows = (docData.items || [])
+        .filter(item => !!item)
+        .map((item, idx) => {
+            let desc = item.productName || item.description || 'Lorry Body';
+            if (item.productTranslation) {
+                desc += `\n(${item.productTranslation})`;
+            }
+            const qty = Number(item.quantity) || 1;
+            const price = Number(item.unitPrice) || 0;
+            const total = qty * price;
+            return [
+                idx + 1,
+                desc,
+                qty,
+                fmt(price),
+                fmt(total)
+            ];
+        });
     
     // Add Summary Row
     const subtotal = docData.totalAmount || (docData.items || []).reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
@@ -248,15 +250,15 @@ export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
         },
         margin: { left: 14, right: 14 },
         columnStyles: {
-            0: { width: 10, halign: 'center' },
-            1: { width: 95 },
-            2: { width: 15, halign: 'center' },
-            3: { width: 30, halign: 'right' },
-            4: { width: 30, halign: 'right' }
+            0: { cellWidth: 10, halign: 'center' },
+            1: { cellWidth: 95 },
+            2: { cellWidth: 15, halign: 'center' },
+            3: { cellWidth: 30, halign: 'right' },
+            4: { cellWidth: 30, halign: 'right' }
         }
     });
     
-    const finalY = doc.previousAutoTable.finalY + 8;
+    const finalY = doc.lastAutoTable.finalY + 8;
     
     // Summary Right Aligned
     doc.setFont('helvetica', 'normal');
@@ -278,7 +280,7 @@ export const exportDocumentToPDF = (docData, documentType = 'invoice') => {
             'Account Name: GLX Truck Body Engineers',
             'Bank: Nations Trust Bank, Ja-Ela Branch',
             'Account No: 1001-XXXX-XXXX'
-        ], 14, finalY + 4);
+        ].join('\n'), 14, finalY + 4);
     }
     
     // Signature

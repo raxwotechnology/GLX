@@ -570,6 +570,9 @@ const QuotationsPage = () => {
                                     <Button variant="outline" size="sm" className="flex-1" onClick={() => openForm(quote)}>
                                         <Edit size={14} className="mr-1" /> Edit
                                     </Button>
+                                    <Button variant="outline" size="sm" onClick={() => exportDocumentToPDF(quote, quote.documentType || 'quotation')} title="Download PDF">
+                                        <Download size={14} />
+                                    </Button>
                                     {quote.status !== 'converted' && (
                                         <Button variant="primary" size="sm" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={() => handleConvertToInvoice(quote._id)}>
                                             <ShoppingCart size={14} className="mr-1" /> Convert

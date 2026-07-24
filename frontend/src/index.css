@@ -25,6 +25,26 @@ body {
     visibility: visible;
   }
 
+  /* Reset layout of all ancestor/parent containers to allow 100% full-width printing */
+  html, body, #root, .app-layout, .main-content, .page-container,
+  .fixed.inset-0.z-50, 
+  .fixed.inset-0.z-50 > div,
+  .fixed.inset-0.z-50 > div > div {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
   .print-container,
   .print-page {
     position: absolute;
@@ -42,8 +62,10 @@ body {
     margin-bottom: 20mm;
   }
 
-  /* Hide app shell when printing */
-  .no-print {
+  /* Hide app shell and modal header/footer close buttons when printing */
+  .no-print,
+  .fixed.inset-0.z-50 button,
+  .fixed.inset-0.z-50 h2 {
     display: none !important;
   }
 
