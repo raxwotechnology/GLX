@@ -13,6 +13,7 @@ import { useAuthStore } from '../store/authStore';
 import { useRef } from 'react';
 import PrintableInvoice from '../components/print/PrintableInvoice';
 import ShareDocumentSmsModal from '../components/ShareDocumentSmsModal';
+import { getApiUrl } from '../api/config';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsApi } from '../features/payments/paymentsApi';
 
@@ -101,7 +102,7 @@ export default function InvoiceDetailPage() {
                         <Button variant="outline" onClick={() => setShareModalOpen(true)}>
                             <Send size={16} className="mr-1.5" /> Share SMS
                         </Button>
-                        <Button variant="outline" onClick={() => window.open(`/api/documents/${inv._id}/download-pdf?documentType=invoice`, '_blank')}>
+                        <Button variant="outline" onClick={() => window.open(`${getApiUrl()}/api/documents/${inv._id}/download-pdf?documentType=invoice`.replace('/api/api', '/api'), '_blank')}>
                             <Download size={16} className="mr-1.5" /> Download PDF
                         </Button>
                         {inv.balanceDue > 0 && inv.paymentStatus !== 'cancelled' && (
