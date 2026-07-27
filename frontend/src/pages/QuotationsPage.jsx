@@ -479,10 +479,10 @@ const QuotationsPage = () => {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-gray-900">
                 <div>
-                    <h2 className="text-2xl font-bold">Quotations & Estimates</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold">Quotations & Estimates</h2>
                     <p className="text-sm text-gray-500">Manage vehicle body engineering quotations, insurance estimates & convert to invoices</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button variant="outline" onClick={() => openForm(null, 'estimate')}>
                         <Plus size={16} className="mr-1.5" /> New Estimate (EST)
                     </Button>
@@ -647,11 +647,11 @@ const QuotationsPage = () => {
 
             {/* Quotation / Estimate Form Modal */}
             <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={editing ? `Edit ${formData.documentType === 'estimate' ? 'Estimate' : 'Quotation'}` : `New ${formData.documentType === 'estimate' ? 'Estimate (EST)' : 'Quotation (QUT)'}`} size="xl">
-                <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[85vh] overflow-y-auto">
+                <form onSubmit={handleSubmit} className="p-3 sm:p-6 space-y-6 max-h-[85vh] overflow-y-auto">
                     
                     {/* Document Type Selector & Ref */}
-                    <div className="bg-slate-100 p-3 rounded-xl flex items-center justify-between gap-4">
-                        <div className="flex gap-2">
+                    <div className="bg-slate-100 p-3 rounded-xl flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex flex-wrap gap-2">
                             <button
                                 type="button"
                                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${formData.documentType === 'quotation' ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
@@ -677,7 +677,7 @@ const QuotationsPage = () => {
                     <div className="bg-slate-50 p-4 rounded-xl border border-gray-200 space-y-4">
                         <span className="text-xs font-black text-slate-600 uppercase tracking-wide">Vehicle & Owner Information</span>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Vehicle Owner / Customer Name *</label>
                                 <input 
@@ -749,7 +749,7 @@ const QuotationsPage = () => {
                         </div>
 
                         {/* Introducer and Biller selection fields */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 pt-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-200 pt-3">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Introducer (Employee)</label>
                                 <select
@@ -861,8 +861,9 @@ const QuotationsPage = () => {
                             <span className="text-xs font-black uppercase">Parts & Labour Charges</span>
                             <Button type="button" variant="outline" size="sm" onClick={addItem}><Plus size={14} className="mr-1" /> Add Charge Item</Button>
                         </div>
+                        <div className="overflow-x-auto">
                         {formData.items.map((item, index) => (
-                            <div key={index} className="grid grid-cols-12 gap-3 items-end bg-gray-50/80 p-2.5 rounded-xl relative border border-gray-200">
+                            <div key={index} className="grid grid-cols-12 gap-3 items-end bg-gray-50/80 p-2.5 rounded-xl relative border border-gray-200 mb-2">
                                 <div className="col-span-12 md:col-span-6 space-y-1">
                                     <div className="flex justify-between items-center">
                                         <label className="text-[10px] font-bold text-gray-500 uppercase">Item Description</label>
@@ -957,10 +958,11 @@ const QuotationsPage = () => {
                                 </div>
                             </div>
                         ))}
+                        </div>
                     </div>
 
                     {/* Summary & Totals */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Notes / Terms</label>
                             <textarea 
@@ -993,7 +995,7 @@ const QuotationsPage = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t">
+                    <div className="flex flex-wrap justify-end gap-3 pt-4 border-t">
                         <Button variant="outline" type="button" onClick={() => setIsFormOpen(false)}>Cancel</Button>
                         <Button variant="primary" type="submit" loading={saving}>{editing ? 'Save Changes' : `Create ${formData.documentType === 'estimate' ? 'Estimate' : 'Quotation'}`}</Button>
                     </div>
@@ -1012,14 +1014,14 @@ const QuotationsPage = () => {
             {/* A4 Print & QR Preview Modal */}
             <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} title={`${previewQuote?.documentType === 'estimate' ? 'Estimate' : 'Quotation'} Printable View & QR Code`} size="xl">
                 {previewQuote && (
-                    <div className="p-6 space-y-6">
+                    <div className="p-3 sm:p-6 space-y-6">
                         <div className="max-h-[75vh] overflow-y-auto p-2 bg-gray-100 rounded-xl">
                             <DocumentPrintView ref={printRef} document={previewQuote} companyInfo={settings} />
                         </div>
 
                         <div className="flex justify-between items-center pt-4 border-t flex-wrap gap-2">
                             <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>Close</Button>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                                 <Button variant="outline" onClick={handlePrintDocument}>
                                     <Printer size={16} className="mr-1.5" /> Print Document
                                 </Button>

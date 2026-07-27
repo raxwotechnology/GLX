@@ -76,13 +76,13 @@ export default function ProfilePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="col-span-1 md:col-span-2 space-y-6">
-                    <Card className="p-6">
+                    <Card className="p-4 sm:p-6">
                         <div className="flex items-center gap-3 mb-6">
                             <User size={20} className="text-gray-600" />
                             <h3 className="text-sm font-semibold">Personal Information</h3>
                         </div>
                         <form onSubmit={profileForm.handleSubmit(saveProfile)} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <Input label="First Name" required {...profileForm.register('firstName', { required: true })} />
                                 <Input label="Last Name" required {...profileForm.register('lastName', { required: true })} />
                             </div>
@@ -96,7 +96,7 @@ export default function ProfilePage() {
                         </form>
                     </Card>
 
-                    <Card className="p-6">
+                    <Card className="p-4 sm:p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
                                 <Lock size={20} className="text-gray-600" />
@@ -118,7 +118,7 @@ export default function ProfilePage() {
                                     {...passwordForm.register('newPassword', { required: true, minLength: 6 })} />
                                 <Input label="Confirm New Password" type="password" required
                                     {...passwordForm.register('confirmPassword', { required: true })} />
-                                <div className="flex gap-2 pt-4 border-t">
+                                <div className="flex flex-wrap gap-2 pt-4 border-t">
                                     <Button type="submit" variant="primary">Update Password</Button>
                                     <Button type="button" variant="outline" onClick={() => {
                                         passwordForm.reset();
@@ -138,7 +138,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                    <Card className="p-6 sticky top-6">
+                    <Card className="p-4 sm:p-6 sticky top-6">
                         <h3 className="text-sm font-semibold mb-4">Account Details</h3>
                         <div className="space-y-3 text-sm">
                             <div>

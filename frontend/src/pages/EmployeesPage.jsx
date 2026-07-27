@@ -62,7 +62,7 @@ export default function EmployeesPage() {
                 </Button>} />
 
             <Card>
-                <div className="p-4 border-b flex gap-3">
+                <div className="p-4 border-b flex flex-wrap gap-2 sm:gap-3">
                     <div className="relative flex-1">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input type="text" placeholder="Search by name, code, email..."
@@ -70,12 +70,12 @@ export default function EmployeesPage() {
                             value={filters.search}
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))} />
                     </div>
-                    <div className="w-48">
+                    <div className="w-full sm:w-48">
                         <Select placeholder="All Departments" options={deptOptions}
                             value={filters.departmentId}
                             onChange={(e) => setFilters((f) => ({ ...f, departmentId: e.target.value, page: 1 }))} />
                     </div>
-                    <div className="w-40">
+                    <div className="w-full sm:w-40">
                         <Select placeholder="All Statuses"
                             options={[
                                 { value: 'active', label: 'Active' },

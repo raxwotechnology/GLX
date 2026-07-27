@@ -40,7 +40,7 @@ export default function BomDetailPage() {
                 </span>}
                 description={`Makes ${bom.outputQuantity} ${bom.outputUnitOfMeasure} of ${bom.finishedProductName}`}
                 actions={
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="outline" onClick={() => navigate('/boms')}>
                             <ArrowLeft size={16} className="mr-1.5" /> Back
                         </Button>
@@ -58,12 +58,13 @@ export default function BomDetailPage() {
                 }
             />
 
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="col-span-2 space-y-6">
                     <Card>
                         <div className="px-6 py-4 border-b">
                             <h3 className="text-sm font-semibold text-gray-700">Components</h3>
                         </div>
+                        <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50 border-b">
                                 <tr>
@@ -95,6 +96,7 @@ export default function BomDetailPage() {
                                 })}
                             </tbody>
                         </table>
+                        </div>
                     </Card>
 
                     {bom.labor?.length > 0 && (
@@ -102,6 +104,7 @@ export default function BomDetailPage() {
                             <div className="px-6 py-4 border-b">
                                 <h3 className="text-sm font-semibold text-gray-700">Labor</h3>
                             </div>
+                            <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50 border-b">
                                     <tr>
@@ -124,6 +127,7 @@ export default function BomDetailPage() {
                                     ))}
                                 </tbody>
                             </table>
+                            </div>
                         </Card>
                     )}
 
@@ -144,7 +148,7 @@ export default function BomDetailPage() {
                                         ? <><CheckCircle size={18} className="text-green-600" /><span className="font-semibold text-green-700">Ready to produce {availability.targetQuantity} units</span></>
                                         : <><AlertTriangle size={18} className="text-amber-600" /><span className="font-semibold text-amber-700">Insufficient materials</span></>}
                                 </div>
-                                <table className="w-full text-sm">
+                                <div className="overflow-x-auto"><table className="w-full text-sm">
                                     <thead className="border-b">
                                         <tr>
                                             <th className="px-2 py-1 text-left text-xs font-semibold text-gray-600">Material</th>
@@ -167,7 +171,7 @@ export default function BomDetailPage() {
                                             </tr>
                                         ))}
                                     </tbody>
-                                </table>
+                                </table></div>
                             </div>
                         )}
                     </Card>

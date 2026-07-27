@@ -78,7 +78,7 @@ export default function EpfEtfPage() {
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-6 print:p-0">
+        <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-6 print:p-0">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
                 <div>
@@ -124,7 +124,7 @@ export default function EpfEtfPage() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <select
                         value={month}
                         onChange={(e) => setMonth(e.target.value)}

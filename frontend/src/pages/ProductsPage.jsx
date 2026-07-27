@@ -177,7 +177,7 @@ export default function ProductsPage() {
                 title="Products"
                 description="Manage your product catalog"
                 actions={
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <ExportButtons
                             onExportPDF={() => handleExportPDF(exportData)}
                             onExportExcel={() => handleExportExcel(exportData)}
@@ -210,7 +210,7 @@ export default function ProductsPage() {
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
                         />
                     </div>
-                    <div className="w-48">
+                    <div className="w-full sm:w-48">
                         <Select
                             placeholder="All Categories"
                             options={categoryOptions}
@@ -218,7 +218,7 @@ export default function ProductsPage() {
                             onChange={(e) => setFilters((f) => ({ ...f, categoryId: e.target.value, page: 1 }))}
                         />
                     </div>
-                    <div className="w-40">
+                    <div className="w-full sm:w-40">
                         <Select
                             placeholder="Active Only"
                             options={[
@@ -257,7 +257,9 @@ export default function ProductsPage() {
                     />
                 ) : (
                     <>
-                        <Table columns={columns} data={products} />
+                        <div className="overflow-x-auto">
+                            <Table columns={columns} data={products} />
+                        </div>
                         <Pagination
                             page={filters.page}
                             totalPages={totalPages}

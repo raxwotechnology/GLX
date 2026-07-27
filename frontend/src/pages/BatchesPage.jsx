@@ -168,7 +168,7 @@ const BatchesPage = () => {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                     { label: 'Active Batches', value: batches.filter(b => b.status === 'in_progress').length, color: 'blue', icon: Clock },
                     { label: 'Pending QC', value: batches.filter(b => b.status === 'qc_pending').length, color: 'yellow', icon: AlertCircle },
@@ -186,14 +186,14 @@ const BatchesPage = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                             type="text"
                             placeholder="Search batch #..."
-                            className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none w-64"
+                            className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none w-full sm:w-64"
                         />
                     </div>
                     <select

@@ -162,7 +162,7 @@ export default function AttendancePage() {
                 title="Attendance & Fingerprint Log"
                 description="Daily staff attendance, biometric imports, and policy rules"
                 actions={
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="outline" onClick={() => navigate('/attendance-policies')}>
                             <Clock size={16} className="mr-1.5" /> Manage Policies
                         </Button>
@@ -177,11 +177,11 @@ export default function AttendancePage() {
             />
 
             <Card>
-                <div className="p-4 border-b flex gap-3">
-                    <div className="w-48">
+                <div className="p-4 border-b flex flex-wrap gap-3">
+                    <div className="w-full sm:w-48">
                         <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
                     </div>
-                    <div className="w-56">
+                    <div className="w-full sm:w-56">
                         <Select placeholder="All Departments" options={deptOptions}
                             value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} />
                     </div>
@@ -199,7 +199,7 @@ export default function AttendancePage() {
 
             {/* Bulk Mark Modal */}
             <Modal isOpen={isBulkOpen} onClose={() => setIsBulkOpen(false)} title={`Mark Attendance — ${selectedDate}`} size="lg">
-                <div className="p-6 max-h-96 overflow-y-auto">
+                <div className="p-6 max-h-96 overflow-y-auto overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead className="border-b">
                             <tr>

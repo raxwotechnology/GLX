@@ -150,7 +150,7 @@ export default function EmployeeFormPage() {
                 </Button>} />
 
             <Card>
-                <div className="border-b flex gap-1 px-4">
+                <div className="border-b flex gap-1 px-4 overflow-x-auto">
                     {tabs.map((t) => (
                         <button key={t.id} onClick={() => setTab(t.id)}
                             className={`px-4 py-3 text-sm font-medium border-b-2 ${tab === t.id ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -160,14 +160,14 @@ export default function EmployeeFormPage() {
                     ))}
                 </div>
 
-                <div className="p-6 space-y-4">
+                <div className="p-3 sm:p-6 space-y-4">
                     {tab === 'basic' && (
                         <>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <Input label="First Name" required value={form.firstName} onChange={(e) => update('firstName', e.target.value)} />
                                 <Input label="Last Name" required value={form.lastName} onChange={(e) => update('lastName', e.target.value)} />
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                 <Select label="Gender" placeholder="Select..."
                                     options={[
                                         { value: 'male', label: 'Male' }, { value: 'female', label: 'Female' },
@@ -179,7 +179,7 @@ export default function EmployeeFormPage() {
                                 <Input label="NIC Number" value={form.nationalIdNumber}
                                     onChange={(e) => update('nationalIdNumber', e.target.value)} />
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                 <Select label="Marital Status" placeholder="Select..."
                                     options={[
                                         { value: 'single', label: 'Single' }, { value: 'married', label: 'Married' },
@@ -195,7 +195,7 @@ export default function EmployeeFormPage() {
 
                     {tab === 'contact' && (
                         <>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                 <Input label="Email" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} />
                                 <Input label="Phone" value={form.phone} onChange={(e) => update('phone', e.target.value)} />
                                 <Input label="Mobile" value={form.mobile} onChange={(e) => update('mobile', e.target.value)} />
@@ -204,7 +204,7 @@ export default function EmployeeFormPage() {
                                 <p className="text-sm font-semibold mb-2">Permanent Address</p>
                                 <Input label="Line 1" value={form.permanentAddress.line1}
                                     onChange={(e) => update('permanentAddress.line1', e.target.value)} />
-                                <div className="grid grid-cols-2 gap-4 mt-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-2">
                                     <Input label="City" value={form.permanentAddress.city}
                                         onChange={(e) => update('permanentAddress.city', e.target.value)} />
                                     <Input label="Postal Code" value={form.permanentAddress.postalCode}
@@ -213,7 +213,7 @@ export default function EmployeeFormPage() {
                             </div>
                             <div>
                                 <p className="text-sm font-semibold mb-2">Emergency Contact</p>
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                     <Input label="Name" value={form.emergencyContact.name}
                                         onChange={(e) => update('emergencyContact.name', e.target.value)} />
                                     <Input label="Relationship" value={form.emergencyContact.relationship}
@@ -227,13 +227,13 @@ export default function EmployeeFormPage() {
 
                     {tab === 'employment' && (
                         <>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <Select label="Department" placeholder="Select..." options={deptOptions}
                                     value={form.departmentId} onChange={(e) => update('departmentId', e.target.value)} />
                                 <Select label="Designation" placeholder="Select..." options={designationOptions}
                                     value={form.designationId} onChange={(e) => update('designationId', e.target.value)} />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <Select label="Employment Type"
                                     options={[
                                         { value: 'permanent', label: 'Permanent' },
@@ -247,7 +247,7 @@ export default function EmployeeFormPage() {
                                 <Input label="Date of Joining" required type="date" value={form.dateOfJoining}
                                     onChange={(e) => update('dateOfJoining', e.target.value)} />
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                 <Input label="Probation End Date" type="date" value={form.probationEndDate}
                                     onChange={(e) => update('probationEndDate', e.target.value)} />
                                 <Input label="Work Location" value={form.workLocation}
@@ -271,14 +271,14 @@ export default function EmployeeFormPage() {
 
                     {tab === 'statutory' && (
                         <>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                 <Input label="EPF Number" value={form.epfNumber} onChange={(e) => update('epfNumber', e.target.value)} />
                                 <Input label="ETF Number" value={form.etfNumber} onChange={(e) => update('etfNumber', e.target.value)} />
                                 <Input label="Tax Registration (TIN)" value={form.taxRegistrationNumber}
                                     onChange={(e) => update('taxRegistrationNumber', e.target.value)} />
                             </div>
                             <p className="text-sm font-semibold mt-4 mb-2">Bank Details (for salary disbursement)</p>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <Input label="Bank Name" value={form.bankDetails.bankName}
                                     onChange={(e) => update('bankDetails.bankName', e.target.value)} />
                                 <Input label="Branch Name" value={form.bankDetails.branchName}
@@ -293,7 +293,7 @@ export default function EmployeeFormPage() {
 
                     {tab === 'compensation' && (
                         <>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <Select label="Employee Category" required
                                     options={[
                                         { value: 'Permanent', label: 'Permanent' },
@@ -303,7 +303,7 @@ export default function EmployeeFormPage() {
                                 <Input label="Basic Wage Rate (LKR/hour)" type="number" min="0"
                                     value={form.basicWageRate} onChange={(e) => update('basicWageRate', Number(e.target.value))} />
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                 <Input label="EPF Rate (%)" type="number" min="0" max="100"
                                     value={form.epfRate} onChange={(e) => update('epfRate', Number(e.target.value))} />
                                 <Input label="ETF Rate (%)" type="number" min="0" max="100"
@@ -311,7 +311,7 @@ export default function EmployeeFormPage() {
                                 <Input label="Automated OT Cutoff (Hours/month)" type="number" min="0"
                                     value={form.otCutoffHours} onChange={(e) => update('otCutoffHours', Number(e.target.value))} />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <Select label="Salary Structure" placeholder="None (use basic only)" options={structureOptions}
                                     value={form.salaryStructureId} onChange={(e) => update('salaryStructureId', e.target.value)} />
                                 <Select label="Leave Structure" placeholder="None (use default standard balances)" options={leaveStructureOptions}
@@ -327,7 +327,7 @@ export default function EmployeeFormPage() {
                     )}
                 </div>
 
-                <div className="flex justify-end gap-2 px-6 py-4 border-t bg-gray-50">
+                <div className="flex flex-wrap justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-4 border-t bg-gray-50">
                     <Button variant="outline" onClick={() => navigate('/employees')}>Cancel</Button>
                     <Button variant="primary" onClick={submit}
                         loading={createMutation.isPending || updateMutation.isPending}>

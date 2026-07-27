@@ -264,7 +264,7 @@ export default function ProjectDetailPage() {
             />
 
             {/* Financial Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                 <Card className="p-4 bg-slate-50 border flex flex-col justify-between">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Quoted Price</span>
                     <span className="text-xl font-bold text-slate-800">{fmt(project.quotedPrice)}</span>
@@ -299,11 +299,11 @@ export default function ProjectDetailPage() {
             </div>
 
             {/* Progress and status update panel */}
-            <Card className="p-6">
+            <Card className="p-3 sm:p-6">
                 <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center">
                     <BarChart2 className="mr-2 text-primary-500" size={18} /> Project Management & Status
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-end">
                     <div className="space-y-2">
                         <label className="text-xs font-semibold text-slate-500 uppercase">Project Progress ({progress}%)</label>
                         <div className="flex items-center space-x-4">
@@ -325,7 +325,7 @@ export default function ProjectDetailPage() {
                             onChange={(e) => setStatus(e.target.value)}
                         />
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         {project.status !== 'delivered' && (
                             <>
                                 <Button variant="outline" onClick={handleUpdateProject} loading={isUpdating}>
@@ -358,7 +358,7 @@ export default function ProjectDetailPage() {
             </Card>
 
             {/* Tabs Navigation */}
-            <div className="flex border-b border-gray-200 bg-white rounded-t-xl">
+            <div className="flex border-b border-gray-200 bg-white rounded-t-xl overflow-x-auto">
                 {[
                     { id: 'overview', label: 'Overview & Employees', icon: User },
                     { id: 'materials', label: `Materials Issued (${project.materialsIssued?.length || 0})`, icon: Package },
@@ -366,16 +366,16 @@ export default function ProjectDetailPage() {
                     { id: 'labor', label: 'Labor Logs', icon: Hammer },
                 ].map((t) => (
                     <button key={t.id} onClick={() => setTab(t.id)}
-                        className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-all ${tab === t.id ? 'border-primary-600 text-primary-600 bg-slate-50' : 'border-transparent text-gray-500 hover:text-slate-800 hover:bg-slate-50'}`}>
+                        className={`flex items-center gap-2 px-4 sm:px-6 py-4 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${tab === t.id ? 'border-primary-600 text-primary-600 bg-slate-50' : 'border-transparent text-gray-500 hover:text-slate-800 hover:bg-slate-50'}`}>
                         <t.icon size={16} /> {t.label}
                     </button>
                 ))}
             </div>
 
             {/* Tab Contents */}
-            <Card className="rounded-t-none p-6">
+            <Card className="rounded-t-none p-3 sm:p-6">
                 {tab === 'overview' && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
                         <div className="md:col-span-2 space-y-4">
                             <div>
                                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Project Details</h4>
@@ -383,7 +383,7 @@ export default function ProjectDetailPage() {
                                     {project.details || 'No description provided.'}
                                 </p>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="bg-slate-50 p-3 rounded-xl border">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase">Yard / Site</span>
                                     <p className="text-sm font-semibold text-slate-800 mt-0.5">{project.yard || '—'}</p>
@@ -494,7 +494,7 @@ export default function ProjectDetailPage() {
                         <form onSubmit={handleAddExpense} className="space-y-4">
                             <Input label="Expense Title" required value={expTitle} onChange={(e) => setExpTitle(e.target.value)} placeholder="e.g. Transporter payment, lunch allowance" />
                             
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Select label="Category"
                                     options={[
                                         { value: 'Raw Materials', label: 'Raw Materials' },
@@ -521,7 +521,7 @@ export default function ProjectDetailPage() {
 
                             <Textarea label="Notes" rows={2} value={expNotes} onChange={(e) => setExpNotes(e.target.value)} placeholder="Enter details..." />
 
-                            <div className="flex justify-end gap-2 pt-4 border-t">
+                            <div className="flex flex-wrap justify-end gap-2 pt-4 border-t">
                                 <Button variant="outline" type="button" onClick={() => setIsExpenseOpen(false)}>Cancel</Button>
                                 <Button variant="primary" type="submit" loading={isSavingExpense}>Save Expense</Button>
                             </div>

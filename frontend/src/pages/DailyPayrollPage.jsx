@@ -155,7 +155,7 @@ export default function DailyPayrollPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             <PageHeader
                 title="Daily Wages & Attendance Payout"
                 description="Process daily and hourly wage payments, link labor costs to active projects, and log cash/bank vouchers."
@@ -182,7 +182,7 @@ export default function DailyPayrollPage() {
             />
 
             {/* Metric KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <Card className="p-4 bg-white border border-gray-100 shadow-xs rounded-2xl">
                     <div className="flex justify-between items-start">
                         <div>
@@ -239,7 +239,7 @@ export default function DailyPayrollPage() {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex gap-2 border-b border-gray-200 pb-2">
+            <div className="flex overflow-x-auto no-scrollbar gap-2 border-b border-gray-200 pb-2">
                 <button
                     onClick={() => setActiveTab('daily')}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
@@ -264,7 +264,7 @@ export default function DailyPayrollPage() {
 
             {/* TAB 1: DAILY PAYOUT TABLE */}
             {activeTab === 'daily' && (
-                <Card className="p-5 space-y-4">
+                <Card className="p-3 sm:p-5 space-y-4">
                     {/* Bulk Action Controls */}
                     {selectedWorkerIds.length > 0 && (
                         <div className="bg-slate-900 text-white p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xl animate-fadeIn">
@@ -456,8 +456,8 @@ export default function DailyPayrollPage() {
 
             {/* TAB 2: PAYOUT HISTORY */}
             {activeTab === 'history' && (
-                <Card className="p-5 space-y-4">
-                    <div className="flex justify-between items-center gap-4">
+                <Card className="p-3 sm:p-5 space-y-4">
+                    <div className="flex flex-wrap justify-between items-center gap-3 sm:gap-4">
                         <div className="relative flex-1 max-w-md">
                             <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
                             <input
@@ -554,7 +554,7 @@ export default function DailyPayrollPage() {
 
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-gray-600 uppercase">Payment Method</label>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                     {['cash', 'bank_transfer', 'cheque'].map((m) => (
                                         <button
                                             key={m}

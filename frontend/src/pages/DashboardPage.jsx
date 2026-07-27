@@ -136,7 +136,7 @@ export default function DashboardPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-wrap items-start justify-between gap-2">
                 <PageHeader title="Factory Operations & MD Command" description="Real-time Command Hub" />
                 <button onClick={() => { fetchDeptMetrics(); }} className="p-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition bg-white shadow-sm">
                     <RefreshCw size={16} className="text-gray-500" />
@@ -339,14 +339,14 @@ export default function DashboardPage() {
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 <Card className="lg:col-span-2 p-6 space-y-6">
                                     <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5"><Factory className="text-indigo-600" /> Aluminium Fabrication & Output status</h3>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-indigo-900">
                                             <p className="text-[10px] font-bold uppercase text-indigo-600">Active Fabrication Jobs</p>
-                                            <p className="text-2xl font-black mt-1">{deptData?.operations?.activeProduction}</p>
+                                            <p className="text-xl sm:text-2xl font-black mt-1">{deptData?.operations?.activeProduction}</p>
                                         </div>
                                         <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-emerald-900">
                                             <p className="text-[10px] font-bold uppercase text-emerald-600">Completed Custom Orders (Month)</p>
-                                            <p className="text-2xl font-black mt-1">{deptData?.operations?.completedProductionVerification || deptData?.operations?.completedProductionThisMonth}</p>
+                                            <p className="text-xl sm:text-2xl font-black mt-1">{deptData?.operations?.completedProductionVerification || deptData?.operations?.completedProductionThisMonth}</p>
                                         </div>
                                     </div>
 
@@ -355,7 +355,7 @@ export default function DashboardPage() {
                                         <div className="flex justify-between items-center">
                                             <div>
                                                 <h4 className="text-xs font-bold text-indigo-800 uppercase tracking-wider">Monthly Fabrication Output Target</h4>
-                                                <p className="text-2xl font-black text-indigo-950 mt-1">{deptData?.operations?.actualProduction?.toLocaleString() || 0} Items <span className="text-xs font-medium text-gray-500">completed / {deptData?.operations?.targetProduction?.toLocaleString() || 0} Items target</span></p>
+                                                <p className="text-xl sm:text-2xl font-black text-indigo-950 mt-1">{deptData?.operations?.actualProduction?.toLocaleString() || 0} Items <span className="text-xs font-medium text-gray-500">completed / {deptData?.operations?.targetProduction?.toLocaleString() || 0} Items target</span></p>
                                             </div>
                                             <Badge variant={deptData?.operations?.productionPercentage >= 105 ? 'success' : 'warning'}>
                                                 {deptData?.operations?.productionPercentage || 0}% Achieved
@@ -419,12 +419,12 @@ export default function DashboardPage() {
                                 <Card className="lg:col-span-2 p-6 space-y-6">
                                     <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5"><Landmark className="text-indigo-600" /> Cash Pool & Bank Balances</h3>
                                     
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="bg-primary-600 text-white rounded-xl p-5 shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
                                             <Wallet className="absolute right-[-10px] top-[-10px] w-20 h-20 text-white/10" />
                                             <div>
                                                 <p className="text-primary-100 text-[10px] font-bold uppercase tracking-wide">Factory Petty Cash Pool</p>
-                                                <p className="text-2xl font-black mt-1">{fmt(deptData?.finance?.pettyCashBalance)}</p>
+                                                <p className="text-xl sm:text-2xl font-black mt-1">{fmt(deptData?.finance?.pettyCashBalance)}</p>
                                             </div>
                                             {deptData?.finance?.pettyCategories && deptData.finance.pettyCategories.length > 0 && (
                                                 <div className="mt-3 pt-2 border-t border-white/20 text-[9px] space-y-0.5 max-h-[60px] overflow-y-auto scrollbar-none">
@@ -440,7 +440,7 @@ export default function DashboardPage() {
                                         <div className="bg-emerald-600 text-white rounded-xl p-5 shadow relative overflow-hidden">
                                             <Landmark className="absolute right-[-10px] bottom-[-10px] w-24 h-24 text-white/10" />
                                             <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-wide">Total Bank Liquid Assets</p>
-                                            <p className="text-2xl font-black mt-1">{fmt(deptData?.finance?.totalBankBalance)}</p>
+                                            <p className="text-xl sm:text-2xl font-black mt-1">{fmt(deptData?.finance?.totalBankBalance)}</p>
                                         </div>
                                     </div>
 
@@ -567,19 +567,19 @@ export default function DashboardPage() {
                                 <Card className="lg:col-span-2 p-6 space-y-6">
                                     <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5"><Users className="text-primary-600" /> Human Resources Command</h3>
                                     
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="bg-blue-50 border border-blue-100 text-blue-900 rounded-xl p-5 shadow-sm flex items-center gap-4">
                                             <div className="p-3 bg-blue-500 rounded-lg text-white"><CheckCircle size={24} /></div>
                                             <div>
                                                 <p className="text-[10px] font-bold uppercase text-blue-500">Staff Attendance Today</p>
-                                                <p className="text-2xl font-black mt-0.5">{deptData?.hr?.attendanceToday || 0} checked-in</p>
+                                                <p className="text-xl sm:text-2xl font-black mt-0.5">{deptData?.hr?.attendanceToday || 0} checked-in</p>
                                             </div>
                                         </div>
                                         <div className="bg-violet-50 border border-violet-100 text-violet-900 rounded-xl p-5 shadow-sm flex items-center gap-4">
                                             <div className="p-3 bg-violet-500 rounded-lg text-white"><Clock size={24} /></div>
                                             <div>
                                                 <p className="text-[10px] font-bold uppercase text-violet-500">Active Payrolls</p>
-                                                <p className="text-2xl font-black mt-0.5">{deptData?.hr?.payrollStats?.totalPayrolls || 0} employees</p>
+                                                <p className="text-xl sm:text-2xl font-black mt-0.5">{deptData?.hr?.payrollStats?.totalPayrolls || 0} employees</p>
                                             </div>
                                         </div>
                                     </div>
@@ -587,7 +587,7 @@ export default function DashboardPage() {
                                     {/* EPF/ETF breakdown */}
                                     <div className="space-y-3 pt-2">
                                         <h4 className="text-xs font-bold text-gray-400 uppercase">Monthly EPF & ETF Breakdown</h4>
-                                        <div className="grid grid-cols-3 gap-4 border border-gray-100 rounded-xl p-4 bg-gray-50/50 text-xs">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border border-gray-100 rounded-xl p-4 bg-gray-50/50 text-xs">
                                             <div>
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase">EPF Employer (12%)</p>
                                                 <p className="text-sm font-bold mt-1 text-gray-800">{fmt(deptData?.hr?.payrollStats?.epfEmployer)}</p>
@@ -692,17 +692,17 @@ function EmployeeDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="p-5 md:col-span-2">
                     <h3 className="text-sm font-semibold mb-4 text-gray-700">My Leave Balances (Remaining)</h3>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         <div className="bg-blue-50 border border-blue-100 p-3.5 rounded-xl text-center">
-                            <span className="text-2xl font-bold text-blue-700 block">{profile.leaveBalances?.annual || 0}</span>
+                            <span className="text-xl sm:text-2xl font-bold text-blue-700 block">{profile.leaveBalances?.annual || 0}</span>
                             <span className="text-[10px] text-blue-600 font-medium uppercase tracking-wider">Annual</span>
                         </div>
                         <div className="bg-green-50 border border-green-100 p-3.5 rounded-xl text-center">
-                            <span className="text-2xl font-bold text-green-700 block">{profile.leaveBalances?.casual || 0}</span>
+                            <span className="text-xl sm:text-2xl font-bold text-green-700 block">{profile.leaveBalances?.casual || 0}</span>
                             <span className="text-[10px] text-green-600 font-medium uppercase tracking-wider">Casual</span>
                         </div>
                         <div className="bg-yellow-50 border border-yellow-100 p-3.5 rounded-xl text-center">
-                            <span className="text-2xl font-bold text-yellow-700 block">{profile.leaveBalances?.sick || 0}</span>
+                            <span className="text-xl sm:text-2xl font-bold text-yellow-700 block">{profile.leaveBalances?.sick || 0}</span>
                             <span className="text-[10px] text-yellow-600 font-medium uppercase tracking-wider">Sick</span>
                         </div>
                     </div>
@@ -818,7 +818,7 @@ function EmployeeDashboard() {
 
             <Modal isOpen={isLeaveModalOpen} onClose={() => setIsLeaveModalOpen(false)} title="New Leave Request" size="md">
                 <div className="p-6 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Select label="Leave Type"
                             options={[
                                 { value: 'annual', label: 'Annual' },
@@ -837,7 +837,7 @@ function EmployeeDashboard() {
                             </label>
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input label="From Date" required type="date" value={form.fromDate}
                             onChange={(e) => setForm((f) => ({ ...f, fromDate: e.target.value }))} />
                         <Input label="To Date" required type="date" value={form.toDate}

@@ -95,7 +95,7 @@ export default function PurchaseOrdersPage() {
                             value={filters.search}
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))} />
                     </div>
-                    <div className="w-56">
+                    <div className="w-full sm:w-56">
                         <Select placeholder="All Statuses"
                             options={[
                                 { value: 'draft', label: 'Draft' },
@@ -120,7 +120,9 @@ export default function PurchaseOrdersPage() {
                         </Button>} />
                 ) : (
                     <>
-                        <Table columns={columns} data={orders} onRowClick={(r) => navigate(`/purchase-orders/${r._id}`)} />
+                        <div className="overflow-x-auto">
+                            <Table columns={columns} data={orders} onRowClick={(r) => navigate(`/purchase-orders/${r._id}`)} />
+                        </div>
                         <Pagination page={filters.page} totalPages={totalPages} total={total}
                             onPageChange={(p) => setFilters((f) => ({ ...f, page: p }))} />
                     </>

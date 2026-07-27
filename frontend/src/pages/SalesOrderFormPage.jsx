@@ -261,11 +261,11 @@ export default function SalesOrderFormPage() {
                 }
             />
 
-            <div className="grid grid-cols-3 gap-6">
-                <div className="col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
 
                     {/* Customer & Delivery */}
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Customer & Delivery</h3>
                         <div className="space-y-4">
 
@@ -339,7 +339,7 @@ export default function SalesOrderFormPage() {
                                 />
                             )}
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Input
                                     label="Requested Delivery Date" type="date"
                                     value={requestedDeliveryDate}
@@ -361,7 +361,7 @@ export default function SalesOrderFormPage() {
                     </Card>
 
                     {/* Line Items */}
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-semibold text-gray-700">Line Items</h3>
                             <Button type="button" variant="outline" size="sm" onClick={addItem}>
@@ -437,7 +437,7 @@ export default function SalesOrderFormPage() {
                                                 </button>
                                             </div>
 
-                                            <div className="grid grid-cols-5 gap-2">
+                                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                                                 <div>
                                                     <Input
                                                         label="Qty" type="number" step="0.01" min="0.01"
@@ -478,7 +478,7 @@ export default function SalesOrderFormPage() {
                     </Card>
 
                     {/* Notes */}
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Notes</h3>
                         <div className="space-y-4">
                             <Textarea
@@ -495,7 +495,7 @@ export default function SalesOrderFormPage() {
 
                 {/* Order Summary sidebar */}
                 <div className="space-y-6">
-                    <Card className="p-6 sticky top-6">
+                    <Card className="p-3 sm:p-6 sticky top-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Order Summary</h3>
                         <div className="space-y-3">
                             <div className="flex justify-between text-sm">

@@ -29,7 +29,7 @@ export default function EmployeeDetailPage() {
                 title={<span className="flex items-center gap-3">{emp.firstName} {emp.lastName} <Badge variant={statusVariant[emp.status]}>{emp.status?.replace(/_/g, ' ')}</Badge></span>}
                 description={`${emp.employeeCode} · ${emp.designationId?.name || 'No designation'}`}
                 actions={
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="outline" onClick={() => navigate('/employees')}>
                             <ArrowLeft size={16} className="mr-1.5" /> Back
                         </Button>
@@ -39,7 +39,7 @@ export default function EmployeeDetailPage() {
                     </div>
                 } />
 
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="col-span-2 space-y-6">
                     <Card className="p-6">
                         <div className="flex items-center gap-2 mb-4">

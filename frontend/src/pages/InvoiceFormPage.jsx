@@ -151,7 +151,7 @@ export default function InvoiceFormPage() {
                     <ArrowLeft size={16} className="mr-1.5" /> Back
                 </Button>} />
 
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="col-span-2 space-y-6">
                     <Card className="p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Customer & Dates</h3>
@@ -169,7 +169,7 @@ export default function InvoiceFormPage() {
                                         setIntroducerName('');
                                     }
                                 }} />
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <Input label="Invoice Date" type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
                                 <Input label="Due Date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                                 <Select label="Type"
@@ -305,7 +305,7 @@ export default function InvoiceFormPage() {
                                         </div>
                                         <Input label="Description / Name" required
                                             value={item.productName} onChange={(e) => updateItem(idx, 'productName', e.target.value)} />
-                                        <div className="grid grid-cols-4 gap-2 mt-2">
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
                                             <Input label="Qty" type="number" step="0.01" min="0.01"
                                                 value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} />
                                             <Input label="Unit Price" type="number" step="0.01" min="0"

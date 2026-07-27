@@ -99,7 +99,7 @@ export default function SalesOrdersPage() {
                 title="Sales Orders"
                 description="Manage customer orders"
                 actions={canCreate && (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         {/* <Button variant="primary" onClick={() => navigate('/sales-orders/new')}>
                             <Plus size={16} className="mr-1.5" /> New Order
                         </Button> */}
@@ -125,7 +125,7 @@ export default function SalesOrdersPage() {
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
                         />
                     </div>
-                    <div className="w-48">
+                    <div className="w-full sm:w-48">
                         <Select
                             placeholder="All Statuses"
                             options={[

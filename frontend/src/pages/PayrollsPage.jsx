@@ -96,7 +96,7 @@ export default function PayrollsPage() {
                 </Button>} />
 
             <Card>
-                <div className="p-4 border-b flex gap-3">
+                <div className="p-4 border-b flex flex-wrap gap-2 sm:gap-3">
                     <div className="w-32">
                         <Input type="number" value={year} onChange={(e) => setYear(e.target.value)} />
                     </div>
@@ -113,7 +113,7 @@ export default function PayrollsPage() {
                         <strong>Before processing:</strong> ensure attendance for this month is marked and leaves are approved.
                         EPF 8% employee + 12% employer, ETF 3%, and APIT income tax will be auto-calculated.
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <Select label="Month" required options={months}
                             value={processMonth} onChange={(e) => setProcessMonth(e.target.value)} />
                         <Input label="Year" required type="number" value={processYear}
@@ -126,7 +126,7 @@ export default function PayrollsPage() {
                         Tip: Common rates are 1.5× hourly basic. For a LKR 50,000/month basic, hourly is ~240, so OT at 1.5× = ~360.
                     </p>
                 </div>
-                <div className="flex justify-end gap-2 px-6 py-4 border-t bg-gray-50">
+                <div className="flex flex-wrap justify-end gap-2 px-6 py-4 border-t bg-gray-50">
                     <Button variant="outline" onClick={() => setIsProcessOpen(false)}>Cancel</Button>
                     <Button variant="primary" onClick={submitProcess} loading={processM.isPending}>Process</Button>
                 </div>

@@ -149,13 +149,13 @@ export default function SuppliersPage() {
                         <input type="text" placeholder="Search..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm"
                             value={filters.search} onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))} />
                     </div>
-                    <div className="w-48">
+                    <div className="w-full sm:w-48">
                         <Select placeholder="All Categories"
                             options={Object.entries(categoryLabels).map(([v, l]) => ({ value: v, label: l }))}
                             value={filters.category}
                             onChange={(e) => setFilters((f) => ({ ...f, category: e.target.value, page: 1 }))} />
                     </div>
-                    <div className="w-40">
+                    <div className="w-full sm:w-40">
                         <Select placeholder="All Statuses"
                             options={[
                                 { value: 'active', label: 'Active' }, { value: 'on_hold', label: 'On Hold' },
@@ -175,7 +175,9 @@ export default function SuppliersPage() {
                         </Button>} />
                 ) : (
                     <>
-                        <Table columns={columns} data={suppliers} />
+                        <div className="overflow-x-auto">
+                            <Table columns={columns} data={suppliers} />
+                        </div>
                         <Pagination page={filters.page} totalPages={totalPages} total={total}
                             onPageChange={(p) => setFilters((f) => ({ ...f, page: p }))} />
                     </>

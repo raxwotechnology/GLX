@@ -208,7 +208,7 @@ export default function ReturnFormPage() {
             />
 
             {/* ── Step indicator bar ── */}
-            <div className="flex items-center gap-0 mb-6 bg-white border border-gray-200 rounded-xl p-4">
+            <div className="flex flex-wrap items-center gap-0 mb-6 bg-white border border-gray-200 rounded-xl p-4">
                 {[
                     { n: 1, label: 'Select Customer', icon: User },
                     { n: 2, label: 'Select Orders', icon: ShoppingCart },
@@ -238,11 +238,11 @@ export default function ReturnFormPage() {
                 })}
             </div>
 
-            <div className="grid grid-cols-3 gap-6">
-                <div className="col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div className="lg:col-span-2 space-y-4 sm:space-y-6">
 
                     {/* ── STEP 1: Customer ── */}
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <div className="flex items-center gap-2 mb-4">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step >= 1 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-400'}`}>1</div>
                             <h3 className="text-sm font-semibold text-gray-700">Select Customer</h3>
@@ -262,7 +262,7 @@ export default function ReturnFormPage() {
                     </Card>
 
                     {/* ── STEP 2: Orders ── */}
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <div className="flex items-center gap-2 mb-4">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step >= 2 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-400'}`}>2</div>
                             <h3 className="text-sm font-semibold text-gray-700">Select Source Orders</h3>
@@ -332,7 +332,7 @@ export default function ReturnFormPage() {
                     </Card>
 
                     {/* ── STEP 3: Items ── */}
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <div className="flex items-center gap-2 mb-4">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step >= 3 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-400'}`}>3</div>
                             <h3 className="text-sm font-semibold text-gray-700">Add Items to Return</h3>
@@ -444,7 +444,7 @@ export default function ReturnFormPage() {
                                             </div>
 
                                             {/* Inputs */}
-                                            <div className="grid grid-cols-3 gap-3 mb-3">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                                                 <div>
                                                     <Input
                                                         label={`Qty to Return (max ${item.maxQty})`}
@@ -523,7 +523,7 @@ export default function ReturnFormPage() {
                     </Card>
 
                     {/* Notes */}
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Additional Notes</h3>
                         <div className="space-y-3">
                             <Textarea label="Customer Notes (visible to customer)" rows={2} value={customerNotes} onChange={(e) => setCustomerNotes(e.target.value)} />
@@ -534,7 +534,7 @@ export default function ReturnFormPage() {
 
                 {/* ── Summary Panel ── */}
                 <div>
-                    <Card className="p-6 sticky top-6">
+                    <Card className="p-3 sm:p-6 sticky top-6">
                         <h3 className="text-sm font-semibold mb-4 text-gray-700">Return Summary</h3>
 
                         {items.length === 0 ? (

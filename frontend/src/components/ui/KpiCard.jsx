@@ -16,7 +16,7 @@ export default function KpiCard({
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     <p className="text-sm text-gray-600 mb-1">{label}</p>
-                    <p className="text-2xl font-semibold text-gray-900">{value}</p>
+                    <p className="text-xl sm:text-2xl font-semibold text-gray-900">{value}</p>
                     {hasTrend && (
                         <p className={`text-xs mt-1 flex items-center gap-1 ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
                             {trendUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
@@ -26,8 +26,8 @@ export default function KpiCard({
                     {subtext && <p className="text-xs text-gray-500 mt-1">{subtext}</p>}
                 </div>
                 {Icon && (
-                    <div className={`${iconBg} ${iconColor} w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
-                        <Icon size={20} />
+                    <div className={`${iconBg} ${iconColor} w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                        <Icon size={18} />
                     </div>
                 )}
             </div>

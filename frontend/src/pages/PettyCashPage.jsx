@@ -86,12 +86,12 @@ export default function PettyCashPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center text-gray-900">
+            <div className="flex flex-wrap justify-between items-start gap-3 text-gray-900">
                 <div>
                     <h2 className="text-2xl font-bold">Petty Cash Ledger</h2>
                     <p className="text-sm text-gray-500">Factory petty cash pool — Running balance tracker</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-2 sm:gap-3">
                     <button onClick={fetchAll} className="p-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition">
                         <RefreshCw size={16} className="text-gray-500" />
                     </button>

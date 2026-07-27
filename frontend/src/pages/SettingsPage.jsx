@@ -117,7 +117,7 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
 
             {/* ── Page Header ─────────────────────────────────────── */}
             <div className="mb-8">
@@ -126,9 +126,9 @@ export default function SettingsPage() {
                     <ChevronRight size={12} />
                     <span className="text-emerald-500 font-medium">System Settings</span>
                 </div>
-                <div className="flex items-end justify-between">
+                <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">System Settings</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">System Settings</h1>
                         <p className="text-gray-400 text-sm mt-1">Configure company profile, financial defaults &amp; inventory behaviour</p>
                     </div>
                     <button
@@ -153,11 +153,11 @@ export default function SettingsPage() {
             </div>
 
             {/* ── Layout ──────────────────────────────────────────── */}
-            <div className="flex gap-6">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
 
                 {/* Sidebar tabs */}
-                <div className="w-52 flex-shrink-0">
-                    <nav className="flex flex-col gap-1">
+                <div className="w-full sm:w-52 sm:flex-shrink-0">
+                    <nav className="flex flex-row sm:flex-col gap-1 overflow-x-auto pb-1 sm:pb-0">
                         {TABS.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -166,7 +166,7 @@ export default function SettingsPage() {
                                     key={tab.id}
                                     type="button"
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-left transition-all
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-left transition-all whitespace-nowrap flex-shrink-0 sm:flex-shrink sm:whitespace-normal
                                         ${isActive
                                             ? 'bg-white border border-gray-200 text-emerald-600 shadow-sm'
                                             : 'text-gray-500 hover:bg-white hover:text-gray-700 border border-transparent'
@@ -181,7 +181,7 @@ export default function SettingsPage() {
                     </nav>
 
                     {/* Company badge card */}
-                    <div className="mt-6 p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
+                    <div className="mt-4 sm:mt-6 p-4 rounded-xl bg-white border border-gray-200 shadow-sm hidden sm:block">
                         <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-3">
                             <Building2 size={18} className="text-emerald-500" />
                         </div>
@@ -196,13 +196,13 @@ export default function SettingsPage() {
                 {/* Content panel */}
                 <div className="flex-1">
                     <form onSubmit={handleSubmit(onSubmit)}>
-                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-7">
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-7">
 
                             {/* ── COMPANY PROFILE ───────────────────────── */}
                             {activeTab === 'company' && (
                                 <div>
                                     <SectionBadge icon={Building2} label="Business Identity" accent="blue" />
-                                    <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
                                         <StyledInput
                                             label="Company Name"
                                             icon={Building2}
@@ -219,7 +219,7 @@ export default function SettingsPage() {
                                     </div>
 
                                     <SectionBadge icon={Globe} label="Contact Details" accent="blue" />
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                         <StyledInput
                                             label="Email Address"
                                             icon={Mail}
@@ -271,7 +271,7 @@ export default function SettingsPage() {
                             {activeTab === 'finance' && (
                                 <div>
                                     <SectionBadge icon={DollarSign} label="Currency Configuration" accent="emerald" />
-                                    <div className="grid grid-cols-3 gap-4 mb-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
                                         <StyledInput
                                             label="System Currency"
                                             icon={Globe}
@@ -313,7 +313,7 @@ export default function SettingsPage() {
                             {activeTab === 'inventory' && (
                                 <div>
                                     <SectionBadge icon={Package} label="Stock Alert Configuration" accent="amber" />
-                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
                                         <StyledInput
                                             label="Low Stock Alert Threshold (units)"
                                             icon={AlertTriangle}
@@ -339,7 +339,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* Bottom action bar */}
-                        <div className="flex items-center justify-between mt-5 px-1">
+                        <div className="flex flex-wrap items-center justify-between gap-3 mt-5 px-1">
                             <p className="text-xs text-gray-400">
                                 Changes take effect immediately across all users.
                             </p>

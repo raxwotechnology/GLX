@@ -130,10 +130,11 @@ export default function ReturnDetailPage() {
                 }
             />
 
-            <div className="grid grid-cols-3 gap-6">
-                <div className="col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                     <Card>
-                        <div className="px-6 py-4 border-b"><h3 className="text-sm font-semibold">Items</h3></div>
+                        <div className="px-3 sm:px-6 py-4 border-b"><h3 className="text-sm font-semibold">Items</h3></div>
+                        <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50 border-b">
                                 <tr>
@@ -161,10 +162,11 @@ export default function ReturnDetailPage() {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
                     </Card>
 
                     {ret.customerNotes && (
-                        <Card className="p-6">
+                        <Card className="p-3 sm:p-6">
                             <h3 className="text-sm font-semibold mb-2">Customer Notes</h3>
                             <p className="text-sm">{ret.customerNotes}</p>
                         </Card>
@@ -172,7 +174,7 @@ export default function ReturnDetailPage() {
                 </div>
 
                 <div className="space-y-6">
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold mb-4">Summary</h3>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span className="text-gray-600">Return Value</span><span>{fmt(ret.totalReturnValue)}</span></div>
@@ -184,7 +186,7 @@ export default function ReturnDetailPage() {
                         </div>
                     </Card>
 
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold mb-4">Timeline</h3>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span className="text-gray-500">Requested</span><span>{fmtDate(ret.requestDate)}</span></div>
@@ -195,7 +197,7 @@ export default function ReturnDetailPage() {
                     </Card>
 
                     {ret.creditNoteId && (
-                        <Card className="p-6 bg-green-50 border-green-200">
+                        <Card className="p-3 sm:p-6 bg-green-50 border-green-200">
                             <h3 className="text-sm font-semibold text-green-800">Credit Note Issued</h3>
                             <p className="text-sm mt-1">
                                 <button onClick={() => navigate(`/credit-notes/${ret.creditNoteId._id}`)}
@@ -208,7 +210,7 @@ export default function ReturnDetailPage() {
                     )}
 
                     {ret.rejectionReason && (
-                        <Card className="p-6 bg-red-50 border-red-200">
+                        <Card className="p-3 sm:p-6 bg-red-50 border-red-200">
                             <h3 className="text-sm font-semibold text-red-800">Rejected</h3>
                             <p className="text-sm text-red-700 mt-1">{ret.rejectionReason}</p>
                         </Card>

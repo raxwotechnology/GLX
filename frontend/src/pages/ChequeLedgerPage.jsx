@@ -214,7 +214,7 @@ export default function ChequeLedgerPage() {
             <Card>
                 <div className="p-4 border-b flex flex-wrap items-center justify-between gap-4">
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="w-48">
+                        <div className="w-full sm:w-48">
                             <Select 
                                 placeholder="All Directions"
                                 options={[{ value: 'received', label: 'Incoming (Customer)' }, { value: 'paid', label: 'Outgoing (Supplier)' }]}
@@ -222,7 +222,7 @@ export default function ChequeLedgerPage() {
                                 onChange={(e) => setFilters((f) => ({ ...f, direction: e.target.value, page: 1 }))} 
                             />
                         </div>
-                        <div className="w-48">
+                        <div className="w-full sm:w-48">
                             <Select 
                                 placeholder="All Statuses"
                                 options={[
@@ -236,7 +236,7 @@ export default function ChequeLedgerPage() {
                         </div>
                     </div>
 
-                    <div className="relative w-72">
+                    <div className="relative w-full sm:w-72">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <input
                             type="text"

@@ -131,9 +131,9 @@ export default function PurchaseOrderFormPage() {
                     <ArrowLeft size={16} className="mr-1.5" /> Back
                 </Button>} />
 
-            <div className="grid grid-cols-3 gap-6">
-                <div className="col-span-2 space-y-6">
-                    <Card className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Supplier & Delivery</h3>
                         <div className="space-y-4">
                             <div className="flex gap-2 items-end">
@@ -161,7 +161,7 @@ export default function PurchaseOrderFormPage() {
                             <Select label="Deliver To Warehouse" required
                                 options={warehouseOptions} value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} />
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <Input label="Expected Delivery Date" type="date"
                                     value={expectedDeliveryDate} onChange={(e) => setExpectedDeliveryDate(e.target.value)} />
                                 <Select label="Shipping Terms" placeholder="Select..."
@@ -176,7 +176,7 @@ export default function PurchaseOrderFormPage() {
                         </div>
                     </Card>
 
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-semibold text-gray-700">Items</h3>
                             <Button type="button" variant="outline" size="sm" onClick={addItem}>
@@ -220,7 +220,7 @@ export default function PurchaseOrderFormPage() {
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>
-                                            <div className="grid grid-cols-5 gap-2">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                                                 <Input label="Qty" type="number" step="0.01" min="0.01"
                                                     value={item.orderedQuantity} onChange={(e) => updateItem(idx, 'orderedQuantity', e.target.value)} />
                                                 <Input label="Unit Price" type="number" step="0.01" min="0"
@@ -241,7 +241,7 @@ export default function PurchaseOrderFormPage() {
                         )}
                     </Card>
 
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Notes</h3>
                         <div className="space-y-4">
                             <Textarea label="Notes to Supplier" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -251,7 +251,7 @@ export default function PurchaseOrderFormPage() {
                 </div >
 
                 <div>
-                    <Card className="p-6 sticky top-6">
+                    <Card className="p-3 sm:p-6 sticky top-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Summary</h3>
                         <div className="space-y-3 text-sm">
                             <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>{fmt(totals.sub)}</span></div>

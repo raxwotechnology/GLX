@@ -176,7 +176,7 @@ export default function BillDetailPage() {
                 </span>}
                 description={`${fmtDate(bill.billDate)} · Due ${fmtDate(bill.dueDate)}`}
                 actions={
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="outline" onClick={() => navigate('/bills')}>
                             <ArrowLeft size={16} className="mr-1.5" /> Back
                         </Button>
@@ -192,9 +192,9 @@ export default function BillDetailPage() {
                 }
             />
 
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="col-span-2 space-y-6">
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Supplier</h3>
                         <div className="grid grid-cols-2 gap-6">
                             <div>
@@ -233,7 +233,8 @@ export default function BillDetailPage() {
                     </Card>
 
                     <Card>
-                        <div className="px-6 py-4 border-b"><h3 className="text-sm font-semibold text-gray-700">Items</h3></div>
+                        <div className="px-3 sm:px-6 py-4 border-b"><h3 className="text-sm font-semibold text-gray-700">Items</h3></div>
+                        <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50 border-b">
                                 <tr>
@@ -257,11 +258,12 @@ export default function BillDetailPage() {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
                     </Card>
                 </div>
 
                 <div className="space-y-6">
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Summary</h3>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>{fmt(bill.subtotal)}</span></div>

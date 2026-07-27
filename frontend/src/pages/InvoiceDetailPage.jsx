@@ -255,11 +255,11 @@ export default function InvoiceDetailPage() {
                 }
             />
 
-            <div className="grid grid-cols-3 gap-6">
-                <div className="col-span-2 space-y-6">
-                    <Card className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Customer & Vehicle Details</h3>
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
                                 <p className="text-xs text-gray-500 uppercase mb-1">Bill To / Owner</p>
                                 <p className="font-medium">{inv.vehicleOwner || inv.customerSnapshot?.name}</p>
@@ -290,7 +290,7 @@ export default function InvoiceDetailPage() {
 
                         {/* Vehicle Photos */}
                         {(inv.numberPlateImage || inv.lorryBodyImage) && (
-                            <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
+                            <div className="mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-xs font-bold text-gray-500 uppercase mb-2">Number Plate Photo</p>
                                     {inv.numberPlateImage ? (
@@ -312,9 +312,10 @@ export default function InvoiceDetailPage() {
                     </Card>
 
                     <Card>
-                        <div className="px-6 py-4 border-b">
+                        <div className="px-3 sm:px-6 py-4 border-b">
                             <h3 className="text-sm font-semibold text-gray-700">Line Items</h3>
                         </div>
+                        <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50 border-b">
                                 <tr>
@@ -341,6 +342,7 @@ export default function InvoiceDetailPage() {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
                     </Card>
 
                     {(inv.notes || inv.paymentInstructions) && (
@@ -363,7 +365,7 @@ export default function InvoiceDetailPage() {
                 </div>
 
                 <div className="space-y-6">
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Summary</h3>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>{fmt(inv.subtotal)}</span></div>
@@ -391,7 +393,7 @@ export default function InvoiceDetailPage() {
                         </div>
                     </Card>
 
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Details</h3>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span className="text-gray-500">Invoice Date</span><span>{fmtDate(inv.invoiceDate)}</span></div>
@@ -409,7 +411,7 @@ export default function InvoiceDetailPage() {
                     </Card>
 
                     {inv.lastPaymentDate && (
-                        <Card className="p-6 border-l-4 border-l-green-500">
+                        <Card className="p-3 sm:p-6 border-l-4 border-l-green-500">
                             <h3 className="text-sm font-semibold text-gray-700 mb-1">Last Payment</h3>
                             <p className="text-sm">{fmtDate(inv.lastPaymentDate)}</p>
                             {inv.fullyPaidAt && <p className="text-xs text-green-600 mt-1">Fully paid on {fmtDate(inv.fullyPaidAt)}</p>}
@@ -417,7 +419,7 @@ export default function InvoiceDetailPage() {
                     )}
 
                     {inv.cancelledAt && (
-                        <Card className="p-6 border-l-4 border-l-red-500 bg-red-50">
+                        <Card className="p-3 sm:p-6 border-l-4 border-l-red-500 bg-red-50">
                             <h3 className="text-sm font-semibold text-red-800 mb-1">Cancelled</h3>
                             <p className="text-sm text-red-700">{inv.cancellationReason}</p>
                             <p className="text-xs text-red-600 mt-1">By {inv.cancelledBy?.firstName} on {fmtDate(inv.cancelledAt)}</p>
@@ -528,6 +530,8 @@ export default function InvoiceDetailPage() {
                         </form>
                     </div>
                 </div>
+            )}
+
             {/* CONVERT INVOICE MODAL */}
             {isConvertOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

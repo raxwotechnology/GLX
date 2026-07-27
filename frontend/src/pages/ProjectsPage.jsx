@@ -174,7 +174,7 @@ export default function ProjectsPage() {
             />
 
             {/* Dashboard Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <Card className="p-4 bg-gradient-to-br from-blue-50 to-white border-blue-100 flex items-center space-x-4">
                     <div className="p-3 bg-blue-500 text-white rounded-xl shadow-md">
                         <Briefcase size={22} />
@@ -230,7 +230,7 @@ export default function ProjectsPage() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)} />
                     </div>
-                    <div className="w-48">
+                    <div className="w-full sm:w-48">
                         <Select placeholder="All Statuses"
                             options={[
                                 { value: 'active', label: 'Active' },
@@ -264,7 +264,7 @@ export default function ProjectsPage() {
                                 onChange={(val) => setCustomerId(val)}
                             />
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Input label="Yard / Worksite" value={yard} onChange={(e) => setYard(e.target.value)} placeholder="e.g. Yard 1 - Ja-Ela" />
                                 <Input label="Estimated Budget / Price (LKR)" type="number" value={quotedPrice} onChange={(e) => setQuotedPrice(e.target.value)} min="0" />
                             </div>
@@ -286,7 +286,7 @@ export default function ProjectsPage() {
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-2 pt-4 border-t">
+                            <div className="flex flex-wrap justify-end gap-2 pt-4 border-t">
                                 <Button variant="outline" type="button" onClick={() => setIsOpen(false)}>Cancel</Button>
                                 <Button variant="primary" type="submit">Create Project</Button>
                             </div>

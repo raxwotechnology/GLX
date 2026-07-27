@@ -51,7 +51,7 @@ export default function CreditNoteDetailPage() {
                 title={<>Credit Note {cn.creditNoteNumber} <Badge>{cn.status.replace(/_/g, ' ')}</Badge></>}
                 description={`Customer: ${cn.customerSnapshot?.name} · ${fmtDate(cn.issueDate)}`}
                 actions={
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="outline" onClick={() => navigate('/credit-notes')}>
                             <ArrowLeft size={16} className="mr-1.5" /> Back
                         </Button>
@@ -62,7 +62,7 @@ export default function CreditNoteDetailPage() {
                 }
             />
 
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="col-span-2 space-y-6">
                     <Card className="p-6">
                         <h3 className="text-sm font-semibold mb-3">Details</h3>
@@ -83,7 +83,7 @@ export default function CreditNoteDetailPage() {
                         {cn.applications?.length === 0 ? (
                             <p className="p-6 text-center text-gray-500 text-sm">Not yet applied to any invoice</p>
                         ) : (
-                            <table className="w-full">
+                            <div className="overflow-x-auto"><table className="w-full">
                                 <thead className="bg-gray-50 border-b">
                                     <tr>
                                         <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Invoice</th>
@@ -104,7 +104,7 @@ export default function CreditNoteDetailPage() {
                                         </tr>
                                     ))}
                                 </tbody>
-                            </table>
+                            </table></div>
                         )}
                     </Card>
                 </div>

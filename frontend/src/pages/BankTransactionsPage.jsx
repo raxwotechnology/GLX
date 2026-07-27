@@ -125,7 +125,7 @@ export default function BankTransactionsPage() {
     });
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -272,7 +272,7 @@ export default function BankTransactionsPage() {
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Transaction Type</label>
                                     <select
@@ -298,7 +298,7 @@ export default function BankTransactionsPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Date</label>
                                     <input

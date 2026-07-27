@@ -112,7 +112,7 @@ export default function LoginPage() {
                         <p className="text-sm text-slate-500">Automated Quotation & Calculation</p>
                     </div>
 
-                    <div className="p-8 backdrop-blur-xl bg-white/40 border border-white/60 shadow-[0_30px_70px_rgba(99,_102,_241,_0.08)] rounded-3xl relative overflow-hidden">
+                    <div className="p-6 sm:p-8 backdrop-blur-xl bg-white/40 border border-white/60 shadow-[0_30px_70px_rgba(99,_102,_241,_0.08)] rounded-3xl relative overflow-hidden">
                         {/* Soft decorative blur */}
                         <div className="absolute -top-10 -right-10 w-24 h-24 bg-indigo-600/10 rounded-full blur-2xl"></div>
                         

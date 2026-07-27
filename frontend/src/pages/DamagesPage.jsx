@@ -72,7 +72,7 @@ export default function DamagesPage() {
                     <Plus size={16} className="mr-1.5" /> Record Damage
                 </Button>} />
 
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
                 <Card className="p-4"><p className="text-sm text-gray-600">Total Damages Recorded</p><p className="text-2xl font-semibold">{summary.totalCount}</p></Card>
                 <Card className="p-4"><p className="text-sm text-gray-600">Total Value Lost</p><p className="text-2xl font-semibold text-red-600">{fmt(summary.totalValue)}</p></Card>
                 <Card className="p-4 bg-amber-50 border-amber-200"><p className="text-sm text-amber-700">Top Source</p>
@@ -83,8 +83,8 @@ export default function DamagesPage() {
             </div>
 
             <Card>
-                <div className="p-4 border-b flex gap-3">
-                    <div className="w-56">
+                <div className="p-4 border-b flex flex-wrap gap-3">
+                    <div className="w-full sm:w-56">
                         <Select placeholder="All Sources"
                             options={[
                                 { value: 'production_reject', label: 'Production reject' },
@@ -111,7 +111,7 @@ export default function DamagesPage() {
                     <Select label="Product" required placeholder="Select product..."
                         options={(productsData?.data || []).map((p) => ({ value: p._id, label: `${p.name} (${p.productCode})` }))}
                         value={productId} onChange={(e) => setProductId(e.target.value)} />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <Input label="Quantity" required type="number" step="0.01" min="0.01"
                             value={quantity} onChange={(e) => setQuantity(e.target.value)} />
                         <Input label="Cost per unit" type="number" step="0.01" min="0"

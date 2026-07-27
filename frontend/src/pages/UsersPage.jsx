@@ -131,7 +131,7 @@ export default function UsersPage() {
                 }
             />
 
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
                 <Card className="p-4">
                     <p className="text-sm text-gray-600">Total Users</p>
                     <p className="text-2xl font-semibold">{total}</p>
@@ -159,12 +159,12 @@ export default function UsersPage() {
                             value={filters.search}
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))} />
                     </div>
-                    <div className="w-48">
+                    <div className="w-full sm:w-48">
                         <Select placeholder="All Roles" options={roleOptions}
                             value={filters.role}
                             onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value, page: 1 }))} />
                     </div>
-                    <div className="w-40">
+                    <div className="w-full sm:w-40">
                         <Select placeholder="All"
                             options={[
                                 { value: 'true', label: 'Active only' },

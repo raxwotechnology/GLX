@@ -91,7 +91,7 @@ export default function AnalyticsPage() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                     <Filter className="w-4 h-4 text-slate-400" />
                     <select
                         value={timeRange}
@@ -178,7 +178,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 {/* Revenue Trend Chart */}
                 <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm lg:col-span-2">
                     <h3 className="text-sm font-semibold text-slate-800 dark:text-white mb-4">Revenue Trend (LKR Millions)</h3>

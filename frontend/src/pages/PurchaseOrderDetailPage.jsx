@@ -112,11 +112,11 @@ export default function PurchaseOrderDetailPage() {
                 }
             />
 
-            <div className="grid grid-cols-3 gap-6">
-                <div className="col-span-2 space-y-6">
-                    <Card className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Supplier & Delivery</h3>
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             <div>
                                 <p className="text-xs text-gray-500 uppercase mb-1">Supplier</p>
                                 <p className="font-medium">{po.supplierSnapshot?.name}</p>
@@ -143,12 +143,13 @@ export default function PurchaseOrderDetailPage() {
                     </Card>
 
                     <Card>
-                        <div className="px-6 py-4 border-b flex items-center justify-between">
+                        <div className="px-3 sm:px-6 py-4 border-b flex items-center justify-between">
                             <h3 className="text-sm font-semibold text-gray-700">Items</h3>
                             <div className="text-xs text-gray-500">
                                 Receipt: <span className="font-medium">{Math.round(po.receiptCompletionPercent || 0)}%</span>
                             </div>
                         </div>
+                        <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50 border-b">
                                 <tr>
@@ -185,17 +186,18 @@ export default function PurchaseOrderDetailPage() {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
                     </Card>
 
                     {po.notes && (
-                        <Card className="p-6">
+                        <Card className="p-3 sm:p-6">
                             <h3 className="text-sm font-semibold text-gray-700 mb-2">Notes</h3>
                             <p className="text-sm whitespace-pre-wrap">{po.notes}</p>
                         </Card>
                     )}
 
                     {po.grns?.length > 0 && (
-                        <Card className="p-6">
+                        <Card className="p-3 sm:p-6">
                             <h3 className="text-sm font-semibold text-gray-700 mb-3">Goods Received</h3>
                             <div className="space-y-2">
                                 {po.grns.map((g) => (
@@ -237,7 +239,7 @@ export default function PurchaseOrderDetailPage() {
                 </div>
 
                 <div className="space-y-6">
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Summary</h3>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>{fmt(po.subtotal)}</span></div>
@@ -251,7 +253,7 @@ export default function PurchaseOrderDetailPage() {
                         </div>
                     </Card>
 
-                    <Card className="p-6">
+                    <Card className="p-3 sm:p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Details</h3>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span className="text-gray-500">PO Date</span><span>{fmtDate(po.poDate)}</span></div>

@@ -217,7 +217,7 @@ function useIsCategoryActive(items) {
 }
 
 // ── Approval accordion sub-category component ────────────────────────────────
-function ApprovalCategory({ category, hasPermission, hasAnyPermission, isAdmin, searchQuery }) {
+function ApprovalCategory({ category, hasPermission, hasAnyPermission, isAdmin, searchQuery, onNavClick }) {
     const visibleItems = category.items.filter((item) => {
         const isPermitted = isAdmin ||
             (!item.permission && !item.anyPermission) ||
@@ -284,6 +284,7 @@ function ApprovalCategory({ category, hasPermission, hasAnyPermission, isAdmin, 
                             <NavLink
                                 key={`${item.label}-${item.path}`}
                                 to={item.path}
+                                onClick={onNavClick}
                                 className={({ isActive }) =>
                                     `flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                         isActive
@@ -304,7 +305,7 @@ function ApprovalCategory({ category, hasPermission, hasAnyPermission, isAdmin, 
 }
 
 // ── Regular menu group accordion component ────────────────────────────────────
-function MenuGroup({ group, searchQuery }) {
+function MenuGroup({ group, searchQuery, onNavClick }) {
     const visibleItems = group.items;
     const isActive = useIsCategoryActive(visibleItems);
     const [isOpen, setIsOpen] = useState(isActive);
@@ -356,6 +357,7 @@ function MenuGroup({ group, searchQuery }) {
                             <NavLink
                                 key={`${item.label}-${item.path}`}
                                 to={item.path}
+                                onClick={onNavClick}
                                 className={({ isActive }) =>
                                     `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
                                         isActive
@@ -608,6 +610,7 @@ export default function Sidebar({ isOpen, onClose }) {
                                 key={group.label}
                                 group={group}
                                 searchQuery={searchQuery}
+                                onNavClick={() => { if (window.innerWidth < 1024) onClose(); }}
                             />
                         ))}
 
@@ -635,6 +638,7 @@ export default function Sidebar({ isOpen, onClose }) {
                                             hasAnyPermission={hasAnyPermission}
                                             isAdmin={isAdmin}
                                             searchQuery={searchQuery}
+                                            onNavClick={() => { if (window.innerWidth < 1024) onClose(); }}
                                         />
                                     ))}
                                 </div>

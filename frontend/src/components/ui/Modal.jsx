@@ -26,22 +26,22 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
     if (!isOpen) return null;
 
     const sizes = {
-        sm: 'max-w-md',
-        md: 'max-w-lg',
-        lg: 'max-w-2xl',
-        xl: 'max-w-4xl',
-        '2xl': 'max-w-6xl',
+        sm: 'sm:max-w-md',
+        md: 'sm:max-w-lg',
+        lg: 'sm:max-w-2xl',
+        xl: 'sm:max-w-4xl',
+        '2xl': 'sm:max-w-6xl',
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50" onClick={onClose}>
             <div
-                className={`bg-white rounded-lg shadow-xl w-full ${sizes[size]} max-h-[90vh] flex flex-col`}
+                className={`bg-white rounded-t-2xl sm:rounded-lg shadow-xl w-full ${sizes[size]} max-h-[92vh] sm:max-h-[90vh] flex flex-col`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+                <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex-shrink-0">
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">{title}</h2>
                     <button
                         onClick={onClose}
                         className="text-gray-400 hover:text-gray-600 transition p-1 rounded hover:bg-gray-100"
@@ -51,8 +51,8 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto p-6">{children}</div>
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</div>
             </div>
         </div>
     );
-}
+}

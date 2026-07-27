@@ -200,12 +200,12 @@ export default function BomFormPage() {
                 </Button>}
             />
 
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="col-span-2 space-y-6">
                     <Card className="p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Basic Info</h3>
                         <div className="space-y-4">
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div className="col-span-2">
                                     <Input label="Formula Name" required value={name} onChange={(e) => setName(e.target.value)} />
                                 </div>
@@ -336,7 +336,7 @@ export default function BomFormPage() {
                     <Card className="p-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Other</h3>
                         <div className="space-y-4">
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <Input label="Overhead %" type="number" step="0.01" min="0" max="500"
                                     value={overheadPercent} onChange={(e) => setOverheadPercent(e.target.value)} />
                                 <Input label="Est. Production Time (hrs)" type="number" step="0.01" min="0"

@@ -222,7 +222,7 @@ export default function ExpensesPage() {
 
       {/* Summary Cards */}
       {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Grand Total Expenses</span>
@@ -277,7 +277,7 @@ export default function ExpensesPage() {
       )}
 
       {/* Filters Bar */}
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-3">
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap gap-2 sm:gap-3">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
@@ -417,7 +417,7 @@ export default function ExpensesPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Category *</label>
                   <select
@@ -560,7 +560,7 @@ export default function ExpensesPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Payment Method *</label>
                   <select
@@ -588,7 +588,7 @@ export default function ExpensesPage() {
               </div>
 
               {formData.paymentMethod === 'Cheque' && (
-                <div className="grid grid-cols-2 gap-3 p-3 bg-amber-50 rounded-lg dark:bg-amber-950/30">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-amber-50 rounded-lg dark:bg-amber-950/30">
                   <div>
                     <label className="block text-xs font-semibold text-amber-800 dark:text-amber-300 mb-1">Cheque Number</label>
                     <input
@@ -611,7 +611,7 @@ export default function ExpensesPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Payee / Vendor Name</label>
                   <input

@@ -249,7 +249,7 @@ export default function InvoicesPage() {
                 title="Invoices"
                 description="Bill customers and track outstanding payments"
                 actions={canCreate && (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="outline" onClick={() => navigate('/invoices/from-sales-order')}>
                             From Sales Order
                         </Button>
@@ -343,7 +343,7 @@ export default function InvoicesPage() {
                                 }
                             }} />
                     </div>
-                    <div className="w-48">
+                    <div className="w-full sm:w-48">
                         <Select placeholder="All Statuses"
                             options={[
                                 { value: 'unpaid', label: 'Unpaid' },

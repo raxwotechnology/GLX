@@ -360,7 +360,9 @@ export default function GrnsPage() {
                         action={canManage && <Button variant="primary" onClick={openForm}><Plus size={16} className="mr-1.5" />New GRN</Button>}
                     />
                 ) : (
-                    <Table columns={columns} data={grns} />
+                    <div className="overflow-x-auto">
+                        <Table columns={columns} data={grns} />
+                    </div>
                 )}
             </Card>
 
@@ -373,7 +375,7 @@ export default function GrnsPage() {
             >
                 {selectedGrn && (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl text-sm border border-gray-150">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl text-sm border border-gray-150">
                             <div>
                                 <span className="text-gray-500 block text-xs font-semibold uppercase">Source Type</span>
                                 <span className="font-bold text-gray-800 uppercase">{selectedGrn.sourceType}</span>
@@ -453,7 +455,7 @@ export default function GrnsPage() {
                         </div>
 
                         {selectedGrn.status === 'approved' && (
-                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 text-sm grid grid-cols-3 gap-4">
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 text-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <span className="text-gray-500 block text-xs">Total Value (LKR)</span>
                                     <span className="font-bold text-gray-900 text-lg">Rs. {selectedGrn.totalPayableLKR?.toLocaleString('en-LK', { minimumFractionDigits: 2 })}</span>
@@ -501,7 +503,7 @@ export default function GrnsPage() {
                         {qcApprovals.map((item, idx) => (
                             <div key={item._id} className="border border-gray-200 p-4 rounded-xl space-y-3 bg-white shadow-sm">
                                 <h5 className="font-bold text-gray-800 text-sm">{item.productName}</h5>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                                     <div>
                                         <span className="text-gray-500 block mb-1">Received Quantity</span>
                                         <span className="font-bold text-gray-800 text-sm block py-1">{item.receivedQuantity}</span>
@@ -625,7 +627,7 @@ export default function GrnsPage() {
                                 )}
 
                                 {paymentMethod === 'cheque' && (
-                                    <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-lg border">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3 rounded-lg border">
                                         <div className="col-span-1">
                                             <Input
                                                 label="Cheque Number *"
@@ -686,7 +688,7 @@ export default function GrnsPage() {
                 size="lg"
             >
                 <form onSubmit={handleFormSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-bold text-gray-600 block mb-1">Receipt Type</label>
                             <div className="flex flex-col sm:flex-row gap-2">
@@ -720,7 +722,7 @@ export default function GrnsPage() {
                     </div>
 
                     {!formData.purchaseOrderId && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <Select
                                 label="Material Source Type *"
                                 value={formData.sourceType}
@@ -785,7 +787,7 @@ export default function GrnsPage() {
                         </Select>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <Input
                             label="Delivery Note No."
                             type="text"
@@ -822,7 +824,7 @@ export default function GrnsPage() {
                     {!formData.purchaseOrderId && (
                         <div className="border border-gray-150 p-4 rounded-xl bg-gray-50 space-y-4">
                             <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">Add Received Product</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
                                 <div className="md:col-span-2">
                                     <ProductAutocompleteSelect
                                         label="Product *"
@@ -859,7 +861,7 @@ export default function GrnsPage() {
                                     value={newItem.unitPrice}
                                     onChange={(e) => setNewItem(p => ({ ...p, unitPrice: e.target.value }))}
                                 />
-                                <div className="md:col-span-4 flex justify-end">
+                                <div className="md:col-span-4 flex flex-wrap justify-end">
                                     <Button type="button" variant="primary" onClick={handleAddItem}>
                                         Add Line Item
                                     </Button>

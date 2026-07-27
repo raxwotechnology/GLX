@@ -200,7 +200,7 @@ export default function CustomersPage() {
                 title="Customers"
                 description="Manage your wholesale customers"
                 actions={
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <ExportButtons
                             onExportPDF={() => handleExportPDF(exportData)}
                             onExportExcel={() => handleExportExcel(exportData)}
@@ -231,7 +231,7 @@ export default function CustomersPage() {
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
                         />
                     </div>
-                    <div className="w-40">
+                    <div className="w-full sm:w-40">
                         <Select
                             placeholder="All Statuses"
                             options={[
