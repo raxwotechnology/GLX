@@ -1,9 +1,10 @@
 [
   {
-    "_id": "6a342d73258cab163c6218b9",
+    "_id": "6a60c4bde973949169feba9a",
     "customerType": "company",
     "businessType": "retailer",
-    "displayName": "DVD",
+    "companyName": "kamal",
+    "displayName": "kamal",
     "tags": [],
     "paymentTerms": {
       "type": "cod",
@@ -25,22 +26,22 @@
       "totalPaidAmount": 0
     },
     "status": "active",
-    "createdBy": "6a2314f4bd599fedbae59a61",
+    "createdBy": "6a5d93ff7a9f4d97d153d3f4",
     "deletedAt": null,
     "contacts": [],
     "shippingAddresses": [],
-    "createdAt": "2026-06-18T17:40:03.366Z",
-    "updatedAt": "2026-06-18T18:18:57.157Z",
+    "createdAt": {},
+    "updatedAt": {},
     "customerCode": "CUST-1",
     "__v": 0,
-    "groupName": "—",
     "phone": "—"
   },
   {
-    "_id": "6a343e0163bac8e0b519f3ec",
+    "_id": "6a60cd79c7a602d2cb6056f6",
     "customerType": "company",
     "businessType": "retailer",
-    "displayName": "SR",
+    "companyName": "Nimal",
+    "displayName": "Nimal",
     "tags": [],
     "paymentTerms": {
       "type": "cod",
@@ -62,22 +63,22 @@
       "totalPaidAmount": 0
     },
     "status": "active",
-    "createdBy": "6a2314f4bd599fedbae59a61",
+    "createdBy": "6a5d93ff7a9f4d97d153d3f4",
     "deletedAt": null,
     "contacts": [],
     "shippingAddresses": [],
-    "createdAt": "2026-06-18T18:50:41.349Z",
-    "updatedAt": "2026-06-18T18:50:41.349Z",
+    "createdAt": {},
+    "updatedAt": {},
     "customerCode": "CUST-2",
     "__v": 0,
-    "groupName": "—",
     "phone": "—"
   },
   {
-    "_id": "6a343e0163bac8e0b519f3ed",
+    "_id": "6a60cff7c7a602d2cb6056fb",
     "customerType": "company",
     "businessType": "retailer",
-    "displayName": "SR",
+    "companyName": "sunil",
+    "displayName": "sunil",
     "tags": [],
     "paymentTerms": {
       "type": "cod",
@@ -99,23 +100,26 @@
       "totalPaidAmount": 0
     },
     "status": "active",
-    "createdBy": "6a2314f4bd599fedbae59a61",
+    "createdBy": "6a5d93ff7a9f4d97d153d3f4",
     "deletedAt": null,
     "contacts": [],
     "shippingAddresses": [],
-    "createdAt": "2026-06-18T18:50:41.651Z",
-    "updatedAt": "2026-06-18T18:50:41.651Z",
+    "createdAt": {},
+    "updatedAt": {},
     "customerCode": "CUST-3",
     "__v": 0,
-    "groupName": "—",
     "phone": "—"
   },
   {
-    "_id": "6a3ba00c88fb0b40e651c68e",
+    "_id": "6a60f4e3fbcc23cf4b6baa20",
     "customerType": "company",
     "businessType": "retailer",
-    "displayName": "Dilum",
+    "companyName": "customer name",
+    "displayName": "customer name",
     "tags": [],
+    "primaryContact": {
+      "phone": "0784231627"
+    },
     "paymentTerms": {
       "type": "cod",
       "creditDays": 0,
@@ -136,19 +140,93 @@
       "totalPaidAmount": 0
     },
     "status": "active",
-    "createdBy": "6a2314f4bd599fedbae59a61",
+    "createdBy": "6a5d93ff7a9f4d97d153d3f4",
     "deletedAt": null,
     "contacts": [],
     "shippingAddresses": [],
-    "createdAt": "2026-06-24T09:14:52.586Z",
-    "updatedAt": "2026-06-24T09:14:52.586Z",
+    "createdAt": {},
+    "updatedAt": {},
     "customerCode": "CUST-4",
     "__v": 0,
-    "groupName": "—",
+    "phone": "0784231627"
+  },
+  {
+    "_id": "6a60fdd2b1b304276dee57b6",
+    "customerType": "company",
+    "businessType": "retailer",
+    "companyName": "jayakodi",
+    "displayName": "jayakodi",
+    "tags": [],
+    "primaryContact": {
+      "phone": "0716151423"
+    },
+    "paymentTerms": {
+      "type": "cod",
+      "creditDays": 0,
+      "creditLimit": 0
+    },
+    "defaultDiscountPercent": 0,
+    "creditStatus": {
+      "currentBalance": 0,
+      "overdueAmount": 0,
+      "availableCredit": 0,
+      "isOverdue": false,
+      "daysPastDue": 0,
+      "onCreditHold": false
+    },
+    "analytics": {
+      "totalOrders": 0,
+      "totalOrderValue": 0,
+      "totalPaidAmount": 0
+    },
+    "status": "active",
+    "createdBy": "6a5d93ff7a9f4d97d153d3f4",
+    "deletedAt": null,
+    "contacts": [],
+    "shippingAddresses": [],
+    "createdAt": {},
+    "updatedAt": {},
+    "customerCode": "CUST-5",
+    "__v": 0,
+    "phone": "0716151423"
+  },
+  {
+    "_id": "6a66fd51efd9bf5d13d2b4d6",
+    "customerCode": "CUST-TEST",
+    "customerType": "company",
+    "businessType": "retailer",
+    "displayName": "Test Customer",
+    "tags": [],
+    "paymentTerms": {
+      "type": "cod",
+      "creditDays": 0,
+      "creditLimit": 0
+    },
+    "defaultDiscountPercent": 0,
+    "creditStatus": {
+      "currentBalance": 0,
+      "overdueAmount": 0,
+      "availableCredit": 0,
+      "isOverdue": false,
+      "daysPastDue": 0,
+      "onCreditHold": false
+    },
+    "analytics": {
+      "totalOrders": 0,
+      "totalOrderValue": 0,
+      "totalPaidAmount": 0
+    },
+    "status": "active",
+    "deletedAt": null,
+    "contacts": [],
+    "shippingAddresses": [],
+    "createdAt": "2026-07-27T06:40:17.098Z",
+    "updatedAt": "2026-07-27T06:40:17.098Z",
+    "__v": 0,
     "phone": "—"
   },
   {
-    "_id": "6a3ba00d88fb0b40e651c690",
+    "_id": "6a66ff503b33460839755515",
     "customerType": "company",
     "businessType": "retailer",
     "displayName": "Dilum",
@@ -173,215 +251,14 @@
       "totalPaidAmount": 0
     },
     "status": "active",
-    "createdBy": "6a2314f4bd599fedbae59a61",
+    "createdBy": "6a60dd14d7d790f4f2e73b4f",
     "deletedAt": null,
     "contacts": [],
     "shippingAddresses": [],
-    "createdAt": "2026-06-24T09:14:53.369Z",
-    "updatedAt": "2026-06-24T09:14:53.369Z",
-    "customerCode": "CUST-5",
-    "__v": 0,
-    "groupName": "—",
-    "phone": "—"
-  },
-  {
-    "_id": "6a3d47bbb81c8d600ef6ad04",
-    "customerType": "company",
-    "businessType": "distributor",
-    "companyName": "Lanka Organic Foods Pvt Ltd",
-    "displayName": "Lanka Organic Foods",
-    "tags": [],
-    "primaryContact": {
-      "name": "Asela Perera",
-      "email": "asela@lankaorganic.com",
-      "phone": "+94 77 123 4567",
-      "mobile": "+94 77 123 4567"
-    },
-    "billingAddress": {
-      "label": "Head Office",
-      "attentionTo": "Finance Dept",
-      "line1": "123 Galle Road",
-      "line2": "Colombo 03",
-      "city": "Colombo",
-      "state": "Western",
-      "country": "Sri Lanka",
-      "postalCode": "00300",
-      "phone": "+94 11 222 3333",
-      "isDefault": true,
-      "_id": "6a3d47bbb81c8d600ef6ad05"
-    },
-    "paymentTerms": {
-      "type": "cod",
-      "creditDays": 0,
-      "creditLimit": 0
-    },
-    "defaultDiscountPercent": 0,
-    "creditStatus": {
-      "currentBalance": 0,
-      "overdueAmount": 0,
-      "availableCredit": 0,
-      "isOverdue": false,
-      "daysPastDue": 0,
-      "onCreditHold": false
-    },
-    "analytics": {
-      "totalOrders": 0,
-      "totalOrderValue": 0,
-      "totalPaidAmount": 0
-    },
-    "status": "active",
-    "createdBy": "6a2280960331098cce55d2b9",
-    "deletedAt": null,
-    "contacts": [],
-    "shippingAddresses": [],
-    "createdAt": "2026-06-25T15:22:35.549Z",
-    "updatedAt": "2026-06-25T15:22:35.549Z",
+    "createdAt": "2026-07-27T06:48:48.422Z",
+    "updatedAt": "2026-07-27T06:48:48.422Z",
     "customerCode": "CUST-6",
     "__v": 0,
-    "groupName": "—",
-    "phone": "+94 77 123 4567"
-  },
-  {
-    "_id": "6a3d4c8c0c1d40c430d1f1f3",
-    "customerType": "company",
-    "businessType": "retailer",
-    "companyName": "keels",
-    "displayName": "keels",
-    "tags": [],
-    "primaryContact": {
-      "email": "dilumvishvajith18@gmail.com",
-      "phone": "+94772268608"
-    },
-    "billingAddress": {
-      "line1": "697/B/3/Haluapullana wewa rd,Dambulla",
-      "city": "",
-      "country": "Sri Lanka",
-      "isDefault": false,
-      "_id": "6a3d4c8c0c1d40c430d1f1f4"
-    },
-    "paymentTerms": {
-      "type": "cod",
-      "creditDays": 0,
-      "creditLimit": 0
-    },
-    "defaultDiscountPercent": 0,
-    "creditStatus": {
-      "currentBalance": 0,
-      "overdueAmount": 0,
-      "availableCredit": 0,
-      "isOverdue": false,
-      "daysPastDue": 0,
-      "onCreditHold": false
-    },
-    "analytics": {
-      "totalOrders": 0,
-      "totalOrderValue": 0,
-      "totalPaidAmount": 0
-    },
-    "status": "active",
-    "createdBy": "6a2314f4bd599fedbae59a61",
-    "deletedAt": null,
-    "contacts": [],
-    "shippingAddresses": [],
-    "createdAt": "2026-06-25T15:43:08.647Z",
-    "updatedAt": "2026-06-25T15:43:08.647Z",
-    "customerCode": "CUST-7",
-    "__v": 0,
-    "groupName": "—",
-    "phone": "+94772268608"
-  },
-  {
-    "_id": "6a3de5b4360b910c192c1c63",
-    "customerType": "individual",
-    "businessType": "wholesaler",
-    "displayName": "test",
-    "firstName": "test",
-    "tags": [],
-    "primaryContact": {
-      "name": "",
-      "email": "",
-      "phone": "",
-      "mobile": ""
-    },
-    "contacts": [],
-    "billingAddress": {
-      "label": "",
-      "line1": "",
-      "line2": "",
-      "city": "",
-      "state": "",
-      "country": "Sri Lanka",
-      "postalCode": "",
-      "phone": "",
-      "deliveryInstructions": "",
-      "isDefault": true,
-      "_id": "6a3de5b4360b910c192c1c64"
-    },
-    "shippingAddresses": [],
-    "paymentTerms": {
-      "type": "cod",
-      "creditDays": 0,
-      "creditLimit": 0
-    },
-    "defaultDiscountPercent": 0,
-    "creditStatus": {
-      "currentBalance": 0,
-      "overdueAmount": 0,
-      "availableCredit": 0,
-      "isOverdue": false,
-      "daysPastDue": 0,
-      "onCreditHold": false
-    },
-    "analytics": {
-      "totalOrders": 0,
-      "totalOrderValue": 0,
-      "totalPaidAmount": 0
-    },
-    "status": "active",
-    "createdBy": "6a3ceb5617347b6b8830f61d",
-    "deletedAt": null,
-    "createdAt": "2026-06-26T02:36:36.342Z",
-    "updatedAt": "2026-06-26T02:36:36.342Z",
-    "customerCode": "CUST-8",
-    "__v": 0,
-    "groupName": "—",
-    "phone": "—"
-  },
-  {
-    "_id": "6a3e0a12807e326a0a093223",
-    "customerType": "company",
-    "businessType": "retailer",
-    "displayName": "Raxwo",
-    "tags": [],
-    "paymentTerms": {
-      "type": "cod",
-      "creditDays": 0,
-      "creditLimit": 0
-    },
-    "defaultDiscountPercent": 0,
-    "creditStatus": {
-      "currentBalance": 0,
-      "overdueAmount": 0,
-      "availableCredit": 0,
-      "isOverdue": false,
-      "daysPastDue": 0,
-      "onCreditHold": false
-    },
-    "analytics": {
-      "totalOrders": 0,
-      "totalOrderValue": 0,
-      "totalPaidAmount": 0
-    },
-    "status": "active",
-    "createdBy": "6a2314f4bd599fedbae59a61",
-    "deletedAt": null,
-    "contacts": [],
-    "shippingAddresses": [],
-    "createdAt": "2026-06-26T05:11:46.291Z",
-    "updatedAt": "2026-06-26T05:11:46.291Z",
-    "customerCode": "CUST-9",
-    "__v": 0,
-    "groupName": "—",
     "phone": "—"
   }
 ]

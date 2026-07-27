@@ -5,7 +5,13 @@ import Attendance from '../models/Attendance.js';
 import LeaveRequest from '../models/LeaveRequest.js';
 import Holiday from '../models/Holiday.js';
 import SalaryAdvance from '../models/SalaryAdvance.js';
+import DailyWagePayment from '../models/DailyWagePayment.js';
+import Expense from '../models/Expense.js';
+import Project from '../models/Project.js';
+import BankAccount from '../models/BankAccount.js';
+import { recalculateProjectFinancials } from './projectController.js';
 import { calculatePayslip } from '../services/payrollCalculator.js';
+import PdfPrinter from 'pdfkit-table';
 
 /**
  * Helper: count working days in a month (excluding Sundays and holidays)
@@ -47,13 +53,17 @@ const getEmployeeMonthAttendance = async (employeeId, year, month) => {
     let daysAbsent = 0;
     let halfDays = 0;
     let overtimeMinutes = 0;
+    let totalWorkedMinutes = 0;
 
     records.forEach((r) => {
         if (r.status === 'present' || r.status === 'late') daysPresent++;
         else if (r.status === 'half_day') halfDays++;
         else if (r.status === 'absent') daysAbsent++;
         overtimeMinutes += r.overtimeMinutes || 0;
+        totalWorkedMinutes += r.totalWorkedMinutes || 0;
     });
+
+    const totalWorkedHours = +(totalWorkedMinutes / 60).toFixed(2);
 
     // Get approved leaves in this period
     const approvedLeaves = await LeaveRequest.find({
@@ -118,13 +128,17 @@ export const processPayroll = asyncHandler(async (req, res) => {
     const payslips = [];
 
     for (const emp of employees) {
-        if (!emp.basicSalary || emp.basicSalary <= 0) continue; // skip if no basic salary set
+        const isHourly = emp.salaryStructureId?.frequency === 'hourly' || (!emp.basicSalary && emp.basicWageRate > 0);
+        if (!isHourly && (!emp.basicSalary || emp.basicSalary <= 0)) continue;
+        if (isHourly && (!emp.basicWageRate || emp.basicWageRate <= 0)) continue;
 
         const attendance = await getEmployeeMonthAttendance(emp._id, periodYear, periodMonth);
         const isDaily = emp.salaryStructureId?.frequency === 'daily';
 
         let basic = emp.basicSalary;
-        if (isDaily) {
+        if (isHourly) {
+            basic = (emp.basicWageRate || 0) * (attendance.totalWorkedHours || 0);
+        } else if (isDaily) {
             // Basic salary is daily rate * days present
             basic = (emp.basicSalary || 0) * (attendance.daysPresent || 0);
         }
@@ -150,6 +164,42 @@ export const processPayroll = asyncHandler(async (req, res) => {
                     });
                 });
         }
+
+        // Build deductions from salary structure & salary advances
+        const otherDeductions = [];
+        if (emp.salaryStructureId?.components) {
+            emp.salaryStructureId.components
+                .filter((c) => c.type === 'deduction')
+                .forEach((c) => {
+                    let amount = 0;
+                    if (c.calculationType === 'fixed') {
+                        amount = c.amount || 0;
+                    } else if (c.calculationType === 'percentage_of_basic') {
+                        amount = (basic * (c.percentage || 0)) / 100;
+                    }
+                    otherDeductions.push({
+                        name: c.name,
+                        amount,
+                        type: 'other_deduction',
+                    });
+                });
+        }
+
+        const startOfMonth = new Date(periodYear, periodMonth - 1, 1);
+        const endOfMonth = new Date(periodYear, periodMonth, 0, 23, 59, 59);
+        const advances = await SalaryAdvance.find({
+            employeeId: emp._id,
+            status: 'approved',
+            repaymentMonth: { $gte: startOfMonth, $lte: endOfMonth },
+        });
+
+        advances.forEach((adv) => {
+            otherDeductions.push({
+                name: `Salary Advance (${adv.advanceNumber || 'Advance'})`,
+                amount: adv.monthlyDeduction || adv.amount || 0,
+                type: 'advance',
+            });
+        });
 
         const calc = calculatePayslip({
             basicSalary: basic,
@@ -388,4 +438,344 @@ export const getMyPayslips = asyncHandler(async (req, res) => {
     });
 
     res.json({ success: true, count: payslips.length, data: payslips });
+});
+
+/**
+ * GET /api/payroll/:id/download-sheet
+ * Download professional landscape PDF payroll sheet
+ */
+export const downloadPayrollSheet = asyncHandler(async (req, res) => {
+    const payroll = await Payroll.findById(req.params.id);
+    if (!payroll) {
+        res.status(404);
+        throw new Error('Payroll not found');
+    }
+
+    const doc = new PdfPrinter({
+        margin: 30,
+        size: 'A4',
+        layout: 'landscape'
+    });
+
+    const buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+        const pdfData = Buffer.concat(buffers);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Payroll_Sheet_${payroll.payrollNumber}.pdf`);
+        res.send(pdfData);
+    });
+    doc.on('error', (err) => {
+        console.error('PDF Generation error:', err);
+        if (!res.headersSent) {
+            res.status(500).send('Could not generate PDF');
+        }
+    });
+
+    // Branding Header
+    doc.rect(0, 0, doc.page.width, 60).fill('#1E293B');
+    doc.fillColor('#FFFFFF').fontSize(20).text('GLX INDUSTRIES', 30, 20);
+    doc.fontSize(10).text('Payroll Sheet - Professional Report', 30, 45);
+
+    doc.fillColor('#FFFFFF').fontSize(14).text(`PAYROLL NUMBER: ${payroll.payrollNumber}`, 30, 20, { align: 'right' });
+    doc.fontSize(8).text(`Period: ${payroll.periodMonth}/${payroll.periodYear}`, 30, 38, { align: 'right' });
+    doc.text(`Status: ${payroll.status.toUpperCase()}`, 30, 48, { align: 'right' });
+
+    // Table Data
+    const tableData = payroll.payslips.map(ps => ({
+        employeeCode: ps.employeeCode || 'EMP',
+        employeeName: ps.employeeName || '—',
+        presentWorked: `${ps.daysPresent || 0}d / ${ps.overtimeHours || 0}h OT`,
+        basicSalary: (ps.basicSalary || 0).toFixed(2),
+        grossEarnings: (ps.grossEarnings || 0).toFixed(2),
+        epfEmployee: (ps.epfEmployeeContribution || 0).toFixed(2),
+        apit: (ps.apitAmount || 0).toFixed(2),
+        totalDeductions: (ps.totalDeductions || 0).toFixed(2),
+        netPay: (ps.netPay || 0).toFixed(2)
+    }));
+
+    const table = {
+        title: '',
+        headers: [
+            { label: 'EMP Code', property: 'employeeCode', width: 65 },
+            { label: 'Name', property: 'employeeName', width: 140 },
+            { label: 'Present / OT', property: 'presentWorked', width: 85 },
+            { label: 'Basic (LKR)', property: 'basicSalary', width: 75 },
+            { label: 'Gross (LKR)', property: 'grossEarnings', width: 80 },
+            { label: 'EPF (8%)', property: 'epfEmployee', width: 65 },
+            { label: 'APIT (LKR)', property: 'apit', width: 65 },
+            { label: 'Deductions', property: 'totalDeductions', width: 75 },
+            { label: 'Net Pay (LKR)', property: 'netPay', width: 85 }
+        ],
+        datas: tableData,
+        options: {
+            padding: 5,
+            columnSpacing: 5,
+            divider: {
+                header: { disabled: false, width: 1.5, opacity: 1 },
+                horizontal: { disabled: false, width: 0.5, opacity: 0.1 }
+            }
+        }
+    };
+
+    doc.moveDown(5);
+
+    const totalGross = payroll.totalGrossEarnings || 0;
+    const totalDeductions = payroll.totalDeductions || 0;
+    const totalEpf = payroll.totalEpfEmployee || 0;
+    const totalApit = payroll.totalApit || 0;
+    const totalNet = payroll.totalNetPay || 0;
+
+    await doc.table(table, {
+        prepareHeader: () => doc.font("Helvetica-Bold").fontSize(8).fillColor('#0F172A'),
+        prepareRow: () => doc.font("Helvetica").fontSize(8).fillColor('#334155'),
+    });
+
+    doc.moveDown(1);
+    doc.font("Helvetica-Bold").fontSize(9).fillColor('#0F172A');
+    doc.text(`TOTAL SUMMARY:`, 30);
+    doc.fontSize(8).font("Helvetica");
+    doc.text(`Total Employees: ${payroll.totalEmployees}  |  Total Gross: LKR ${totalGross.toFixed(2)}  |  Total EPF (8%): LKR ${totalEpf.toFixed(2)}  |  Total APIT: LKR ${totalApit.toFixed(2)}  |  Total Deductions: LKR ${totalDeductions.toFixed(2)}  |  Total Net Pay: LKR ${totalNet.toFixed(2)}`, 30);
+
+    const range = doc.bufferedPageRange();
+    for (let i = range.start; i < range.start + range.count; i++) {
+        doc.switchToPage(i);
+        doc.fontSize(7).fillColor('#94A3B8').text(
+            `Page ${i + 1} of ${range.count}  ·  Generated automatically by GLX ERP`,
+            0,
+            doc.page.height - 20,
+            { align: 'center', width: doc.page.width }
+        );
+    }
+
+    doc.end();
+});
+
+/**
+ * @desc    Get Daily Wage Payout Summary for a specific date
+ * @route   GET /api/payroll/daily-summary
+ * @access  Private (hr.payroll.view)
+ */
+export const getDailyPayrollSummary = asyncHandler(async (req, res) => {
+    const targetDateStr = req.query.date || new Date().toISOString().split('T')[0];
+    const targetDate = new Date(targetDateStr);
+    const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+
+    // Get active daily and hourly workers
+    const employees = await Employee.find({
+        status: { $in: ['active', 'probation', 'on_leave'] }
+    }).populate('salaryStructureId');
+
+    // Filter daily/hourly wage earners or any employee with basicWageRate > 0 or daily frequency
+    const dailyWorkers = employees.filter((emp) => {
+        const isDailyFreq = emp.salaryStructureId?.frequency === 'daily';
+        const isHourlyFreq = emp.salaryStructureId?.frequency === 'hourly';
+        const hasHourlyRate = (emp.basicWageRate || 0) > 0;
+        const hasDailyRate = (emp.basicSalary || 0) > 0 && isDailyFreq;
+        return isDailyFreq || isHourlyFreq || hasHourlyRate || hasDailyRate;
+    });
+
+    // Get attendance for target date
+    const attendanceRecords = await Attendance.find({
+        date: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    const attendanceMap = new Map();
+    attendanceRecords.forEach((a) => attendanceMap.set(a.employeeId.toString(), a));
+
+    // Get existing daily wage payments for target date
+    const existingPayments = await DailyWagePayment.find({
+        date: { $gte: startOfDay, $lte: endOfDay },
+        deletedAt: null
+    });
+
+    const paymentMap = new Map();
+    existingPayments.forEach((p) => paymentMap.set(p.employeeId.toString(), p));
+
+    const workerSummaries = dailyWorkers.map((emp) => {
+        const att = attendanceMap.get(emp._id.toString());
+        const existingPay = paymentMap.get(emp._id.toString());
+
+        const isHourly = emp.salaryStructureId?.frequency === 'hourly' || (!emp.basicSalary && (emp.basicWageRate || 0) > 0);
+        const rate = isHourly ? (emp.basicWageRate || 0) : (emp.basicSalary || 0);
+
+        let units = 0;
+        let attStatus = 'absent';
+        let workedHours = 0;
+        let otHours = 0;
+
+        if (att) {
+            attStatus = att.status || 'absent';
+            workedHours = att.totalWorkedHours || 0;
+            otHours = +( (att.overtimeMinutes || 0) / 60 ).toFixed(2);
+            if (isHourly) {
+                units = workedHours;
+            } else {
+                units = attStatus === 'present' || attStatus === 'late' ? 1.0 : (attStatus === 'half_day' ? 0.5 : 0);
+            }
+        }
+
+        const baseWage = +(rate * units).toFixed(2);
+
+        return {
+            employeeId: emp._id,
+            employeeCode: emp.employeeCode,
+            employeeName: emp.fullName,
+            designation: emp.designationId?.name || emp.jobTitle || 'Daily Worker',
+            payType: isHourly ? 'hourly' : 'daily',
+            rate,
+            attendanceStatus: attStatus,
+            units,
+            workedHours,
+            overtimeHours: otHours,
+            baseWage,
+            alreadyPaid: !!existingPay,
+            paymentDetails: existingPay || null
+        };
+    });
+
+    // Also get active projects and bank accounts for payout modal options
+    const activeProjects = await Project.find({ status: { $in: ['active', 'in_progress'] } }).select('projectNumber name yard');
+    const bankAccounts = await BankAccount.find({ isActive: true }).select('bankName accountNumber balance');
+
+    res.json({
+        success: true,
+        date: targetDateStr,
+        workers: workerSummaries,
+        activeProjects,
+        bankAccounts
+    });
+});
+
+/**
+ * @desc    Process & Pay Daily Wages for selected workers
+ * @route   POST /api/payroll/daily-payout
+ * @access  Private (hr.payroll.manage)
+ */
+export const processDailyPayout = asyncHandler(async (req, res) => {
+    const { date, payouts = [] } = req.body;
+
+    if (!payouts.length) {
+        res.status(400);
+        throw new Error('No employee payouts provided');
+    }
+
+    const payoutDate = date ? new Date(date) : new Date();
+    const createdPayments = [];
+
+    for (const item of payouts) {
+        const {
+            employeeId, employeeCode, employeeName, payType,
+            rate, units, overtimeHours = 0, overtimeAmount = 0,
+            allowances = 0, deductions = 0, netPaid,
+            paymentMethod = 'cash', bankAccountId, projectId, notes
+        } = item;
+
+        if (!netPaid || netPaid <= 0) continue;
+
+        // Save DailyWagePayment record
+        const paymentRecord = new DailyWagePayment({
+            date: payoutDate,
+            employeeId,
+            employeeCode,
+            employeeName,
+            payType,
+            rate,
+            units,
+            overtimeHours,
+            overtimeAmount,
+            allowances,
+            deductions,
+            netPaid,
+            paymentMethod,
+            bankAccountId: bankAccountId || undefined,
+            projectId: projectId || undefined,
+            status: 'paid',
+            notes: notes || `Daily wage payout for ${employeeName}`,
+            createdBy: req.user._id
+        });
+        await paymentRecord.save();
+        createdPayments.push(paymentRecord);
+
+        // Record Expense under "Salaries & Wages" category
+        const expense = new Expense({
+            title: `Daily Wage Payout: ${employeeName} (${paymentRecord.voucherNumber})`,
+            category: 'Salaries & Wages',
+            amount: netPaid,
+            paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Bank Transfer',
+            bankAccountId: bankAccountId || undefined,
+            paymentStatus: 'Paid',
+            date: payoutDate,
+            notes: `Daily Wage Payout for ${employeeName} (${units} ${payType === 'hourly' ? 'hrs' : 'days'})`,
+            projectId: projectId || undefined,
+            createdBy: req.user._id
+        });
+        await expense.save();
+
+        // Update Bank Balance if non-cash
+        if (bankAccountId && paymentMethod !== 'cash') {
+            const acc = await BankAccount.findById(bankAccountId);
+            if (acc) {
+                acc.balance = +(acc.balance - netPaid).toFixed(2);
+                await acc.save();
+            }
+        }
+
+        // If assigned to a project, add to project labor cost
+        if (projectId) {
+            const project = await Project.findById(projectId);
+            if (project) {
+                project.laborCost = +( (project.laborCost || 0) + netPaid ).toFixed(2);
+                await project.save();
+                await recalculateProjectFinancials(projectId);
+            }
+        }
+    }
+
+    res.status(201).json({
+        success: true,
+        message: `Successfully processed daily wage payouts for ${createdPayments.length} worker(s)`,
+        data: createdPayments
+    });
+});
+
+/**
+ * @desc    Get Daily Wage Payout History
+ * @route   GET /api/payroll/daily-history
+ * @access  Private (hr.payroll.view)
+ */
+export const getDailyPayrollHistory = asyncHandler(async (req, res) => {
+    const { startDate, endDate, search, limit = 100 } = req.query;
+
+    const filter = { deletedAt: null };
+    if (startDate && endDate) {
+        filter.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+        };
+    }
+
+    if (search) {
+        filter.$or = [
+            { employeeName: new RegExp(search, 'i') },
+            { employeeCode: new RegExp(search, 'i') },
+            { voucherNumber: new RegExp(search, 'i') }
+        ];
+    }
+
+    const history = await DailyWagePayment.find(filter)
+        .sort({ date: -1, createdAt: -1 })
+        .limit(Number(limit))
+        .populate('projectId', 'projectNumber name')
+        .populate('bankAccountId', 'bankName accountNumber');
+
+    const totalPaid = history.reduce((sum, h) => sum + (h.netPaid || 0), 0);
+
+    res.json({
+        success: true,
+        totalPaid,
+        count: history.length,
+        data: history
+    });
 });

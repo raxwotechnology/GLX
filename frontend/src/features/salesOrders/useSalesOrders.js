@@ -32,6 +32,10 @@ export const useCreateSalesOrder = () => {
             qc.invalidateQueries({ queryKey: ['salesOrders'] });
             qc.invalidateQueries({ queryKey: ['stock'] });
             qc.invalidateQueries({ queryKey: ['stockMovements'] });
+            qc.invalidateQueries({ queryKey: ['projects'] });
+            qc.invalidateQueries({ queryKey: ['project'] });
+            qc.invalidateQueries({ queryKey: ['expenses'] });
+            qc.invalidateQueries({ queryKey: ['bankAccounts'] });
             invalidateReportsAndDashboard(qc);
             toast.success('Order created');
         },

@@ -73,14 +73,26 @@ const updateCustomerBalance = async (customerId, session) => {
 
     const customer = await Customer.findById(customerId).session(session || null);
     if (customer) {
-        customer.creditStatus.currentBalance = +summary.totalBalance.toFixed(2);
-        customer.creditStatus.overdueAmount = +summary.overdueAmount.toFixed(2);
-        customer.creditStatus.isOverdue = summary.overdueAmount > 0;
-        customer.creditStatus.availableCredit = Math.max(
+        const currentBalance = +summary.totalBalance.toFixed(2);
+        const overdueAmount = +summary.overdueAmount.toFixed(2);
+        const isOverdue = overdueAmount > 0;
+        const availableCredit = Math.max(
             0,
-            (customer.paymentTerms?.creditLimit || 0) - customer.creditStatus.currentBalance
+            (customer.paymentTerms?.creditLimit || 0) - currentBalance
         );
-        await customer.save({ session: session || undefined });
+
+        await Customer.updateOne(
+            { _id: customerId },
+            {
+                $set: {
+                    'creditStatus.currentBalance': currentBalance,
+                    'creditStatus.overdueAmount': overdueAmount,
+                    'creditStatus.isOverdue': isOverdue,
+                    'creditStatus.availableCredit': availableCredit,
+                }
+            },
+            { session: session || undefined }
+        );
     }
 };
 
@@ -411,4 +423,156 @@ export const deleteInvoice = asyncHandler(async (req, res) => {
 });
 
 // Exported for use by payments module
+/**
+ * POST /api/invoices/:id/convert-proforma
+ * Convert a Proforma invoice into a Commercial invoice and deduct stock
+ */
+export const convertProformaToCommercial = asyncHandler(async (req, res) => {
+    const invoice = await Invoice.findById(req.params.id);
+    if (!invoice) {
+        res.status(404);
+        throw new Error('Invoice not found');
+    }
+
+    if (invoice.invoiceType !== 'proforma') {
+        res.status(400);
+        throw new Error('Only Proforma Invoices can be converted to Commercial Invoices');
+    }
+
+    invoice.invoiceType = 'standard';
+    await invoice.save();
+
+    await deductStockForInvoice(invoice, req.user._id);
+
+    res.json({
+        success: true,
+        data: invoice,
+        message: 'Successfully converted Proforma Invoice to Commercial Invoice and deducted inventory.'
+    });
+});
+
+/**
+ * POST /api/invoices/:id/convert-to-proforma
+ * Convert Commercial / Standard invoice into Proforma invoice
+ */
+export const convertInvoiceToProforma = asyncHandler(async (req, res) => {
+    const invoice = await Invoice.findById(req.params.id);
+    if (!invoice) {
+        res.status(404);
+        throw new Error('Invoice not found');
+    }
+
+    invoice.invoiceType = 'proforma';
+    await invoice.save();
+
+    res.json({
+        success: true,
+        data: invoice,
+        message: 'Successfully converted Invoice to Proforma Invoice.'
+    });
+});
+
+/**
+ * POST /api/invoices/:id/convert-to-project
+ * Convert any Invoice (Commercial or Proforma) into a Project
+ */
+export const convertInvoiceToProject = asyncHandler(async (req, res) => {
+    const invoice = await Invoice.findById(req.params.id);
+    if (!invoice) {
+        res.status(404);
+        throw new Error('Invoice not found');
+    }
+
+    if (invoice.convertedProjectId) {
+        const Project = mongoose.model('Project');
+        const existingProject = await Project.findById(invoice.convertedProjectId);
+        if (existingProject) {
+            return res.json({ success: true, message: 'Already converted', data: existingProject });
+        }
+    }
+
+    const { yard, assignedEmployees, details } = req.body;
+    const Project = mongoose.model('Project');
+
+    const project = new Project({
+        name: `${invoice.customerSnapshot?.name || invoice.vehicleOwner || 'Customer'} - ${invoice.vehicleNo || invoice.invoiceNumber}`,
+        customer: invoice.customerId || undefined,
+        invoiceId: invoice._id,
+        yard: yard || '',
+        details: details || invoice.jobCaption || '',
+        assignedEmployees: assignedEmployees || [],
+        quotedPrice: invoice.grandTotal || 0,
+        createdBy: req.user._id
+    });
+
+    // Handle walk-in if no customer
+    if (!project.customer) {
+        const Customer = mongoose.model('Customer');
+        let walkInCustomer = await Customer.findOne({ displayName: 'Walk-in Customer' });
+        if (!walkInCustomer) {
+            walkInCustomer = new Customer({
+                displayName: 'Walk-in Customer',
+                legalName: 'Walk-in Customer',
+                status: 'active',
+                paymentTerms: { type: 'cod', creditDays: 0, creditLimit: 0 }
+            });
+            await walkInCustomer.save();
+        }
+        project.customer = walkInCustomer._id;
+    }
+
+    await project.save();
+
+    // Handle advance payment if provided
+    if (req.body.advancePaymentAmount && Number(req.body.advancePaymentAmount) > 0) {
+        const advanceAmount = Number(req.body.advancePaymentAmount);
+
+        const advanceInvoice = new Invoice({
+            invoiceType: 'commercial',
+            sourceDocumentType: 'direct',
+            sourceDocumentId: project._id,
+            sourceDocumentCode: project.projectNumber,
+            vehicleOwner: invoice.vehicleOwner || '',
+            vehicleNo: invoice.vehicleNo || '',
+            customerId: project.customer,
+            customerSnapshot: invoice.customerSnapshot || { name: 'Customer' },
+            invoiceDate: new Date(),
+            items: [{
+                lineNumber: 1,
+                productName: `Advance Payment - ${project.projectNumber}`,
+                description: `Advance payment for project ${project.projectNumber}`,
+                quantity: 1,
+                unitPrice: advanceAmount,
+                lineSubtotal: advanceAmount,
+                lineTotal: advanceAmount
+            }],
+            subtotal: advanceAmount,
+            grandTotal: advanceAmount,
+            paidAmount: advanceAmount,
+            balanceDue: 0,
+            status: 'approved',
+            paymentStatus: 'paid',
+            notes: `Advance payment for project ${project.projectNumber}`,
+            createdBy: req.user._id
+        });
+        await advanceInvoice.save();
+
+        if (req.body.bankAccountId && req.body.paymentMethod !== 'cash') {
+            const BankAccount = mongoose.model('BankAccount');
+            const bankAccount = await BankAccount.findById(req.body.bankAccountId);
+            if (bankAccount) {
+                bankAccount.balance = +(bankAccount.balance + advanceAmount).toFixed(2);
+                await bankAccount.save();
+            }
+        }
+    }
+
+    await Invoice.updateOne(
+        { _id: invoice._id },
+        { $set: { convertedProjectId: project._id } }
+    );
+
+    res.status(201).json({ success: true, message: 'Converted Invoice to Project successfully', data: project });
+});
+
 export { updateCustomerBalance };

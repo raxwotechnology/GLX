@@ -102,6 +102,9 @@ export const createSalesOrder = asyncHandler(async (req, res) => {
     // Build order
     const orderData = {
         ...rest,
+        isGoToYard: req.body.isGoToYard === true || req.body.isGoToYard === 'true',
+        projectId: req.body.projectId || undefined,
+        issuedToEmployeeId: req.body.issuedToEmployeeId || undefined,
         customer: foundCustomer._id,
         customerId: foundCustomer._id,
         sourceWarehouseId: warehouse?._id,
@@ -133,6 +136,11 @@ export const createSalesOrder = asyncHandler(async (req, res) => {
     };
 
     const order = new SalesOrder(orderData);
+    order.isGoToYard = Boolean(req.body.isGoToYard);
+    if (req.body.projectId) order.projectId = req.body.projectId;
+    if (req.body.issuedToEmployeeId) order.issuedToEmployeeId = req.body.issuedToEmployeeId;
+
+    console.log('[POS GoToYard Check]', { isGoToYard: order.isGoToYard, projectId: order.projectId, body: req.body });
 
     // Pre-save calculates totals. We need totals to run credit check.
     // Save first with 'draft' status, then validate credit.
@@ -268,10 +276,68 @@ export const createSalesOrder = asyncHandler(async (req, res) => {
                     balanceDue: 0,
                     stockDeducted: true,
                     warehouseId: warehouseId,
+                    projectId: order.projectId,
+                    issuedToEmployeeId: order.issuedToEmployeeId,
+                    isGoToYard: order.isGoToYard,
                     createdBy: req.user._id,
                 });
 
                 await invoice.save({ session });
+
+                // Issue materials to project if Go to Yard is checked
+                if (order.isGoToYard && order.projectId) {
+                    const Project = mongoose.model('Project');
+                    const Expense = mongoose.model('Expense');
+                    const project = await Project.findById(order.projectId).session(session);
+                    if (project) {
+                        let totalBatchMaterialCost = 0;
+                        for (const item of order.items) {
+                            const prod = productMap.get(item.productId.toString());
+                            const buyingCost = prod?.costs?.averageCost 
+                                || prod?.costs?.lastPurchaseCost 
+                                || prod?.costs?.standardCost 
+                                || item.unitPrice 
+                                || prod?.basePrice 
+                                || 0;
+
+                            const lineMaterialTotal = (item.orderedQuantity || 1) * buyingCost;
+                            totalBatchMaterialCost += lineMaterialTotal;
+
+                            project.materialsIssued.push({
+                                product: item.productId,
+                                productCode: item.productCode,
+                                productName: item.productName,
+                                qty: item.orderedQuantity,
+                                buyingPrice: buyingCost,
+                                issuedBy: order.issuedToEmployeeId || req.user._id,
+                                issuedDate: new Date()
+                            });
+                        }
+
+                        // 1. Recalculate materialCost on project
+                        project.materialCost = project.materialsIssued.reduce((sum, m) => sum + ((m.qty || 0) * (m.buyingPrice || 0)), 0);
+                        await project.save({ session });
+
+                        // 2. Log an Expense entry so it appears under Expenses tab and financial expense reports
+                        const expense = new Expense({
+                            title: `POS Yard Materials: ${order.orderNumber}`,
+                            projectId: project._id,
+                            category: 'Raw Materials',
+                            amount: totalBatchMaterialCost,
+                            date: new Date(),
+                            paymentMethod: 'Cash',
+                            paymentStatus: 'Paid',
+                            notes: `POS Yard Checkout (${order.orderNumber}): ${order.items.map(i => `${i.productName} x${i.orderedQuantity}`).join(', ')}`,
+                            createdBy: req.user._id
+                        });
+                        await expense.save({ session });
+
+                        // 3. Recalculate project otherExpenses
+                        const allProjectExpenses = await Expense.find({ projectId: project._id, paymentStatus: 'Paid' }).session(session);
+                        project.otherExpenses = allProjectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+                        await project.save({ session });
+                    }
+                }
 
                 if (paymentMethod) {
                     if (bankAccountId && paymentMethod !== 'cash' && !isChequePending) {
@@ -308,6 +374,16 @@ export const createSalesOrder = asyncHandler(async (req, res) => {
                 await updateCustomerBalance(foundCustomer._id, session);
                 await excelService.updateExcelRow('sales_order', order);
             });
+
+            // Recalculate project financials after transaction commits
+            if (order.isGoToYard && order.projectId) {
+                try {
+                    const { recalculateProjectFinancials } = await import('./projectController.js');
+                    await recalculateProjectFinancials(order.projectId);
+                } catch (err) {
+                    console.error('[Project Financials POS Update] Failed:', err.message);
+                }
+            }
 
             const finalIsChequePending = paymentMethod === 'cheque' && chequeStatus !== 'cleared';
             if (paymentMethod && bankAccountId && paymentMethod !== 'cash' && !finalIsChequePending) {

@@ -89,6 +89,17 @@ const QuotationsPage = () => {
     const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
     const [showProductSuggestions, setShowProductSuggestions] = useState(null);
 
+    // Convert to Project Dialog State
+    const [isConvertToProjectOpen, setIsConvertToProjectOpen] = useState(false);
+    const [convertProjectYard, setConvertProjectYard] = useState('');
+    const [convertProjectEmployees, setConvertProjectEmployees] = useState([]);
+    const [isProjectAdvanceChecked, setIsProjectAdvanceChecked] = useState(false);
+    const [projectAdvanceAmount, setProjectAdvanceAmount] = useState(0);
+    const [projectAdvanceMethod, setProjectAdvanceMethod] = useState('cash');
+    const [projectAdvanceBankAccountId, setProjectAdvanceBankAccountId] = useState('');
+    const [projectAdvanceReference, setProjectAdvanceReference] = useState('');
+    const [bankAccounts, setBankAccounts] = useState([]);
+
     const fetchQuotations = async () => {
         try {
             const { data } = await api.get('/crm/quotations');
@@ -112,18 +123,20 @@ const QuotationsPage = () => {
 
     const fetchData = async () => {
         try {
-            const [prodRes, custRes, empRes, userRes] = await Promise.all([
+            const [prodRes, custRes, empRes, userRes, bankRes] = await Promise.all([
                 api.get('/products?limit=1000&status=active').catch(() => ({ data: { data: [] } })),
                 api.get('/customers?limit=1000&status=active').catch(() => ({ data: { data: [] } })),
                 api.get('/hr/employees?limit=500&status=active').catch(() => ({ data: { data: [] } })),
-                api.get('/users?limit=500').catch(() => ({ data: { data: [] } }))
+                api.get('/users?limit=500').catch(() => ({ data: { data: [] } })),
+                api.get('/finance/bank-accounts').catch(() => ({ data: { data: [] } }))
             ]);
             setProducts(prodRes.data.data || []);
             setCustomers(custRes.data.data || []);
             setEmployees(empRes.data.data || []);
             setUsers(userRes.data.data || []);
+            setBankAccounts(bankRes.data?.data || []);
         } catch (error) {
-            console.error('Failed to load products/customers/employees/users', error);
+            console.error('Failed to load products/customers/employees/users/bank-accounts', error);
         }
     };
 
@@ -329,6 +342,50 @@ const QuotationsPage = () => {
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to convert to invoice');
+        }
+    };
+
+    const handleConvertToProformaInvoice = async (id) => {
+        try {
+            const { data } = await api.post(`/crm/quotations/${id}/convert-to-invoice`, { invoiceType: 'proforma' });
+            toast.success('Successfully converted to Proforma Invoice!');
+            setIsPreviewOpen(false);
+            fetchQuotations();
+            if (data.data?._id) {
+                navigate(`/invoices/${data.data._id}`);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to convert to proforma invoice');
+        }
+    };
+
+    const handleConvertToProjectSubmit = async (e) => {
+        e.preventDefault();
+        if (!convertProjectYard.trim()) { toast.error('Enter yard or worksite location'); return; }
+        setSaving(true);
+        try {
+            const payload = {
+                yard: convertProjectYard,
+                assignedEmployees: convertProjectEmployees,
+                details: previewQuote.jobCaption,
+                advancePaymentAmount: isProjectAdvanceChecked ? Number(projectAdvanceAmount) : 0,
+                paymentMethod: isProjectAdvanceChecked ? projectAdvanceMethod : undefined,
+                bankAccountId: isProjectAdvanceChecked ? projectAdvanceBankAccountId : undefined,
+                paymentReference: isProjectAdvanceChecked ? projectAdvanceReference : undefined,
+            };
+
+            const { data } = await api.post(`/crm/quotations/${previewQuote._id}/convert-to-project`, payload);
+            toast.success('Successfully converted to Project!');
+            setIsConvertToProjectOpen(false);
+            setIsPreviewOpen(false);
+            fetchQuotations();
+            if (data.data?._id) {
+                navigate(`/crm/projects/${data.data._id}`);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to convert to project');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -574,7 +631,7 @@ const QuotationsPage = () => {
                                         <Download size={14} />
                                     </Button>
                                     {quote.status !== 'converted' && (
-                                        <Button variant="primary" size="sm" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={() => handleConvertToInvoice(quote._id)}>
+                                        <Button variant="primary" size="sm" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={() => { setPreviewQuote(quote); setIsPreviewOpen(true); }}>
                                             <ShoppingCart size={14} className="mr-1" /> Convert
                                         </Button>
                                     )}
@@ -817,14 +874,65 @@ const QuotationsPage = () => {
                                             Translate
                                         </button>
                                     </div>
-                                    <input 
-                                        type="text" 
-                                        required
-                                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white font-calibri"
-                                        placeholder="e.g. Set Bar Corner (21 feet) / Labour Charges / Paint Works"
-                                        value={item.productName}
-                                        onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
-                                    />
+                                    <div className="relative">
+                                        <input 
+                                            type="text" 
+                                            required
+                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white font-calibri"
+                                            placeholder="e.g. Set Bar Corner (21 feet) / Labour Charges / Paint Works"
+                                            value={item.productName}
+                                            onChange={(e) => {
+                                                handleItemChange(index, 'productName', e.target.value);
+                                                setShowProductSuggestions(index);
+                                            }}
+                                            onFocus={() => setShowProductSuggestions(index)}
+                                            onBlur={() => setTimeout(() => setShowProductSuggestions(null), 250)}
+                                        />
+                                        {showProductSuggestions === index && (
+                                            <div className="absolute z-50 left-0 right-0 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg mt-1 divide-y shadow-blue-500/10">
+                                                {products
+                                                    .filter(p => {
+                                                        const search = (item.productName || '').toLowerCase().trim();
+                                                        if (!search) return true;
+                                                        const name = (p.name || p.productName || p.title || '').toLowerCase();
+                                                        const code = (p.productCode || p.code || p.sku || '').toLowerCase();
+                                                        return name.includes(search) || code.includes(search);
+                                                    })
+                                                    .slice(0, 10)
+                                                    .map(p => {
+                                                        const pName = p.name || p.productName || 'Item';
+                                                        const pPrice = Number(p.basePrice || p.sellingPrice || p.retailPrice || p.costs?.lastPurchaseCost || p.costs?.averageCost || p.unitPrice || p.price || 0);
+                                                        const pCode = p.productCode || p.code || 'NO-CODE';
+                                                        return (
+                                                            <button
+                                                                key={p._id}
+                                                                type="button"
+                                                                onMouseDown={() => {
+                                                                    const newItems = [...formData.items];
+                                                                    const qty = Number(newItems[index].quantity || 1);
+                                                                    newItems[index].product = p._id;
+                                                                    newItems[index].productName = pName;
+                                                                    newItems[index].unitPrice = pPrice;
+                                                                    newItems[index].quantity = qty;
+                                                                    newItems[index].subtotal = qty * pPrice;
+                                                                    
+                                                                    const { subtotal, grandTotal } = calculateTotals(newItems, formData.discount, formData.tax);
+                                                                    setFormData({ ...formData, items: newItems, totalAmount: subtotal, grandTotal });
+                                                                    setShowProductSuggestions(null);
+                                                                }}
+                                                                className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition cursor-pointer"
+                                                            >
+                                                                <div className="font-bold text-gray-800">{pName}</div>
+                                                                <div className="text-gray-500 flex justify-between text-[11px] mt-0.5">
+                                                                    <span>Code: {pCode}</span>
+                                                                    <span className="font-mono text-blue-600 font-semibold">LKR {pPrice.toLocaleString()}</span>
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                            </div>
+                                        )}
+                                    </div>
                                     <input 
                                         type="text" 
                                         className="w-full px-3 py-1 border border-dashed border-gray-300 rounded-lg text-xs bg-slate-50 text-blue-700 mt-1 font-calibri"
@@ -922,15 +1030,158 @@ const QuotationsPage = () => {
                                     <Download size={16} className="mr-1.5" /> Download PDF
                                 </Button>
                                 {previewQuote.status !== 'converted' && (
-                                    <Button variant="primary" className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => handleConvertToInvoice(previewQuote._id)}>
-                                        <ShoppingCart size={16} className="mr-1.5" /> Convert to Invoice (INV)
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button variant="primary" className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-2.5 py-1.5" onClick={() => handleConvertToInvoice(previewQuote._id)}>
+                                            Convert to Invoice (Commercial)
+                                        </Button>
+                                        <Button variant="outline" className="text-purple-600 border-purple-200 hover:bg-purple-50 text-xs px-2.5 py-1.5" onClick={() => handleConvertToProformaInvoice(previewQuote._id)}>
+                                            Convert to Proforma
+                                        </Button>
+                                        <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-2.5 py-1.5" onClick={() => {
+                                            setConvertProjectYard('');
+                                            setConvertProjectEmployees([]);
+                                            setIsProjectAdvanceChecked(false);
+                                            setProjectAdvanceAmount(0);
+                                            setProjectAdvanceMethod('cash');
+                                            setProjectAdvanceBankAccountId('');
+                                            setProjectAdvanceReference('');
+                                            setIsConvertToProjectOpen(true);
+                                        }}>
+                                            Convert to Project
+                                        </Button>
+                                    </div>
                                 )}
                             </div>
                         </div>
                     </div>
                 )}
             </Modal>
+
+            {/* Convert to Project Modal */}
+            {isConvertToProjectOpen && (
+                <div className="fixed inset-0 bg-black/45 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 className="text-lg font-bold text-slate-800">Convert to Project</h3>
+                            <button onClick={() => setIsConvertToProjectOpen(false)} className="text-gray-400 hover:text-slate-600 text-lg">×</button>
+                        </div>
+                        <form onSubmit={handleConvertToProjectSubmit} className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Yard / Worksite Location</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={convertProjectYard}
+                                    onChange={(e) => setConvertProjectYard(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                    placeholder="e.g. JA-ELA Workshop / Yard 1"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Assign Employees</label>
+                                <div className="border border-gray-200 rounded-xl p-3 max-h-40 overflow-y-auto space-y-2 bg-slate-50">
+                                    {employees.map(emp => (
+                                        <label key={emp._id} className="flex items-center space-x-2 text-xs p-1 hover:bg-white rounded cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={convertProjectEmployees.includes(emp._id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setConvertProjectEmployees([...convertProjectEmployees, emp._id]);
+                                                    } else {
+                                                        setConvertProjectEmployees(convertProjectEmployees.filter(id => id !== emp._id));
+                                                    }
+                                                }}
+                                                className="rounded text-primary-600 border-gray-300"
+                                            />
+                                            <span>{emp.fullName || `${emp.firstName} ${emp.lastName}`} ({emp.employeeCode})</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="border-t pt-3 space-y-3">
+                                <label className="flex items-center space-x-2 text-xs font-bold text-slate-700 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={isProjectAdvanceChecked}
+                                        onChange={(e) => setIsProjectAdvanceChecked(e.target.checked)}
+                                        className="rounded text-primary-600 border-gray-300 w-4 h-4"
+                                    />
+                                    <span>Record Advance Payment</span>
+                                </label>
+
+                                {isProjectAdvanceChecked && (
+                                    <div className="p-3 bg-slate-50 border border-gray-200 rounded-xl space-y-3">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase font-bold text-gray-500">Advance Amount (LKR)</label>
+                                                <input
+                                                    type="number"
+                                                    required
+                                                    min="1"
+                                                    value={projectAdvanceAmount}
+                                                    onChange={(e) => setProjectAdvanceAmount(Number(e.target.value))}
+                                                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase font-bold text-gray-500">Payment Method</label>
+                                                <select
+                                                    value={projectAdvanceMethod}
+                                                    onChange={(e) => setProjectAdvanceMethod(e.target.value)}
+                                                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white"
+                                                >
+                                                    <option value="cash">Cash</option>
+                                                    <option value="bank_transfer">Bank Transfer</option>
+                                                    <option value="card">Card</option>
+                                                    <option value="cheque">Cheque</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {(projectAdvanceMethod === 'cheque' || projectAdvanceMethod === 'bank_transfer') && (
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase font-bold text-gray-500">Company Bank Account</label>
+                                                <select
+                                                    required
+                                                    value={projectAdvanceBankAccountId}
+                                                    onChange={(e) => setProjectAdvanceBankAccountId(e.target.value)}
+                                                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white"
+                                                >
+                                                    <option value="">-- Select Account --</option>
+                                                    {bankAccounts.map(acc => (
+                                                        <option key={acc._id} value={acc._id}>
+                                                            {acc.bankName} - {acc.accountNumber} (LKR {acc.balance?.toLocaleString()})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase font-bold text-gray-500">Payment Reference / Notes</label>
+                                            <input
+                                                type="text"
+                                                value={projectAdvanceReference}
+                                                onChange={(e) => setProjectAdvanceReference(e.target.value)}
+                                                className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white"
+                                                placeholder="e.g. Txn Ref, Cheque No, etc."
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-4 border-t">
+                                <Button variant="outline" type="button" onClick={() => setIsConvertToProjectOpen(false)}>Cancel</Button>
+                                <Button variant="primary" type="submit" loading={saving}>Convert to Project</Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             <ConfirmDialog isOpen={!!deleting} onClose={() => setDeleting(null)} onConfirm={handleDelete}
                 title="Delete Document" message={`Permanently remove ${deleting?.quoteNumber || deleting?.quotationCode}?`} />

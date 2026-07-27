@@ -141,6 +141,9 @@ const salesOrderSchema = new mongoose.Schema(
             creditDays: Number,
             dueDate: Date,
         },
+        projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
+        issuedToEmployeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
+        isGoToYard: { type: Boolean, default: false },
 
         // Status
         status: {

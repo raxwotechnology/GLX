@@ -53,6 +53,7 @@ const expenseSchema = new mongoose.Schema({
     costPerUnit: { type: Number, required: true },
     subtotal: { type: Number, required: true }
   }],
+  projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   deletedAt: { type: Date, default: null },

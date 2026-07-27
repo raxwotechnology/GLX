@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Ban, Printer, Receipt, Download } from 'lucide-react';
+import { ArrowLeft, Send, Ban, Printer, Receipt, Download, CheckCircle, RefreshCw, Briefcase, FileCheck, FileText } from 'lucide-react';
+import api from '../api/axios';
+import toast from 'react-hot-toast';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -36,6 +38,115 @@ export default function InvoiceDetailPage() {
     const inv = data?.data;
 
     const printRef = useRef();
+    const [isConverting, setIsConverting] = useState(false);
+
+    // Conversion Modal State
+    const [isConvertOpen, setIsConvertOpen] = useState(false);
+    const [convertStep, setConvertStep] = useState('choose');
+    const [convertYard, setConvertYard] = useState('');
+    const [convertDetails, setConvertDetails] = useState('');
+    const [convertAdvance, setConvertAdvance] = useState('');
+    const [isSubmittingConvert, setIsSubmittingConvert] = useState(false);
+
+    // Quick Payment States
+    const [isQuickPayOpen, setIsQuickPayOpen] = useState(false);
+    const [quickPayMethod, setQuickPayMethod] = useState('cash');
+    const [quickPayBankAccountId, setQuickPayBankAccountId] = useState('');
+    const [quickPayReference, setQuickPayReference] = useState('');
+    const [quickPayNotes, setQuickPayNotes] = useState('');
+    const [isSavingPayment, setIsSavingPayment] = useState(false);
+
+    const { data: bankAccountsData } = useQuery({
+        queryKey: ['bankAccounts'],
+        queryFn: async () => {
+            const { data } = await api.get('/finance/bank-accounts');
+            return data.data || [];
+        },
+        enabled: isQuickPayOpen
+    });
+    const bankAccounts = bankAccountsData || [];
+
+    const handleConvertToProforma = async () => {
+        setIsSubmittingConvert(true);
+        try {
+            await api.post(`/invoices/${inv._id}/convert-to-proforma`);
+            toast.success(`Invoice ${inv.invoiceNumber} converted to Proforma Invoice!`);
+            setIsConvertOpen(false);
+            window.location.reload();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to convert invoice');
+        } finally {
+            setIsSubmittingConvert(false);
+        }
+    };
+
+    const handleConvertToCommercial = async () => {
+        setIsSubmittingConvert(true);
+        try {
+            await api.post(`/invoices/${inv._id}/convert-to-commercial`);
+            toast.success(`Invoice ${inv.invoiceNumber} converted to Commercial Invoice!`);
+            setIsConvertOpen(false);
+            window.location.reload();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to convert invoice');
+        } finally {
+            setIsSubmittingConvert(false);
+        }
+    };
+
+    const handleConvertToProjectSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmittingConvert(true);
+        try {
+            const payload = {
+                yard: convertYard,
+                details: convertDetails,
+                assignedEmployees: [],
+                advancePaymentAmount: convertAdvance ? Number(convertAdvance) : 0
+            };
+            const { data: res } = await api.post(`/invoices/${inv._id}/convert-to-project`, payload);
+            toast.success(`Converted to Project successfully!`);
+            setIsConvertOpen(false);
+            if (res.data?._id) {
+                navigate(`/crm/projects/${res.data._id}`);
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to convert invoice to project');
+        } finally {
+            setIsSubmittingConvert(false);
+        }
+    };
+
+    const handleQuickPaymentSubmit = async (e) => {
+        e.preventDefault();
+        setIsSavingPayment(true);
+        try {
+            const payload = {
+                direction: 'received',
+                customerId: inv.customerId?._id || inv.customerId,
+                amount: inv.balanceDue,
+                method: quickPayMethod,
+                bankAccountId: (quickPayMethod === 'cheque' || quickPayMethod === 'bank_transfer') ? quickPayBankAccountId : undefined,
+                paymentDate: new Date().toISOString().split('T')[0],
+                allocations: [{
+                    documentType: 'invoice',
+                    documentId: inv._id,
+                    amount: inv.balanceDue
+                }],
+                notes: quickPayNotes || `Full payment for Invoice ${inv.invoiceNumber}`,
+                transactionReference: quickPayReference || undefined
+            };
+
+            await api.post('/payments', payload);
+            toast.success('Payment recorded and Invoice marked as Paid!');
+            setIsQuickPayOpen(false);
+            window.location.reload();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to record payment');
+        } finally {
+            setIsSavingPayment(false);
+        }
+    };
 
     // Fetch payments allocated to this invoice
     const { data: paymentsData } = useQuery({
@@ -107,10 +218,34 @@ export default function InvoiceDetailPage() {
                             <Download size={16} className="mr-1.5" /> Download PDF
                         </Button>
                         {inv.balanceDue > 0 && inv.paymentStatus !== 'cancelled' && (
-                            <Button variant="outline" onClick={() => navigate(`/payments/new?invoiceId=${inv._id}`)}>
-                                <Receipt size={16} className="mr-1.5" /> Record Payment
-                            </Button>
+                            <>
+                                <Button variant="outline" onClick={() => navigate(`/payments/new?invoiceId=${inv._id}`)}>
+                                    <Receipt size={16} className="mr-1.5" /> Record Payment
+                                </Button>
+                                <Button variant="primary" className="bg-green-600 hover:bg-green-700 text-white border-green-600" onClick={() => {
+                                    setQuickPayMethod('cash');
+                                    setQuickPayBankAccountId('');
+                                    setQuickPayReference('');
+                                    setQuickPayNotes('');
+                                    setIsQuickPayOpen(true);
+                                }}>
+                                    <CheckCircle size={16} className="mr-1.5" /> Mark as Paid
+                                </Button>
+                            </>
                         )}
+                        <Button
+                            variant="outline"
+                            className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-bold"
+                            onClick={() => {
+                                setConvertStep('choose');
+                                setConvertYard('');
+                                setConvertDetails('');
+                                setConvertAdvance('');
+                                setIsConvertOpen(true);
+                            }}
+                        >
+                            <RefreshCw size={16} className="mr-1.5" /> Convert Document
+                        </Button>
                         {actions.map((a) => (
                             <Button key={a.label} variant={a.variant} onClick={() => setAction(a)}>
                                 <a.icon size={16} className="mr-1.5" /> {a.label}
@@ -326,6 +461,196 @@ export default function InvoiceDetailPage() {
                     documentType="invoice"
                     defaultPhone={inv.customerSnapshot?.phone || ''}
                 />
+            )}
+
+            {/* Quick Payment Modal */}
+            {isQuickPayOpen && (
+                <div className="fixed inset-0 bg-black/45 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-[slideUp_0.2s_ease-out]">
+                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 className="text-lg font-bold text-slate-800">Quick Mark as Paid</h3>
+                            <button onClick={() => setIsQuickPayOpen(false)} className="text-gray-400 hover:text-slate-600 text-lg">×</button>
+                        </div>
+                        <form onSubmit={handleQuickPaymentSubmit} className="space-y-4">
+                            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 space-y-1">
+                                <span className="text-[10px] uppercase font-bold text-gray-500">Amount Due</span>
+                                <p className="text-xl font-bold text-blue-900">LKR {inv.balanceDue?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Payment Method</label>
+                                <select
+                                    value={quickPayMethod}
+                                    onChange={(e) => setQuickPayMethod(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                >
+                                    <option value="cash">Cash</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="card">Card</option>
+                                    <option value="cheque">Cheque</option>
+                                </select>
+                            </div>
+
+                            {(quickPayMethod === 'cheque' || quickPayMethod === 'bank_transfer') && (
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-700 uppercase">Company Bank Account</label>
+                                    <select
+                                        required
+                                        value={quickPayBankAccountId}
+                                        onChange={(e) => setQuickPayBankAccountId(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                    >
+                                        <option value="">-- Select Account --</option>
+                                        {bankAccounts.map(acc => (
+                                            <option key={acc._id} value={acc._id}>
+                                                {acc.bankName} - {acc.accountNumber} (LKR {acc.balance?.toLocaleString()})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Reference / Notes (optional)</label>
+                                <input
+                                    type="text"
+                                    value={quickPayReference}
+                                    onChange={(e) => setQuickPayReference(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                    placeholder="e.g. Txn Ref, Cheque No, etc."
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-4 border-t">
+                                <Button variant="outline" type="button" onClick={() => setIsQuickPayOpen(false)}>Cancel</Button>
+                                <Button variant="primary" type="submit" loading={isSavingPayment}>Confirm Payment</Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {/* CONVERT INVOICE MODAL */}
+            {isConvertOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-scaleUp">
+                        <div className="flex justify-between items-center border-b pb-3">
+                            <div>
+                                <h3 className="font-bold text-gray-900 text-lg">Convert Document</h3>
+                                <p className="text-xs text-gray-500 font-mono">{inv.invoiceNumber} · Total: {inv.grandTotal?.toLocaleString()} LKR</p>
+                            </div>
+                            <button onClick={() => setIsConvertOpen(false)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+                        </div>
+
+                        {convertStep === 'choose' ? (
+                            <div className="space-y-3 pt-2">
+                                <p className="text-xs text-gray-600 font-medium">Select target conversion format:</p>
+
+                                {inv.invoiceType === 'proforma' ? (
+                                    <button
+                                        type="button"
+                                        onClick={handleConvertToCommercial}
+                                        disabled={isSubmittingConvert}
+                                        className="w-full p-4 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/60 transition text-left flex items-start gap-3 group"
+                                    >
+                                        <div className="p-2.5 bg-blue-600 text-white rounded-xl group-hover:scale-105 transition">
+                                            <FileCheck size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 text-sm">Convert to Commercial Invoice</h4>
+                                            <p className="text-xs text-gray-500 mt-0.5">Convert Proforma Invoice into standard tax/commercial invoice & deduct inventory</p>
+                                        </div>
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={handleConvertToProforma}
+                                        disabled={isSubmittingConvert}
+                                        className="w-full p-4 rounded-xl border border-amber-200 bg-amber-50/50 hover:bg-amber-100/60 transition text-left flex items-start gap-3 group"
+                                    >
+                                        <div className="p-2.5 bg-amber-500 text-white rounded-xl group-hover:scale-105 transition">
+                                            <FileText size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 text-sm">Convert to Proforma Invoice (PI)</h4>
+                                            <p className="text-xs text-gray-500 mt-0.5">Change invoice format into a Proforma Estimate for client review</p>
+                                        </div>
+                                    </button>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={() => setConvertStep('project')}
+                                    className="w-full p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/60 transition text-left flex items-start gap-3 group"
+                                >
+                                    <div className="p-2.5 bg-emerald-600 text-white rounded-xl group-hover:scale-105 transition">
+                                        <Briefcase size={20} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-gray-900 text-sm">Convert to Project (Yard Job)</h4>
+                                        <p className="text-xs text-gray-500 mt-0.5">Create a Project to track materials, labor cost, and progress at the yard</p>
+                                    </div>
+                                </button>
+
+                                <div className="pt-2 flex justify-end">
+                                    <Button variant="outline" size="sm" onClick={() => setIsConvertOpen(false)}>Cancel</Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleConvertToProjectSubmit} className="space-y-4">
+                                <div className="bg-indigo-50 p-3.5 rounded-xl border border-indigo-200 text-indigo-900">
+                                    <p className="text-xs font-bold uppercase">Target Project Summary</p>
+                                    <p className="text-xs text-indigo-700 mt-0.5 font-medium">Customer: {inv.customerSnapshot?.name || inv.vehicleOwner || 'Customer'}</p>
+                                    <p className="text-xs text-indigo-700 font-mono font-bold">Quoted Value: {inv.grandTotal?.toLocaleString()} LKR</p>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-600 uppercase">Select Yard Location</label>
+                                    <select
+                                        value={convertYard}
+                                        onChange={(e) => setConvertYard(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-white outline-none focus:border-slate-900"
+                                    >
+                                        <option value="">-- Select Yard Location --</option>
+                                        <option value="Ja-Ela Yard 1">Ja-Ela Yard 1</option>
+                                        <option value="Ja-Ela Yard 2">Ja-Ela Yard 2</option>
+                                        <option value="Ekala Yard">Ekala Yard</option>
+                                        <option value="Main Yard">Main Yard</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-600 uppercase">Project Notes / Work Details</label>
+                                    <textarea
+                                        rows={2}
+                                        value={convertDetails}
+                                        onChange={(e) => setConvertDetails(e.target.value)}
+                                        placeholder="Add work scope, vehicle details or instructions..."
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-white outline-none focus:border-slate-900"
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-600 uppercase">Advance Payment Amount (Optional)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="e.g. 50000"
+                                        value={convertAdvance}
+                                        onChange={(e) => setConvertAdvance(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs font-bold font-mono bg-white outline-none focus:border-slate-900"
+                                    />
+                                </div>
+
+                                <div className="flex justify-between items-center pt-3 border-t">
+                                    <Button type="button" variant="outline" size="sm" onClick={() => setConvertStep('choose')}>← Back</Button>
+                                    <Button type="submit" variant="primary" size="sm" loading={isSubmittingConvert} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                                        Create Project
+                                    </Button>
+                                </div>
+                            </form>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     );

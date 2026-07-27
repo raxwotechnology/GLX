@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Play, Eye, DollarSign } from 'lucide-react';
+import { Plus, Play, Eye, DollarSign, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../api/axios';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -61,8 +62,28 @@ export default function PayrollsPage() {
         { key: 'net', label: 'Net Pay', render: (r) => <span className="font-semibold">{fmt(r.totalNetPay)}</span> },
         { key: 'status', label: 'Status', render: (r) => <Badge variant={statusVariant[r.status]}>{r.status}</Badge> },
         {
-            key: 'actions', label: '', width: '50px', render: (r) => (
-                <button onClick={() => navigate(`/payroll/${r._id}`)} className="p-1.5 hover:bg-gray-100 rounded"><Eye size={16} /></button>
+            key: 'actions', label: '', width: '100px', render: (r) => (
+                <div className="flex gap-2 justify-end">
+                    <button onClick={() => navigate(`/payroll/${r._id}`)} title="View Detail" className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-primary-600"><Eye size={16} /></button>
+                    <button onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                            const response = await api.get(`/payroll/${r._id}/download-sheet`, { responseType: 'blob' });
+                            const blob = new Blob([response.data], { type: 'application/pdf' });
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.setAttribute('download', `Payroll_Sheet_${r.payrollNumber}.pdf`);
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        } catch (err) {
+                            toast.error('Failed to download payroll sheet');
+                        }
+                    }} title="Export Payroll Sheet" className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600">
+                        <Download size={16} />
+                    </button>
+                </div>
             )
         },
     ];

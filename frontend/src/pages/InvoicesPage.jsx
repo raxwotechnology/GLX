@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Eye, FileText, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Eye, FileText, AlertTriangle, CheckCircle, RefreshCw, Briefcase, FileCheck, Layers } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -25,16 +27,42 @@ const paymentStatusVariant = {
 
 export default function InvoicesPage() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { user } = useAuthStore();
     const canCreate = ['admin', 'manager', 'accountant', 'sales_manager'].includes(user?.role);
 
+    // Quick Payment State
+    const [selectedPayInvoice, setSelectedPayInvoice] = useState(null);
+    const [payMethod, setPayMethod] = useState('cash');
+    const [payBankAccountId, setPayBankAccountId] = useState('');
+    const [payReference, setPayReference] = useState('');
+    const [isSubmittingPay, setIsSubmittingPay] = useState(false);
+
+    // Conversion Modal State
+    const [selectedConvertInvoice, setSelectedConvertInvoice] = useState(null);
+    const [convertStep, setConvertStep] = useState('choose');
+    const [convertYard, setConvertYard] = useState('');
+    const [convertDetails, setConvertDetails] = useState('');
+    const [convertAdvance, setConvertAdvance] = useState('');
+    const [isSubmittingConvert, setIsSubmittingConvert] = useState(false);
+
     const [filters, setFilters] = useState({
-        search: '', paymentStatus: '', agingBucket: '',
+        search: '', paymentStatus: '', agingBucket: '', invoiceType: 'commercial',
         page: 1, limit: 15,
     });
 
     const { data, isLoading } = useInvoices(filters);
     const { data: agingData } = useAgingSummary();
+
+    const { data: bankAccountsData } = useQuery({
+        queryKey: ['bankAccounts'],
+        queryFn: async () => {
+            const { data } = await api.get('/finance/bank-accounts');
+            return data.data || [];
+        },
+        enabled: !!selectedPayInvoice
+    });
+    const bankAccounts = bankAccountsData || [];
 
     const invoices = data?.data || [];
     const total = data?.total || 0;
@@ -43,6 +71,96 @@ export default function InvoicesPage() {
 
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 2 }).format(n || 0);
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-LK') : '—';
+
+    const handleQuickPaySubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedPayInvoice) return;
+        setIsSubmittingPay(true);
+        try {
+            const payload = {
+                direction: 'received',
+                customerId: selectedPayInvoice.customerId?._id || selectedPayInvoice.customerId,
+                amount: selectedPayInvoice.balanceDue,
+                method: payMethod,
+                bankAccountId: payMethod !== 'cash' ? (payBankAccountId || undefined) : undefined,
+                paymentDate: new Date().toISOString().split('T')[0],
+                allocations: [{
+                    documentType: 'invoice',
+                    documentId: selectedPayInvoice._id,
+                    amount: selectedPayInvoice.balanceDue
+                }],
+                notes: `Quick Payment for Invoice ${selectedPayInvoice.invoiceNumber}`,
+                transactionReference: payReference || undefined
+            };
+
+            await api.post('/payments', payload);
+            toast.success(`Invoice ${selectedPayInvoice.invoiceNumber} marked as Paid!`);
+            setSelectedPayInvoice(null);
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['invoice'] });
+            queryClient.invalidateQueries({ queryKey: ['bankAccounts'] });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to record payment');
+        } finally {
+            setIsSubmittingPay(false);
+        }
+    };
+
+    const handleConvertToProforma = async () => {
+        if (!selectedConvertInvoice) return;
+        setIsSubmittingConvert(true);
+        try {
+            await api.post(`/invoices/${selectedConvertInvoice._id}/convert-to-proforma`);
+            toast.success(`Invoice ${selectedConvertInvoice.invoiceNumber} converted to Proforma Invoice!`);
+            setSelectedConvertInvoice(null);
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to convert invoice');
+        } finally {
+            setIsSubmittingConvert(false);
+        }
+    };
+
+    const handleConvertToCommercial = async () => {
+        if (!selectedConvertInvoice) return;
+        setIsSubmittingConvert(true);
+        try {
+            await api.post(`/invoices/${selectedConvertInvoice._id}/convert-to-commercial`);
+            toast.success(`Invoice ${selectedConvertInvoice.invoiceNumber} converted to Commercial Invoice!`);
+            setSelectedConvertInvoice(null);
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to convert invoice');
+        } finally {
+            setIsSubmittingConvert(false);
+        }
+    };
+
+    const handleConvertToProjectSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedConvertInvoice) return;
+        setIsSubmittingConvert(true);
+        try {
+            const payload = {
+                yard: convertYard,
+                details: convertDetails,
+                assignedEmployees: [],
+                advancePaymentAmount: convertAdvance ? Number(convertAdvance) : 0
+            };
+            const { data: res } = await api.post(`/invoices/${selectedConvertInvoice._id}/convert-to-project`, payload);
+            toast.success(`Converted to Project successfully!`);
+            setSelectedConvertInvoice(null);
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            if (res.data?._id) {
+                navigate(`/crm/projects/${res.data._id}`);
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to convert invoice to project');
+        } finally {
+            setIsSubmittingConvert(false);
+        }
+    };
 
     const columns = [
         {
@@ -86,12 +204,41 @@ export default function InvoicesPage() {
             render: (r) => <Badge variant={paymentStatusVariant[r.paymentStatus]}>{r.paymentStatus.replace('_', ' ')}</Badge>,
         },
         {
-            key: 'actions', label: '', width: '50px',
+            key: 'actions', label: 'Actions', width: '140px',
             render: (r) => (
-                <button onClick={(e) => { e.stopPropagation(); navigate(`/invoices/${r._id}`); }}
-                    className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded">
-                    <Eye size={16} />
-                </button>
+                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {r.paymentStatus !== 'paid' && r.balanceDue > 0 && (
+                        <button
+                            onClick={() => {
+                                setSelectedPayInvoice(r);
+                                setPayMethod('cash');
+                                setPayBankAccountId('');
+                                setPayReference('');
+                            }}
+                            className="px-2 py-1 text-xs font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-1 shadow-xs"
+                            title="Mark as Paid / Record Payment"
+                        >
+                            <CheckCircle size={12} /> Pay
+                        </button>
+                    )}
+                    <button
+                        onClick={() => {
+                            setSelectedConvertInvoice(r);
+                            setConvertStep('choose');
+                            setConvertYard('');
+                            setConvertDetails('');
+                            setConvertAdvance('');
+                        }}
+                        className="px-2 py-1 text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg transition flex items-center gap-1 border border-indigo-200"
+                        title="Convert Invoice"
+                    >
+                        <RefreshCw size={12} /> Convert
+                    </button>
+                    <button onClick={() => navigate(`/invoices/${r._id}`)}
+                        className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded">
+                        <Eye size={16} />
+                    </button>
+                </div>
             ),
         },
     ];
@@ -120,19 +267,53 @@ export default function InvoicesPage() {
                     { key: '1_30', label: '1-30 days', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
                     { key: '31_60', label: '31-60 days', color: 'bg-orange-50 text-orange-700 border-orange-200' },
                     { key: '61_90', label: '61-90 days', color: 'bg-red-50 text-red-700 border-red-200' },
-                    { key: '91_plus', label: '90+ days', color: 'bg-red-100 text-red-800 border-red-300' },
+                    { key: '90_plus', label: '90+ days', color: 'bg-purple-50 text-purple-700 border-purple-200' },
                 ].map((b) => (
                     <button key={b.key}
-                        onClick={() => setFilters((f) => ({ ...f, agingBucket: b.key, page: 1 }))}
-                        className={`border rounded-lg p-3 text-left ${b.color} ${filters.agingBucket === b.key ? 'ring-2 ring-offset-1 ring-primary-500' : ''}`}>
-                        <p className="text-xs">{b.label}</p>
-                        <p className="text-lg font-bold">{fmt(aging.buckets?.[b.key] || 0)}</p>
-                        <p className="text-xs opacity-75">{aging.counts?.[b.key] || 0} invoices</p>
+                        onClick={() => setFilters((f) => ({ ...f, agingBucket: f.agingBucket === b.key ? '' : b.key, page: 1 }))}
+                        className={`border rounded-lg p-3 text-left transition ${b.color} ${filters.agingBucket === b.key ? 'ring-2 ring-offset-1 ring-primary-500' : ''}`}>
+                        <p className="text-xs opacity-75">{b.label}</p>
+                        <p className="text-lg font-bold mt-1">{fmt(aging.buckets?.[b.key] || 0)}</p>
+                        <p className="text-xs opacity-60 mt-0.5">{aging.counts?.[b.key] || 0} invoices</p>
                     </button>
                 ))}
             </div>
 
             <Card>
+                {/* Invoice Type & Status Filter Pills */}
+                <div className="flex border-b border-gray-200 bg-white rounded-t-xl overflow-hidden">
+                    <button
+                        onClick={() => setFilters((f) => ({ ...f, invoiceType: 'commercial', paymentStatus: '', page: 1 }))}
+                        className={`flex-1 py-3 px-4 text-xs md:text-sm font-semibold border-b-2 text-center transition-all ${
+                            filters.invoiceType === 'commercial' && !filters.paymentStatus
+                                ? 'border-primary-600 text-primary-600 bg-slate-50'
+                                : 'border-transparent text-gray-500 hover:text-slate-800 hover:bg-slate-50'
+                        }`}
+                    >
+                        Standard / Commercial
+                    </button>
+                    <button
+                        onClick={() => setFilters((f) => ({ ...f, invoiceType: 'commercial', paymentStatus: 'paid', page: 1 }))}
+                        className={`flex-1 py-3 px-4 text-xs md:text-sm font-semibold border-b-2 text-center transition-all ${
+                            filters.invoiceType === 'commercial' && filters.paymentStatus === 'paid'
+                                ? 'border-primary-600 text-primary-600 bg-slate-50'
+                                : 'border-transparent text-gray-500 hover:text-slate-800 hover:bg-slate-50'
+                        }`}
+                    >
+                        Fully Paid Invoices
+                    </button>
+                    <button
+                        onClick={() => setFilters((f) => ({ ...f, invoiceType: 'proforma', paymentStatus: '', page: 1 }))}
+                        className={`flex-1 py-3 px-4 text-xs md:text-sm font-semibold border-b-2 text-center transition-all ${
+                            filters.invoiceType === 'proforma'
+                                ? 'border-primary-600 text-primary-600 bg-slate-50'
+                                : 'border-transparent text-gray-500 hover:text-slate-800 hover:bg-slate-50'
+                        }`}
+                    >
+                        Proforma Invoices
+                    </button>
+                </div>
+
                 <div className="p-4 border-b border-gray-200 flex flex-wrap gap-3">
                     <div className="relative flex-1 min-w-[200px]">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -196,6 +377,131 @@ export default function InvoicesPage() {
                     </>
                 )}
             </Card>
+
+            {/* CONVERT INVOICE MODAL */}
+            {selectedConvertInvoice && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-scaleUp">
+                        <div className="flex justify-between items-center border-b pb-3">
+                            <div>
+                                <h3 className="font-bold text-gray-900 text-lg">Convert Invoice</h3>
+                                <p className="text-xs text-gray-500 font-mono">{selectedConvertInvoice.invoiceNumber} · Total: {fmt(selectedConvertInvoice.grandTotal)}</p>
+                            </div>
+                            <button onClick={() => setSelectedConvertInvoice(null)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+                        </div>
+
+                        {convertStep === 'choose' ? (
+                            <div className="space-y-3 pt-2">
+                                <p className="text-xs text-gray-600 font-medium">Select target conversion format:</p>
+
+                                {selectedConvertInvoice.invoiceType === 'proforma' ? (
+                                    <button
+                                        type="button"
+                                        onClick={handleConvertToCommercial}
+                                        disabled={isSubmittingConvert}
+                                        className="w-full p-4 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/60 transition text-left flex items-start gap-3 group"
+                                    >
+                                        <div className="p-2.5 bg-blue-600 text-white rounded-xl group-hover:scale-105 transition">
+                                            <FileCheck size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 text-sm">Convert to Commercial Invoice</h4>
+                                            <p className="text-xs text-gray-500 mt-0.5">Convert Proforma Invoice into standard tax/commercial invoice & deduct inventory</p>
+                                        </div>
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={handleConvertToProforma}
+                                        disabled={isSubmittingConvert}
+                                        className="w-full p-4 rounded-xl border border-amber-200 bg-amber-50/50 hover:bg-amber-100/60 transition text-left flex items-start gap-3 group"
+                                    >
+                                        <div className="p-2.5 bg-amber-500 text-white rounded-xl group-hover:scale-105 transition">
+                                            <FileText size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 text-sm">Convert to Proforma Invoice (PI)</h4>
+                                            <p className="text-xs text-gray-500 mt-0.5">Change invoice format into a Proforma Estimate for client review</p>
+                                        </div>
+                                    </button>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={() => setConvertStep('project')}
+                                    className="w-full p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/60 transition text-left flex items-start gap-3 group"
+                                >
+                                    <div className="p-2.5 bg-emerald-600 text-white rounded-xl group-hover:scale-105 transition">
+                                        <Briefcase size={20} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-gray-900 text-sm">Convert to Project (Yard Job)</h4>
+                                        <p className="text-xs text-gray-500 mt-0.5">Create a Project to track materials, labor cost, and progress at the yard</p>
+                                    </div>
+                                </button>
+
+                                <div className="pt-2 flex justify-end">
+                                    <Button variant="outline" size="sm" onClick={() => setSelectedConvertInvoice(null)}>Cancel</Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleConvertToProjectSubmit} className="space-y-4">
+                                <div className="bg-indigo-50 p-3.5 rounded-xl border border-indigo-200 text-indigo-900">
+                                    <p className="text-xs font-bold uppercase">Target Project Summary</p>
+                                    <p className="text-xs text-indigo-700 mt-0.5 font-medium">Customer: {selectedConvertInvoice.customerSnapshot?.name || selectedConvertInvoice.vehicleOwner || 'Customer'}</p>
+                                    <p className="text-xs text-indigo-700 font-mono font-bold">Quoted Value: {fmt(selectedConvertInvoice.grandTotal)}</p>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-600 uppercase">Select Yard Location</label>
+                                    <select
+                                        value={convertYard}
+                                        onChange={(e) => setConvertYard(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-white outline-none focus:border-slate-900"
+                                    >
+                                        <option value="">-- Select Yard Location --</option>
+                                        <option value="Ja-Ela Yard 1">Ja-Ela Yard 1</option>
+                                        <option value="Ja-Ela Yard 2">Ja-Ela Yard 2</option>
+                                        <option value="Ekala Yard">Ekala Yard</option>
+                                        <option value="Main Yard">Main Yard</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-600 uppercase">Project Notes / Work Details</label>
+                                    <textarea
+                                        rows={2}
+                                        value={convertDetails}
+                                        onChange={(e) => setConvertDetails(e.target.value)}
+                                        placeholder="Add work scope, vehicle details or instructions..."
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-white outline-none focus:border-slate-900"
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-600 uppercase">Advance Payment Amount (Optional)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="e.g. 50000"
+                                        value={convertAdvance}
+                                        onChange={(e) => setConvertAdvance(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs font-bold font-mono bg-white outline-none focus:border-slate-900"
+                                    />
+                                </div>
+
+                                <div className="flex justify-between items-center pt-3 border-t">
+                                    <Button type="button" variant="outline" size="sm" onClick={() => setConvertStep('choose')}>← Back</Button>
+                                    <Button type="submit" variant="primary" size="sm" loading={isSubmittingConvert} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                                        Create Project
+                                    </Button>
+                                </div>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

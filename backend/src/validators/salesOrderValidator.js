@@ -42,6 +42,9 @@ export const createSalesOrderSchema = z.object({
     chequeDate: z.string().optional(),
     bankName: z.string().optional(),
     chequeStatus: z.enum(['cleared', 'pending', 'cancelled']).optional(),
+    isGoToYard: z.boolean().optional(),
+    projectId: objectId.optional(),
+    issuedToEmployeeId: objectId.optional(),
 });
 
 export const updateSalesOrderSchema = createSalesOrderSchema.partial();

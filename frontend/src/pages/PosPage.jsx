@@ -49,6 +49,9 @@ export default function PosPage() {
     const [bankName, setBankName] = useState('');
     const [chequeStatus, setChequeStatus] = useState('pending');
     const [checkoutSuccessDetails, setCheckoutSuccessDetails] = useState(null);
+    const [isGoToYard, setIsGoToYard] = useState(false);
+    const [selectedProjectId, setSelectedProjectId] = useState('');
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
 
     const cartDrawerRef = useRef(null);
     const searchRef = useRef(null);
@@ -60,6 +63,27 @@ export default function PosPage() {
         queryFn: () => customersApi.list({ status: 'active', limit: 500 }),
         staleTime: 0,
     });
+    // Fetch active projects and active employees for project materials issue (Go to Yard)
+    const { data: projectsData } = useQuery({
+        queryKey: ['projects', 'active'],
+        queryFn: async () => {
+            const { data } = await api.get('/projects?status=active');
+            return data?.data || [];
+        },
+        staleTime: 0,
+    });
+    const activeProjectsList = projectsData || [];
+
+    const { data: employeesData } = useQuery({
+        queryKey: ['employees', 'active'],
+        queryFn: async () => {
+            const { data } = await api.get('/hr/employees?status=active');
+            return data?.data || [];
+        },
+        staleTime: 0,
+    });
+    const activeEmployeesList = employeesData || [];
+
     const { data: productsData } = useQuery({
         queryKey: ['products', 'active', 'pos'],
         queryFn: () => productsApi.list({ status: 'active', canBeSold: true, limit: 500 }),
@@ -111,6 +135,17 @@ export default function PosPage() {
             if (mainWh) setSourceWarehouseId(mainWh._id);
         }
     }, [warehouses, sourceWarehouseId]);
+
+    // Auto-select customer when project is selected
+    useEffect(() => {
+        if (isGoToYard && selectedProjectId) {
+            const proj = activeProjectsList.find((p) => p._id === selectedProjectId);
+            if (proj && proj.customer) {
+                const custId = proj.customer._id || proj.customer;
+                setCustomerId(custId);
+            }
+        }
+    }, [selectedProjectId, isGoToYard, activeProjectsList]);
 
     // Close cart drawer on outside click
     useEffect(() => {
@@ -322,6 +357,11 @@ export default function PosPage() {
             }
         }
 
+        if (isGoToYard) {
+            if (!selectedProjectId) { toast.error('Select a project'); return; }
+            if (!selectedEmployeeId) { toast.error('Select the employee taking materials'); return; }
+        }
+
         const payload = {
             customerId: activeCustomerId,
             sourceWarehouseId,
@@ -345,10 +385,15 @@ export default function PosPage() {
             chequeDate: saveAsDraft ? undefined : paymentMethod === 'cheque' ? chequeDate : undefined,
             bankName: saveAsDraft ? undefined : paymentMethod === 'cheque' ? bankName : undefined,
             chequeStatus: saveAsDraft ? undefined : paymentMethod === 'cheque' ? chequeStatus : undefined,
+            isGoToYard,
+            projectId: isGoToYard ? selectedProjectId : undefined,
+            issuedToEmployeeId: isGoToYard ? selectedEmployeeId : undefined,
         };
 
         try {
             const result = await createOrder.mutateAsync(payload);
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['expenses'] });
             toast.success(saveAsDraft ? 'Order saved as draft' : 'Order created!');
             const completedCustomer = (customersData?.data || []).find(c => c._id === activeCustomerId) || { displayName: customerId };
             setCheckoutSuccessDetails({
@@ -362,7 +407,12 @@ export default function PosPage() {
             setOrderDiscountPercent(0);
             setTaxMode('item');
             setIsCartOpen(false);
-        } catch { }
+            setIsGoToYard(false);
+            setSelectedProjectId('');
+            setSelectedEmployeeId('');
+        } catch (err) {
+            toast.error(err.response?.data?.message || err.message || 'Failed to process checkout');
+        }
     };
 
 
@@ -640,6 +690,16 @@ export default function PosPage() {
                         chequeStatus={chequeStatus}
                         setChequeStatus={setChequeStatus}
                         bankAccounts={bankAccounts}
+                        checkoutSuccessDetails={checkoutSuccessDetails}
+                        setCheckoutSuccessDetails={setCheckoutSuccessDetails}
+                        isGoToYard={isGoToYard}
+                        setIsGoToYard={setIsGoToYard}
+                        selectedProjectId={selectedProjectId}
+                        setSelectedProjectId={setSelectedProjectId}
+                        selectedEmployeeId={selectedEmployeeId}
+                        setSelectedEmployeeId={setSelectedEmployeeId}
+                        activeProjectsList={activeProjectsList}
+                        activeEmployeesList={activeEmployeesList}
                     />
                 </div>
             </div>
@@ -753,6 +813,16 @@ export default function PosPage() {
                             chequeStatus={chequeStatus}
                             setChequeStatus={setChequeStatus}
                             bankAccounts={bankAccounts}
+                            checkoutSuccessDetails={checkoutSuccessDetails}
+                            setCheckoutSuccessDetails={setCheckoutSuccessDetails}
+                            isGoToYard={isGoToYard}
+                            setIsGoToYard={setIsGoToYard}
+                            selectedProjectId={selectedProjectId}
+                            setSelectedProjectId={setSelectedProjectId}
+                            selectedEmployeeId={selectedEmployeeId}
+                            setSelectedEmployeeId={setSelectedEmployeeId}
+                            activeProjectsList={activeProjectsList}
+                            activeEmployeesList={activeEmployeesList}
                         />
                     </div>
                 </div>
@@ -790,6 +860,16 @@ function CartPanel({
     bankName, setBankName,
     chequeStatus, setChequeStatus,
     bankAccounts,
+    checkoutSuccessDetails,
+    setCheckoutSuccessDetails,
+    isGoToYard,
+    setIsGoToYard,
+    selectedProjectId,
+    setSelectedProjectId,
+    selectedEmployeeId,
+    setSelectedEmployeeId,
+    activeProjectsList,
+    activeEmployeesList,
 }) {
     return (
         <>
@@ -900,6 +980,64 @@ function CartPanel({
                     <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                         <span className="font-bold text-gray-900 text-base">Total</span>
                         <span className="text-xl font-extrabold text-primary-600">{fmt(totals.grandTotal)}</span>
+                    </div>
+
+                    {/* Project materials issue (Go to Yard) */}
+                    <div className="space-y-2 pt-2 border-t border-gray-100">
+                        <label className={`flex items-center space-x-2 text-xs font-bold p-2 rounded-xl border transition-all cursor-pointer ${
+                            isGoToYard ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-slate-50 border-gray-200 text-slate-700 hover:bg-gray-100'
+                        }`}>
+                            <input
+                                type="checkbox"
+                                checked={isGoToYard}
+                                onChange={(e) => setIsGoToYard(e.target.checked)}
+                                className="rounded text-amber-600 focus:ring-amber-500 border-amber-300 w-4 h-4"
+                            />
+                            <span>Go to Yard (Issue to Project)</span>
+                        </label>
+
+                        {isGoToYard && (
+                            <div className="grid grid-cols-1 gap-2.5 mt-2 bg-amber-50/70 p-3 rounded-xl border border-amber-200 shadow-xs">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] uppercase font-bold text-amber-900 flex justify-between">
+                                        <span>Select Project *</span>
+                                        {selectedProjectId && <span className="text-emerald-700">✓ Selected</span>}
+                                    </label>
+                                    <select
+                                        required
+                                        value={selectedProjectId}
+                                        onChange={(e) => setSelectedProjectId(e.target.value)}
+                                        className="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg text-xs bg-white text-gray-900 font-medium focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none"
+                                    >
+                                        <option value="">-- Select Target Project --</option>
+                                        {activeProjectsList.map((p) => (
+                                            <option key={p._id} value={p._id}>
+                                                {p.projectNumber} - {p.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] uppercase font-bold text-amber-900 flex justify-between">
+                                        <span>Employee Taking Items *</span>
+                                        {selectedEmployeeId && <span className="text-emerald-700">✓ Selected</span>}
+                                    </label>
+                                    <select
+                                        required
+                                        value={selectedEmployeeId}
+                                        onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                                        className="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg text-xs bg-white text-gray-900 font-medium focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none"
+                                    >
+                                        <option value="">-- Select Employee --</option>
+                                        {activeEmployeesList.map((emp) => (
+                                            <option key={emp._id} value={emp._id}>
+                                                {emp.fullName || `${emp.firstName} ${emp.lastName}`}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Payment Method & Bank Accounts UI */}
@@ -1021,7 +1159,11 @@ function CartPanel({
                         <button
                             onClick={() => handleCheckout(false)}
                             disabled={!customerId || isPending}
-                            className="flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl bg-primary-600 text-white font-semibold text-sm hover:bg-primary-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-200"
+                            className={`flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg ${
+                                isGoToYard 
+                                    ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200' 
+                                    : 'bg-primary-600 hover:bg-primary-700 text-white shadow-primary-200'
+                            }`}
                         >
                             {isPending ? (
                                 <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1029,7 +1171,7 @@ function CartPanel({
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                                 </svg>
                             ) : <CreditCard size={15} />}
-                            Checkout
+                            {isGoToYard ? 'Issue to Yard / Project' : 'Checkout'}
                         </button>
                     </div>
 
@@ -1060,8 +1202,8 @@ function CartPanel({
                             }
                         }
                     `}} />
-                    <div id="pos-receipt-print-area" className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 print:shadow-none print:p-0 print:w-full print:max-w-none">
-                        <div className="text-center border-b pb-4">
+                    <div id="pos-receipt-print-area" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 print:shadow-none print:p-0 print:w-full print:max-w-none">
+                        <div className="text-center border-b pb-4 dark:border-slate-700">
                             <h2 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-wider">GLX Industries</h2>
                             <p className="text-xs text-gray-500 dark:text-gray-400">Ja-Ela, Sri Lanka · +94 11 223 3445</p>
                             <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mt-2">POS SALES RECEIPT</p>
@@ -1074,10 +1216,10 @@ function CartPanel({
                             <p><span className="font-bold">Order Ref:</span> {checkoutSuccessDetails.order?.orderNumber || checkoutSuccessDetails.order?._id}</p>
                         </div>
 
-                        <div className="border-t border-b py-2 my-2">
+                        <div className="border-t border-b py-2 my-2 dark:border-slate-700">
                             <table className="w-full text-xs text-left">
                                 <thead>
-                                    <tr className="border-b text-gray-400 font-bold">
+                                    <tr className="border-b dark:border-slate-700 text-gray-500 dark:text-gray-400 font-bold">
                                         <th className="py-1">Item Description</th>
                                         <th className="py-1 text-right">Qty</th>
                                         <th className="py-1 text-right">Price</th>
@@ -1086,7 +1228,7 @@ function CartPanel({
                                 </thead>
                                 <tbody>
                                     {checkoutSuccessDetails.items.map((item, idx) => (
-                                        <tr key={idx} className="border-b border-gray-100">
+                                        <tr key={idx} className="border-b border-gray-100 dark:border-slate-700 text-slate-800 dark:text-slate-200">
                                             <td className="py-2">{item.name}</td>
                                             <td className="py-2 text-right font-mono">{item.qty}</td>
                                             <td className="py-2 text-right font-mono">{fmt(item.price)}</td>
@@ -1097,11 +1239,11 @@ function CartPanel({
                             </table>
                         </div>
 
-                        <div className="text-xs space-y-1 text-right font-mono">
+                        <div className="text-xs space-y-1 text-right font-mono text-slate-700 dark:text-slate-300">
                             <p>Subtotal: {fmt(checkoutSuccessDetails.totals.subtotal)}</p>
                             {checkoutSuccessDetails.totals.orderDiscount > 0 && <p className="text-red-500">Discount: -{fmt(checkoutSuccessDetails.totals.orderDiscount)}</p>}
                             {checkoutSuccessDetails.totals.totalTax > 0 && <p>Tax: +{fmt(checkoutSuccessDetails.totals.totalTax)}</p>}
-                            <p className="text-sm font-bold text-slate-800 dark:text-white border-t pt-1">Grand Total: {fmt(checkoutSuccessDetails.totals.grandTotal)}</p>
+                            <p className="text-sm font-bold text-slate-800 dark:text-white border-t dark:border-slate-700 pt-1">Grand Total: {fmt(checkoutSuccessDetails.totals.grandTotal)}</p>
                         </div>
 
                         <div className="flex gap-2 pt-4 print:hidden">

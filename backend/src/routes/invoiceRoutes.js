@@ -2,6 +2,7 @@ import express from 'express';
 import {
     createInvoice, createFromSalesOrder, getInvoices, getInvoiceById,
     getAgingSummary, changeInvoiceStatus, deleteInvoice,
+    convertProformaToCommercial, convertInvoiceToProforma, convertInvoiceToProject
 } from '../controllers/invoiceController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
@@ -29,6 +30,30 @@ router.post(
     requirePermission('invoices.create'),
     validate(createFromSalesOrderSchema),
     createFromSalesOrder
+);
+
+router.post(
+    '/:id/convert-proforma',
+    requirePermission('invoices.create'),
+    convertProformaToCommercial
+);
+
+router.post(
+    '/:id/convert-to-commercial',
+    requirePermission('invoices.create'),
+    convertProformaToCommercial
+);
+
+router.post(
+    '/:id/convert-to-proforma',
+    requirePermission('invoices.create'),
+    convertInvoiceToProforma
+);
+
+router.post(
+    '/:id/convert-to-project',
+    requirePermission('invoices.create'),
+    convertInvoiceToProject
 );
 
 router

@@ -50,6 +50,8 @@ import BatchesPage from './pages/BatchesPage';
 import ProcessTemplatesPage from './pages/ProcessTemplatesPage';
 import MachinesPage from './pages/MachinesPage';
 import QuotationsPage from './pages/QuotationsPage';
+import ProjectsPage from './pages/ProjectsPage';
+import ProjectDetailPage from './pages/ProjectDetailPage';
 import PettyCashPage from './pages/PettyCashPage';
 import FixedAssetsPage from './pages/FixedAssetsPage';
 import EmployeeOfMonthPage from './pages/EmployeeOfMonthPage';
@@ -70,6 +72,7 @@ import RepairsPage from './pages/RepairsPage';
 import RepairDetailPage from './pages/RepairDetailPage';
 import DailyPnLPage from './pages/DailyPnLPage';
 import PosPage from './pages/PosPage';
+import DailyPayrollPage from './pages/DailyPayrollPage';
 
 import AnalyticsPage from './pages/AnalyticsPage';
 import AIAnalyzerPage from './pages/AIAnalyzerPage';
@@ -183,6 +186,10 @@ function App() {
         <Route path="/manufacturing/machines" element={<ProtectedRoute requiredPermission="production.view"><MachinesPage /></ProtectedRoute>} />
 
         <Route path="/crm/quotations" element={<ProtectedRoute requiredPermission="sales.view"><QuotationsPage /></ProtectedRoute>} />
+        <Route path="/crm/projects" element={<ProtectedRoute requiredPermission="sales.view"><ProjectsPage /></ProtectedRoute>} />
+        <Route path="/crm/projects/:id" element={<ProtectedRoute requiredPermission="sales.view"><ProjectDetailPage /></ProtectedRoute>} />
+        <Route path="/projects" element={<ProtectedRoute requiredPermission="sales.view"><ProjectsPage /></ProtectedRoute>} />
+        <Route path="/projects/:id" element={<ProtectedRoute requiredPermission="sales.view"><ProjectDetailPage /></ProtectedRoute>} />
         
 
 
@@ -222,6 +229,7 @@ function App() {
         <Route path="/salary-structures" element={<ProtectedRoute requiredPermission="hr.salary.view" excludeRoles={['employee']}><SalaryStructuresPage /></ProtectedRoute>} />
         <Route path="/leave-structures" element={<ProtectedRoute requiredPermission="hr.leaves.view" excludeRoles={['employee']}><LeaveStructuresPage /></ProtectedRoute>} />
         <Route path="/payroll" element={<ProtectedRoute requiredPermission="hr.payroll.view" excludeRoles={['employee']}><PayrollsPage /></ProtectedRoute>} />
+        <Route path="/hr/daily-payroll" element={<ProtectedRoute requiredPermission="hr.payroll.view" excludeRoles={['employee']}><DailyPayrollPage /></ProtectedRoute>} />
         <Route path="/payroll/:id" element={<ProtectedRoute requiredPermission="hr.payroll.view" excludeRoles={['employee']}><PayrollDetailPage /></ProtectedRoute>} />
         <Route path="/payroll/:payrollId/payslip/:employeeId" element={<ProtectedRoute requiredPermission="hr.payroll.view"><PayslipDetailPage /></ProtectedRoute>} />
 

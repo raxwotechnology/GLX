@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-    LayoutDashboard, BarChart3, Package, ShoppingCart, Users, Settings, Navigation,
+    LayoutDashboard, BarChart3, Package, ShoppingCart, Users, Settings, Navigation, Briefcase,
     FolderTree, Award, UserCircle, Tags, Warehouse, Boxes, Truck,
     ShoppingBag, FileText, Receipt, Wallet, Workflow, Factory, ShieldCheck,
     RotateCcw, Wrench, AlertTriangle, FileMinus, X, Users as UsersIcon, Building2, Clock, Calendar as CalendarIcon, Plane, Calculator, DollarSign, Upload,
@@ -79,6 +79,7 @@ const menuGroups = [
         items: [
             { label: 'Customers', icon: UserCircle, path: '/customers', permission: 'customers.view' },
             { label: 'Quotations', icon: FileText, path: '/crm/quotations', permission: 'sales.view' },
+            { label: 'Projects', icon: Briefcase, path: '/crm/projects', permission: 'sales.view' },
             { label: 'Sales Orders', icon: ShoppingCart, path: '/sales-orders', permission: 'sales.view' },
             { label: 'POS', icon: Calculator, path: '/pos', permission: 'pos.access' },
             { label: 'Customer Returns', icon: RotateCcw, path: '/returns', permission: 'returns.view' },
@@ -97,6 +98,7 @@ const menuGroups = [
             { label: 'Leave Management', icon: Plane, path: '/leaves', permission: 'hr.leaves.view' },
             { label: 'Policy Management', icon: Clock, path: '/attendance-policies', permission: 'hr.attendance.view' },
             { label: 'Payroll', icon: DollarSign, path: '/payroll', permission: 'hr.payroll.view' },
+            { label: 'Daily Wages (දිනපතා පඩි)', icon: CalendarIcon, path: '/hr/daily-payroll', permission: 'hr.payroll.view' },
             { label: 'EPF / ETF', icon: Calculator, path: '/hr/epf-etf', permission: 'hr.payroll.view' },
             { label: 'Departments', icon: Building2, path: '/departments', permission: 'hr.employees.view' },
             { label: 'Designations', icon: Award, path: '/designations', permission: 'hr.employees.view' },

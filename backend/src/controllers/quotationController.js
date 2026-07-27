@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { backupDocumentAsPdf } from '../services/smsService.js';
 import asyncHandler from 'express-async-handler';
 import Quotation from '../models/Quotation.js';
@@ -256,6 +257,7 @@ export const convertQuotationToInvoice = asyncHandler(async (req, res) => {
     }));
 
     const invoice = new Invoice({
+        invoiceType: req.body.invoiceType || 'commercial',
         sourceDocumentType: quotation.documentType || 'quotation',
         sourceDocumentId: quotation._id,
         sourceDocumentCode: quotation.quoteNumber || quotation.quotationCode,
@@ -306,9 +308,10 @@ export const convertQuotationToInvoice = asyncHandler(async (req, res) => {
 
     await invoice.save();
 
-    quotation.status = 'converted';
-    quotation.convertedInvoiceId = invoice._id;
-    await quotation.save();
+    await Quotation.updateOne(
+        { _id: quotation._id },
+        { $set: { status: 'converted', convertedInvoiceId: invoice._id } }
+    );
 
     createAuditLog({
         action: 'create',
@@ -320,4 +323,141 @@ export const convertQuotationToInvoice = asyncHandler(async (req, res) => {
     });
 
     res.status(201).json({ success: true, message: 'Converted to Invoice successfully', data: invoice });
+});
+
+/**
+ * @desc    Convert quotation or estimate to project
+ * @route   POST /api/crm/quotations/:id/convert-to-project
+ * @access  Private
+ */
+export const convertQuotationToProject = asyncHandler(async (req, res) => {
+    const quotation = await Quotation.findById(req.params.id);
+    if (!quotation) {
+        res.status(404);
+        throw new Error('Document not found');
+    }
+
+    if (quotation.status === 'converted' && quotation.convertedProjectId) {
+        const Project = mongoose.model('Project');
+        const existingProject = await Project.findById(quotation.convertedProjectId);
+        if (existingProject) {
+            return res.json({ success: true, message: 'Already converted', data: existingProject });
+        }
+    }
+
+    const { yard, assignedEmployees, details } = req.body;
+    const Project = mongoose.model('Project');
+
+    const project = new Project({
+        name: `${quotation.customerName || 'Walk-in Customer'} - ${quotation.vehicleNo || quotation.quoteNumber || 'Project'}`,
+        customer: quotation.customerId || undefined,
+        quotation: quotation._id,
+        yard: yard || '',
+        details: details || quotation.jobCaption || '',
+        assignedEmployees: assignedEmployees || [],
+        quotedPrice: quotation.grandTotal || 0,
+        createdBy: req.user._id
+    });
+
+    // Handle walk-in if no customer
+    if (!project.customer) {
+        const Customer = mongoose.model('Customer');
+        let walkInCustomer = await Customer.findOne({ displayName: 'Walk-in Customer' });
+        if (!walkInCustomer) {
+            walkInCustomer = new Customer({
+                displayName: 'Walk-in Customer',
+                legalName: 'Walk-in Customer',
+                status: 'active',
+                paymentTerms: { type: 'cod', creditDays: 0, creditLimit: 0 }
+            });
+            await walkInCustomer.save();
+        }
+        project.customer = walkInCustomer._id;
+    }
+
+    await project.save();
+
+    // Handle advance payment if provided
+    if (req.body.advancePaymentAmount && Number(req.body.advancePaymentAmount) > 0) {
+        const advanceAmount = Number(req.body.advancePaymentAmount);
+        const Invoice = mongoose.model('Invoice');
+        const Payment = mongoose.model('Payment');
+        const BankAccount = mongoose.model('BankAccount');
+
+        // 1. Create a Commercial Invoice for the advance payment
+        const invoice = new Invoice({
+            invoiceType: 'commercial',
+            sourceDocumentType: 'quotation',
+            sourceDocumentId: quotation._id,
+            sourceDocumentCode: quotation.quoteNumber,
+            projectId: project._id,
+            customerId: project.customer,
+            invoiceDate: new Date(),
+            dueDate: new Date(),
+            items: [{
+                productName: `Advance Payment for Project ${project.projectNumber}`,
+                quantity: 1,
+                unitPrice: advanceAmount,
+                lineSubtotal: advanceAmount,
+                lineTotal: advanceAmount,
+                taxable: false,
+                taxRate: 0,
+                taxAmount: 0
+            }],
+            subtotal: advanceAmount,
+            grandTotal: advanceAmount,
+            amountPaid: advanceAmount,
+            balanceDue: 0,
+            paymentStatus: 'paid',
+            status: 'approved',
+            createdBy: req.user._id
+        });
+        await invoice.save();
+
+        // 2. Register a Payment entry
+        const payment = new Payment({
+            direction: 'received',
+            customerId: project.customer,
+            bankAccountId: req.body.bankAccountId || undefined,
+            amount: advanceAmount,
+            method: req.body.paymentMethod || 'cash',
+            paymentDate: new Date(),
+            partyName: quotation.customerName || 'Walk-in Customer',
+            allocations: [{
+                documentType: 'invoice',
+                documentId: invoice._id,
+                documentNumber: invoice.invoiceNumber,
+                amount: advanceAmount
+            }],
+            receivedBy: req.user._id,
+            createdBy: req.user._id,
+            notes: `Advance payment for Project ${project.projectNumber}`
+        });
+        await payment.save();
+
+        // 3. Update Bank/Cash Account balance if provided
+        if (req.body.bankAccountId) {
+            const bankAccount = await BankAccount.findById(req.body.bankAccountId);
+            if (bankAccount) {
+                bankAccount.balance = +(bankAccount.balance + advanceAmount).toFixed(2);
+                await bankAccount.save();
+            }
+        }
+    }
+
+    await Quotation.updateOne(
+        { _id: quotation._id },
+        { $set: { status: 'converted', convertedProjectId: project._id } }
+    );
+
+    createAuditLog({
+        action: 'create',
+        module: 'projects',
+        documentId: project._id,
+        documentCode: project.projectNumber,
+        description: `Converted ${quotation.documentType || 'quotation'} ${quotation.quoteNumber} to Project ${project.projectNumber}`,
+        req
+    });
+
+    res.status(201).json({ success: true, message: 'Converted to Project successfully', data: project });
 });

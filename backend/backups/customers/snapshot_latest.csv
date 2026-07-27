@@ -1,10 +1,8 @@
-Code,Name,Group,Phone,Balance
-"CUST-1","DVD","—","—",""
-"CUST-2","SR","—","—",""
-"CUST-3","SR","—","—",""
-"CUST-4","Dilum","—","—",""
-"CUST-5","Dilum","—","—",""
-"CUST-6","Lanka Organic Foods","—","+94 77 123 4567",""
-"CUST-7","keels","—","+94772268608",""
-"CUST-8","test","—","—",""
-"CUST-9","Raxwo","—","—",""
+Code,Name,Phone,Balance
+"CUST-1","kamal","—",""
+"CUST-2","Nimal","—",""
+"CUST-3","sunil","—",""
+"CUST-4","customer name","0784231627",""
+"CUST-5","jayakodi","0716151423",""
+"CUST-TEST","Test Customer","—",""
+"CUST-6","Dilum","—",""

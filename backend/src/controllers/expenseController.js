@@ -8,9 +8,13 @@ import { decreaseStock } from '../services/stockService.js';
  */
 export const getExpenses = async (req, res) => {
   try {
-    const { category, paymentMethod, startDate, endDate, search, page = 1, limit = 50 } = req.query;
+    const { category, paymentMethod, startDate, endDate, search, projectId, page = 1, limit = 50 } = req.query;
 
     const query = {};
+
+    if (projectId) {
+      query.projectId = projectId;
+    }
 
     if (category) {
       query.category = category;
@@ -135,6 +139,15 @@ export const createExpense = async (req, res) => {
       }
     }
 
+    if (expense.projectId) {
+      try {
+        const { recalculateProjectFinancials } = await import('./projectController.js');
+        await recalculateProjectFinancials(expense.projectId);
+      } catch (err) {
+        console.error('[Expense Project Update] Failed:', err.message);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: 'Expense created successfully',
@@ -168,6 +181,15 @@ export const updateExpense = async (req, res) => {
       runValidators: true,
     });
 
+    if (expense.projectId) {
+      try {
+        const { recalculateProjectFinancials } = await import('./projectController.js');
+        await recalculateProjectFinancials(expense.projectId);
+      } catch (err) {
+        console.error('[Expense Update Project Update] Failed:', err.message);
+      }
+    }
+
     res.json({
       success: true,
       message: 'Expense updated successfully',
@@ -194,6 +216,15 @@ export const deleteExpense = async (req, res) => {
     expense.deletedAt = new Date();
     expense.updatedBy = req.user?._id;
     await expense.save();
+
+    if (expense.projectId) {
+      try {
+        const { recalculateProjectFinancials } = await import('./projectController.js');
+        await recalculateProjectFinancials(expense.projectId);
+      } catch (err) {
+        console.error('[Expense Delete Project Update] Failed:', err.message);
+      }
+    }
 
     res.json({ success: true, message: 'Expense deleted successfully' });
   } catch (error) {
