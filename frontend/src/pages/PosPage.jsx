@@ -1202,24 +1202,24 @@ function CartPanel({
                             }
                         }
                     `}} />
-                    <div id="pos-receipt-print-area" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 print:shadow-none print:p-0 print:w-full print:max-w-none">
-                        <div className="text-center border-b pb-4 dark:border-slate-700">
-                            <h2 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-wider">GLX Industries</h2>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Ja-Ela, Sri Lanka · +94 11 223 3445</p>
-                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mt-2">POS SALES RECEIPT</p>
+                    <div id="pos-receipt-print-area" className="bg-white text-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 print:shadow-none print:p-0 print:w-full print:max-w-none">
+                        <div className="text-center border-b pb-4">
+                            <h2 className="text-xl font-black text-slate-800 uppercase tracking-wider">GLX Industries</h2>
+                            <p className="text-xs text-gray-500">Ja-Ela, Sri Lanka · +94 11 223 3445</p>
+                            <p className="text-sm font-bold text-gray-700 mt-2">POS SALES RECEIPT</p>
                         </div>
                         
-                        <div className="text-xs space-y-1 text-gray-600 dark:text-gray-300">
+                        <div className="text-xs space-y-1 text-gray-600">
                             <p><span className="font-bold">Bill To:</span> {checkoutSuccessDetails.customer.displayName || checkoutSuccessDetails.customer.companyName}</p>
                             {checkoutSuccessDetails.customer.customerCode && <p><span className="font-bold">Customer Code:</span> {checkoutSuccessDetails.customer.customerCode}</p>}
                             <p><span className="font-bold">Date:</span> {new Date().toLocaleString()}</p>
                             <p><span className="font-bold">Order Ref:</span> {checkoutSuccessDetails.order?.orderNumber || checkoutSuccessDetails.order?._id}</p>
                         </div>
 
-                        <div className="border-t border-b py-2 my-2 dark:border-slate-700">
+                        <div className="border-t border-b py-2 my-2">
                             <table className="w-full text-xs text-left">
                                 <thead>
-                                    <tr className="border-b dark:border-slate-700 text-gray-500 dark:text-gray-400 font-bold">
+                                    <tr className="border-b text-gray-500 font-bold">
                                         <th className="py-1">Item Description</th>
                                         <th className="py-1 text-right">Qty</th>
                                         <th className="py-1 text-right">Price</th>
@@ -1228,7 +1228,7 @@ function CartPanel({
                                 </thead>
                                 <tbody>
                                     {checkoutSuccessDetails.items.map((item, idx) => (
-                                        <tr key={idx} className="border-b border-gray-100 dark:border-slate-700 text-slate-800 dark:text-slate-200">
+                                        <tr key={idx} className="border-b border-gray-100 text-slate-800">
                                             <td className="py-2">{item.name}</td>
                                             <td className="py-2 text-right font-mono">{item.qty}</td>
                                             <td className="py-2 text-right font-mono">{fmt(item.price)}</td>
@@ -1239,11 +1239,11 @@ function CartPanel({
                             </table>
                         </div>
 
-                        <div className="text-xs space-y-1 text-right font-mono text-slate-700 dark:text-slate-300">
+                        <div className="text-xs space-y-1 text-right font-mono text-slate-700">
                             <p>Subtotal: {fmt(checkoutSuccessDetails.totals.subtotal)}</p>
                             {checkoutSuccessDetails.totals.orderDiscount > 0 && <p className="text-red-500">Discount: -{fmt(checkoutSuccessDetails.totals.orderDiscount)}</p>}
                             {checkoutSuccessDetails.totals.totalTax > 0 && <p>Tax: +{fmt(checkoutSuccessDetails.totals.totalTax)}</p>}
-                            <p className="text-sm font-bold text-slate-800 dark:text-white border-t dark:border-slate-700 pt-1">Grand Total: {fmt(checkoutSuccessDetails.totals.grandTotal)}</p>
+                            <p className="text-sm font-bold text-slate-800 border-t pt-1">Grand Total: {fmt(checkoutSuccessDetails.totals.grandTotal)}</p>
                         </div>
 
                         <div className="flex gap-2 pt-4 print:hidden">

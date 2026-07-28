@@ -21,6 +21,17 @@ export default function SmsLogsPage() {
     const [manualMessage, setManualMessage] = useState('');
     const [sending, setSending] = useState(false);
 
+    const formatDateSafely = (dateStr) => {
+        if (!dateStr) return '—';
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return '—';
+            return format(d, 'yyyy-MM-dd HH:mm:ss');
+        } catch {
+            return '—';
+        }
+    };
+
     const fetchLogs = useCallback(async () => {
         Promise.resolve().then(() => setLoading(true));
         try {
@@ -143,7 +154,7 @@ export default function SmsLogsPage() {
                             filtered.map((log) => (
                                 <tr key={log._id} className="hover:bg-gray-50/50 transition">
                                     <td className="px-5 py-4 whitespace-nowrap text-xs text-gray-500">
-                                        {format(new Date(log.date), 'yyyy-MM-dd HH:mm:ss')}
+                                        {formatDateSafely(log.date)}
                                     </td>
                                     <td className="px-5 py-4 font-bold text-gray-900 whitespace-nowrap">
                                         {log.supplierName}

@@ -202,11 +202,11 @@ export default function ExpensesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <DollarSign className="w-7 h-7 text-emerald-500" />
             Company Expense Management
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500">
             Dedicated expense tracking, category breakdowns, and financial P&L integration
           </p>
         </div>
@@ -223,26 +223,26 @@ export default function ExpensesPage() {
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Grand Total Expenses</span>
-              <div className="p-2 bg-rose-50 text-rose-600 rounded-lg dark:bg-rose-950 dark:text-rose-400">
+              <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
                 <TrendingUp className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-slate-800 dark:text-white mt-2">
+            <p className="text-2xl font-bold text-slate-800 mt-2">
               LKR {summary.grandTotal?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Top Category</span>
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg dark:bg-blue-950 dark:text-blue-400">
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                 <Tag className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-lg font-bold text-slate-800 dark:text-white mt-2 truncate">
+            <p className="text-lg font-bold text-slate-800 mt-2 truncate">
               {summary.byCategory?.[0]?._id || 'N/A'}
             </p>
             <span className="text-xs text-slate-500">
@@ -250,26 +250,26 @@ export default function ExpensesPage() {
             </span>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Cash / Petty Outflow</span>
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg dark:bg-amber-950 dark:text-amber-400">
+              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
                 <CreditCard className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-xl font-bold text-slate-800 dark:text-white mt-2">
+            <p className="text-xl font-bold text-slate-800 mt-2">
               LKR {(summary.byPaymentMethod?.find(m => m._id === 'Cash')?.total || 0).toLocaleString()}
             </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Bank / Cheque Outflow</span>
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg dark:bg-indigo-950 dark:text-indigo-400">
+              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
                 <Building2 className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-xl font-bold text-slate-800 dark:text-white mt-2">
+            <p className="text-xl font-bold text-slate-800 mt-2">
               LKR {((summary.byPaymentMethod?.find(m => m._id === 'Cheque')?.total || 0) + (summary.byPaymentMethod?.find(m => m._id === 'Bank Transfer')?.total || 0)).toLocaleString()}
             </p>
           </div>
@@ -277,7 +277,7 @@ export default function ExpensesPage() {
       )}
 
       {/* Filters Bar */}
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap gap-2 sm:gap-3">
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-2 sm:gap-3">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
@@ -285,14 +285,14 @@ export default function ExpensesPage() {
             placeholder="Search by title, number, payee, reference..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300"
+          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700"
         >
           <option value="">All Categories</option>
           {EXPENSE_CATEGORIES.map(cat => (
@@ -303,7 +303,7 @@ export default function ExpensesPage() {
         <select
           value={paymentMethodFilter}
           onChange={(e) => setPaymentMethodFilter(e.target.value)}
-          className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300"
+          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700"
         >
           <option value="">All Payment Methods</option>
           <option value="Cash">Cash</option>
@@ -314,10 +314,10 @@ export default function ExpensesPage() {
       </div>
 
       {/* Expenses Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 uppercase text-xs">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs">
               <tr>
                 <th className="py-3.5 px-4 font-semibold">Expense #</th>
                 <th className="py-3.5 px-4 font-semibold">Date</th>
@@ -329,7 +329,7 @@ export default function ExpensesPage() {
                 <th className="py-3.5 px-4 font-semibold text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+            <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
                   <td colSpan="8" className="py-8 text-center text-slate-400">Loading expenses...</td>
@@ -340,48 +340,48 @@ export default function ExpensesPage() {
                 </tr>
               ) : (
                 expenses.map((expense) => (
-                  <tr key={expense._id} className="hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
-                    <td className="py-3 px-4 font-medium text-emerald-600 dark:text-emerald-400">
+                  <tr key={expense._id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-4 font-medium text-emerald-600">
                       {expense.expenseNumber}
                     </td>
-                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                    <td className="py-3 px-4 text-slate-600">
                       {new Date(expense.date).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-4 font-medium text-slate-800 dark:text-white">
+                    <td className="py-3 px-4 font-medium text-slate-800">
                       {expense.title}
                       {expense.referenceNo && (
                         <span className="block text-xs text-slate-400">Ref: {expense.referenceNo}</span>
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
                         {expense.category}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                    <td className="py-3 px-4 text-slate-600">
                       {expense.payeeName || expense.supplierId?.name || '-'}
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <span className="text-xs font-semibold text-slate-600">
                         {expense.paymentMethod}
                         {expense.chequeNumber && ` (${expense.chequeNumber})`}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">
+                    <td className="py-3 px-4 text-right font-bold text-slate-900">
                       {expense.amount?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleOpenModal(expense)}
-                          className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 rounded transition-colors"
+                          className="p-1.5 hover:bg-slate-100 text-slate-600 rounded transition-colors"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(expense._id)}
-                          className="p-1.5 hover:bg-rose-50 text-rose-600 rounded transition-colors dark:hover:bg-rose-950"
+                          className="p-1.5 hover:bg-rose-50 text-rose-600 rounded transition-colors"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -399,32 +399,32 @@ export default function ExpensesPage() {
       {/* Modal Form */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
+            <h3 className="text-lg font-bold text-slate-800">
               {editingExpense ? 'Edit Expense Record' : 'Record New Expense'}
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Expense Title / Description *</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Expense Title / Description *</label>
                 <input
                   type="text"
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g. Office Electricity Bill, Factory Maintenance"
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                  className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Category *</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Category *</label>
                   <select
                     value={formData.category}
                     disabled={formData.isStockConsumption}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700 disabled:opacity-75"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white disabled:opacity-75"
                   >
                     {EXPENSE_CATEGORIES.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -433,7 +433,7 @@ export default function ExpensesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Amount (LKR) *</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Amount (LKR) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -442,13 +442,13 @@ export default function ExpensesPage() {
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700 read-only:bg-gray-100 dark:read-only:bg-slate-800"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white read-only:bg-gray-100"
                   />
                 </div>
               </div>
 
               {/* Internal Stock Consumption Switch */}
-              <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
                 <input
                   type="checkbox"
                   id="isStockConsumption"
@@ -465,20 +465,20 @@ export default function ExpensesPage() {
                   }}
                   className="rounded text-primary-600 focus:ring-primary-500"
                 />
-                <label htmlFor="isStockConsumption" className="text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer">
+                <label htmlFor="isStockConsumption" className="text-xs font-bold text-slate-700 cursor-pointer">
                   Internal Stock Consumption (Raw Materials used for lorry body)
                 </label>
               </div>
 
               {/* Items grid if internal stock consumption checked */}
               {formData.isStockConsumption && (
-                <div className="space-y-3 p-3 border border-dashed rounded-lg bg-white dark:bg-slate-900">
+                <div className="space-y-3 p-3 border border-dashed rounded-lg bg-white">
                   <div className="flex items-center justify-between border-b pb-1.5">
-                    <span className="text-xs font-bold text-slate-800 dark:text-white uppercase">Raw Materials & Quantities</span>
+                    <span className="text-xs font-bold text-slate-800 uppercase">Raw Materials & Quantities</span>
                     <button
                       type="button"
                       onClick={addItem}
-                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold rounded text-primary-600"
+                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded text-primary-600"
                     >
                       + Add Raw Material
                     </button>
@@ -492,7 +492,7 @@ export default function ExpensesPage() {
                           <select
                             value={item.productId || ''}
                             onChange={(e) => handleItemChange(idx, 'productId', e.target.value)}
-                            className="w-full text-xs p-1.5 border rounded dark:bg-slate-800 dark:border-slate-700"
+                            className="w-full text-xs p-1.5 border rounded bg-white"
                             required
                           >
                             <option value="">-- Select Material --</option>
@@ -506,7 +506,7 @@ export default function ExpensesPage() {
                           <select
                             value={item.warehouseId || ''}
                             onChange={(e) => handleItemChange(idx, 'warehouseId', e.target.value)}
-                            className="w-full text-xs p-1.5 border rounded dark:bg-slate-800 dark:border-slate-700"
+                            className="w-full text-xs p-1.5 border rounded bg-white"
                             required
                           >
                             <option value="">-- Select Wh --</option>
@@ -524,7 +524,7 @@ export default function ExpensesPage() {
                             type="number"
                             value={item.costPerUnit || 0}
                             readOnly
-                            className="w-full text-xs p-1 bg-gray-50 border rounded font-mono dark:bg-slate-800 dark:border-slate-700"
+                            className="w-full text-xs p-1 bg-gray-50 border rounded font-mono"
                           />
                         </div>
                         <div>
@@ -535,13 +535,13 @@ export default function ExpensesPage() {
                             step="any"
                             value={item.quantity || 0}
                             onChange={(e) => handleItemChange(idx, 'quantity', Number(e.target.value))}
-                            className="w-full text-xs p-1 border rounded font-mono dark:bg-slate-800 dark:border-slate-700"
+                            className="w-full text-xs p-1 border rounded font-mono bg-white"
                             required
                           />
                         </div>
                         <div>
                           <label className="block text-[10px] text-gray-500 font-bold uppercase">Subtotal</label>
-                          <span className="text-xs font-mono block text-gray-700 dark:text-gray-300 mt-1">
+                          <span className="text-xs font-mono block text-gray-700 mt-1">
                             {new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(item.subtotal || 0)}
                           </span>
                         </div>
@@ -562,11 +562,11 @@ export default function ExpensesPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Payment Method *</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Payment Method *</label>
                   <select
                     value={formData.paymentMethod}
                     onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                   >
                     <option value="Cash">Cash</option>
                     <option value="Bank Transfer">Bank Transfer</option>
@@ -576,36 +576,36 @@ export default function ExpensesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Expense Date *</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Expense Date *</label>
                   <input
                     type="date"
                     required
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                   />
                 </div>
               </div>
 
               {formData.paymentMethod === 'Cheque' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-amber-50 rounded-lg dark:bg-amber-950/30">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-amber-50 rounded-lg">
                   <div>
-                    <label className="block text-xs font-semibold text-amber-800 dark:text-amber-300 mb-1">Cheque Number</label>
+                    <label className="block text-xs font-semibold text-amber-800 mb-1">Cheque Number</label>
                     <input
                       type="text"
                       value={formData.chequeNumber}
                       onChange={(e) => setFormData({ ...formData, chequeNumber: e.target.value })}
                       placeholder="e.g. CHQ-98214"
-                      className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                      className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-amber-800 dark:text-amber-300 mb-1">Cheque Date</label>
+                    <label className="block text-xs font-semibold text-amber-800 mb-1">Cheque Date</label>
                     <input
                       type="date"
                       value={formData.chequeDate}
                       onChange={(e) => setFormData({ ...formData, chequeDate: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                      className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                     />
                   </div>
                 </div>
@@ -613,35 +613,35 @@ export default function ExpensesPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Payee / Vendor Name</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Payee / Vendor Name</label>
                   <input
                     type="text"
                     value={formData.payeeName}
                     onChange={(e) => setFormData({ ...formData, payeeName: e.target.value })}
                     placeholder="e.g. CEB / Sri Lanka Telecom"
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Reference / Voucher No</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Reference / Voucher No</label>
                   <input
                     type="text"
                     value={formData.referenceNo}
                     onChange={(e) => setFormData({ ...formData, referenceNo: e.target.value })}
                     placeholder="e.g. INV-10029"
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Notes / Remarks</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Notes / Remarks</label>
                 <textarea
                   rows="2"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                  className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                 ></textarea>
               </div>
 
@@ -649,7 +649,7 @@ export default function ExpensesPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg dark:text-slate-300 dark:hover:bg-slate-700"
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
                 >
                   Cancel
                 </button>

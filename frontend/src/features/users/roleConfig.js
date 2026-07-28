@@ -29,7 +29,7 @@ export const ROLES = [
             'damages.view', 'damages.manage',
             'repairs.view', 'repairs.manage',
             'supplier_returns.view', 'supplier_returns.manage',
-            'reports.inventory',
+            'reports.inventory', 'view_audit_logs',
         ],
     },
     {
@@ -48,7 +48,7 @@ export const ROLES = [
             'payments.view', 'payments.manage',
             'credit_notes.view', 'credit_notes.manage',
             'returns.view', 'returns.manage',
-            'reports.sales',
+            'reports.sales', 'view_audit_logs',
         ],
     },
     {
@@ -66,7 +66,7 @@ export const ROLES = [
             'hr.holidays.manage',
             'hr.salary.view', 'hr.salary.manage',
             'hr.payroll.view', 'hr.payroll.manage',
-            'reports.hr',
+            'reports.hr', 'view_audit_logs',
         ],
     },
     {
@@ -84,7 +84,7 @@ export const ROLES = [
             'sales.view',
             'customers.view',
             'suppliers.view',
-            'reports.sales', 'reports.financial',
+            'reports.sales', 'reports.financial', 'view_audit_logs',
         ],
     },
     {

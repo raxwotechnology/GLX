@@ -118,11 +118,11 @@ export default function AttendancePoliciesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <Clock className="w-7 h-7 text-indigo-500" />
             Attendance & Leave Policy Manager
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500">
             Define shift rules (e.g. 9 AM to 5 PM), OT rates (Rs. 100/hr), early leave penalty cuts, and assign globally or to specific employees.
           </p>
         </div>
@@ -141,61 +141,61 @@ export default function AttendancePoliciesPage() {
         {loading ? (
           <div className="col-span-full py-12 text-center text-slate-400">Loading policies...</div>
         ) : policies.length === 0 ? (
-          <div className="col-span-full p-8 text-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500">
+          <div className="col-span-full p-8 text-center bg-white rounded-xl border border-slate-200 text-slate-500">
             No attendance policies defined yet. Click "Create New Policy" to add one.
           </div>
         ) : (
           policies.map((policy) => (
             <div
               key={policy._id}
-              className={`bg-white dark:bg-slate-800 rounded-xl border p-5 shadow-sm space-y-4 relative ${
-                policy.isDefault ? 'border-indigo-500 ring-1 ring-indigo-500/30' : 'border-slate-200 dark:border-slate-700'
+              className={`bg-white rounded-xl border p-5 shadow-sm space-y-4 relative ${
+                policy.isDefault ? 'border-indigo-500 ring-1 ring-indigo-500/30' : 'border-slate-200'
               }`}
             >
               {policy.isDefault && (
-                <span className="absolute top-4 right-4 bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <span className="absolute top-4 right-4 bg-indigo-50 text-indigo-700 text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Default Policy
                 </span>
               )}
 
               <div>
-                <h3 className="font-bold text-lg text-slate-800 dark:text-white">{policy.name}</h3>
+                <h3 className="font-bold text-lg text-slate-800">{policy.name}</h3>
                 <p className="text-xs text-slate-500 mt-1">{policy.description || 'No description provided'}</p>
               </div>
 
               {/* Policy Settings Grid */}
-              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3 space-y-2 text-xs">
-                <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
+              <div className="bg-slate-50 rounded-lg p-3 space-y-2 text-xs">
+                <div className="flex justify-between border-b border-slate-200 pb-1.5">
                   <span className="text-slate-500">Standard Shift:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-200">
+                  <span className="font-semibold text-slate-700">
                     {policy.shiftStartTime} - {policy.shiftEndTime} ({policy.standardWorkHours} hrs)
                   </span>
                 </div>
 
-                <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
+                <div className="flex justify-between border-b border-slate-200 pb-1.5">
                   <span className="text-slate-500">Overtime Rate:</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-semibold text-emerald-600">
                     + LKR {policy.overtimeRatePerHour} / hr
                   </span>
                 </div>
 
-                <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
+                <div className="flex justify-between border-b border-slate-200 pb-1.5">
                   <span className="text-slate-500">Early Departure Cut:</span>
-                  <span className="font-semibold text-rose-600 dark:text-rose-400">
+                  <span className="font-semibold text-rose-600">
                     - LKR {policy.earlyLeavePenaltyRatePerHour} / hr
                   </span>
                 </div>
 
-                <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
+                <div className="flex justify-between border-b border-slate-200 pb-1.5">
                   <span className="text-slate-500">Late Arrival Cut:</span>
-                  <span className="font-semibold text-amber-600 dark:text-amber-400">
+                  <span className="font-semibold text-amber-600">
                     - LKR {policy.lateArrivalPenaltyRatePerHour} / hr
                   </span>
                 </div>
 
                 <div className="flex justify-between pt-0.5">
                   <span className="text-slate-500">Target Scope:</span>
-                  <span className="font-semibold text-indigo-600 dark:text-indigo-400 uppercase">
+                  <span className="font-semibold text-indigo-600 uppercase">
                     {policy.applicableScope}
                   </span>
                 </div>
@@ -204,21 +204,21 @@ export default function AttendancePoliciesPage() {
               {/* Target Employees info */}
               {policy.applicableScope === 'SPECIFIC_EMPLOYEE' && (
                 <div className="text-xs text-slate-500">
-                  Assigned to <span className="font-semibold text-slate-700 dark:text-slate-300">{policy.assignedEmployees?.length || 0} selected employee(s)</span>
+                  Assigned to <span className="font-semibold text-slate-700">{policy.assignedEmployees?.length || 0} selected employee(s)</span>
                 </div>
               )}
 
               {/* Footer buttons */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   onClick={() => handleOpenModal(policy)}
-                  className="p-1.5 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                  className="p-1.5 text-slate-600 hover:bg-slate-100 rounded transition-colors"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(policy._id)}
-                  className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 rounded transition-colors"
+                  className="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -231,65 +231,65 @@ export default function AttendancePoliciesPage() {
       {/* Policy Form Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-slate-800">
               {editingPolicy ? 'Edit Attendance Policy' : 'Create New Attendance Policy'}
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Policy Name *</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Policy Name *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Standard Permanent Staff Policy (9 AM - 5 PM)"
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                  className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Description</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Description</label>
                 <input
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Brief summary of shift hours and rules"
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                  className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
+              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 rounded-lg">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Shift Start</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Shift Start</label>
                   <input
                     type="time"
                     required
                     value={formData.shiftStartTime}
                     onChange={(e) => setFormData({ ...formData, shiftStartTime: e.target.value })}
-                    className="w-full px-3 py-1.5 border rounded-lg text-sm dark:bg-slate-800 dark:border-slate-700"
+                    className="w-full px-3 py-1.5 border rounded-lg text-sm bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Shift End</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Shift End</label>
                   <input
                     type="time"
                     required
                     value={formData.shiftEndTime}
                     onChange={(e) => setFormData({ ...formData, shiftEndTime: e.target.value })}
-                    className="w-full px-3 py-1.5 border rounded-lg text-sm dark:bg-slate-800 dark:border-slate-700"
+                    className="w-full px-3 py-1.5 border rounded-lg text-sm bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Standard Hours</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Standard Hours</label>
                   <input
                     type="number"
                     value={formData.standardWorkHours}
                     onChange={(e) => setFormData({ ...formData, standardWorkHours: Number(e.target.value) })}
-                    className="w-full px-3 py-1.5 border rounded-lg text-sm dark:bg-slate-800 dark:border-slate-700"
+                    className="w-full px-3 py-1.5 border rounded-lg text-sm bg-white"
                   />
                 </div>
               </div>
@@ -297,45 +297,45 @@ export default function AttendancePoliciesPage() {
               {/* Rates Grid */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Overtime Rate / hr</label>
+                  <label className="block text-xs font-semibold text-emerald-700 mb-1">Overtime Rate / hr</label>
                   <div className="relative">
                     <input
                       type="number"
                       value={formData.overtimeRatePerHour}
                       onChange={(e) => setFormData({ ...formData, overtimeRatePerHour: Number(e.target.value) })}
-                      className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                      className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-rose-700 dark:text-rose-400 mb-1">Early Leave Cut / hr</label>
+                  <label className="block text-xs font-semibold text-rose-700 mb-1">Early Leave Cut / hr</label>
                   <input
                     type="number"
                     value={formData.earlyLeavePenaltyRatePerHour}
                     onChange={(e) => setFormData({ ...formData, earlyLeavePenaltyRatePerHour: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">Late Arrival Cut / hr</label>
+                  <label className="block text-xs font-semibold text-amber-700 mb-1">Late Arrival Cut / hr</label>
                   <input
                     type="number"
                     value={formData.lateArrivalPenaltyRatePerHour}
                     onChange={(e) => setFormData({ ...formData, lateArrivalPenaltyRatePerHour: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                   />
                 </div>
               </div>
 
               {/* Assignment Scope */}
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Policy Scope (Who does this apply to?)</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Policy Scope (Who does this apply to?)</label>
                 <select
                   value={formData.applicableScope}
                   onChange={(e) => setFormData({ ...formData, applicableScope: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700"
+                  className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                 >
                   <option value="ALL">Global Default (All Employees)</option>
                   <option value="PERMANENT">Permanent Employees Only</option>
@@ -346,7 +346,7 @@ export default function AttendancePoliciesPage() {
               {/* Specific Employee Selection */}
               {formData.applicableScope === 'SPECIFIC_EMPLOYEE' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Select Employees</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Select Employees</label>
                   <select
                     multiple
                     value={formData.assignedEmployees}
@@ -354,7 +354,7 @@ export default function AttendancePoliciesPage() {
                       const options = Array.from(e.target.selectedOptions, option => option.value);
                       setFormData({ ...formData, assignedEmployees: options });
                     }}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-900 dark:border-slate-700 h-32"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white h-32"
                   >
                     {employees.map(emp => (
                       <option key={emp._id} value={emp._id}>
@@ -374,16 +374,16 @@ export default function AttendancePoliciesPage() {
                   onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
                   className="rounded text-indigo-600"
                 />
-                <label htmlFor="isDefault" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label htmlFor="isDefault" className="text-xs font-medium text-slate-700">
                   Set as default fallback policy for all staff
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t dark:border-slate-700">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg dark:text-slate-300 dark:hover:bg-slate-700"
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
                 >
                   Cancel
                 </button>

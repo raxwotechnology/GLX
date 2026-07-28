@@ -52,35 +52,35 @@ export default function FinancialSnapshotPage() {
                     {/* Manager vs Employee Income Attribution Section */}
                     {f.roleEarnings && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <Card className="p-6 bg-gradient-to-br from-indigo-50/50 to-white dark:from-slate-800 dark:to-slate-900 border-indigo-100 dark:border-slate-700">
-                                <h3 className="text-base font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-2 mb-4">
+                            <Card className="p-6 bg-gradient-to-br from-indigo-50/50 to-white border border-indigo-100">
+                                <h3 className="text-base font-bold text-indigo-900 flex items-center gap-2 mb-4">
                                     <Briefcase className="w-5 h-5 text-indigo-600" />
                                     Manager Earnings & Sales Attribution
                                 </h3>
                                 <div className="space-y-3 text-sm">
-                                    <div className="flex justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-indigo-100 dark:border-slate-700 shadow-sm">
-                                        <span className="text-slate-600 dark:text-slate-300 font-medium">Invoiced Revenue Attributed to Managers</span>
-                                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{fmt(f.roleEarnings.managerIncomeAttributed)}</span>
+                                    <div className="flex justify-between p-3 bg-white rounded-lg border border-indigo-100 shadow-sm">
+                                        <span className="text-slate-600 font-medium">Invoiced Revenue Attributed to Managers</span>
+                                        <span className="font-bold text-indigo-600">{fmt(f.roleEarnings.managerIncomeAttributed)}</span>
                                     </div>
-                                    <div className="flex justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-indigo-100 dark:border-slate-700 shadow-sm">
-                                        <span className="text-slate-600 dark:text-slate-300 font-medium">Manager Overtime & Payroll Additions</span>
+                                    <div className="flex justify-between p-3 bg-white rounded-lg border border-indigo-100 shadow-sm">
+                                        <span className="text-slate-600 font-medium">Manager Overtime & Payroll Additions</span>
                                         <span className="font-bold text-emerald-600">{fmt(f.roleEarnings.managerOTEarnings)}</span>
                                     </div>
                                 </div>
                             </Card>
 
-                            <Card className="p-6 bg-gradient-to-br from-emerald-50/50 to-white dark:from-slate-800 dark:to-slate-900 border-emerald-100 dark:border-slate-700">
-                                <h3 className="text-base font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-2 mb-4">
+                            <Card className="p-6 bg-gradient-to-br from-emerald-50/50 to-white border border-emerald-100">
+                                <h3 className="text-base font-bold text-emerald-900 flex items-center gap-2 mb-4">
                                     <Users className="w-5 h-5 text-emerald-600" />
                                     Employee Earnings & Sales Attribution
                                 </h3>
                                 <div className="space-y-3 text-sm">
-                                    <div className="flex justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-emerald-100 dark:border-slate-700 shadow-sm">
-                                        <span className="text-slate-600 dark:text-slate-300 font-medium">Invoiced Revenue Attributed to Staff</span>
-                                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{fmt(f.roleEarnings.employeeIncomeAttributed)}</span>
+                                    <div className="flex justify-between p-3 bg-white rounded-lg border border-emerald-100 shadow-sm">
+                                        <span className="text-slate-600 font-medium">Invoiced Revenue Attributed to Staff</span>
+                                        <span className="font-bold text-emerald-600">{fmt(f.roleEarnings.employeeIncomeAttributed)}</span>
                                     </div>
-                                    <div className="flex justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-emerald-100 dark:border-slate-700 shadow-sm">
-                                        <span className="text-slate-600 dark:text-slate-300 font-medium">Staff Overtime & Policy Earnings</span>
+                                    <div className="flex justify-between p-3 bg-white rounded-lg border border-emerald-100 shadow-sm">
+                                        <span className="text-slate-600 font-medium">Staff Overtime & Policy Earnings</span>
                                         <span className="font-bold text-emerald-600">{fmt(f.roleEarnings.employeeOTEarnings)}</span>
                                     </div>
                                 </div>

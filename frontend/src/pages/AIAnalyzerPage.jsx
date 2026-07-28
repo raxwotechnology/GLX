@@ -60,14 +60,14 @@ const PRESET_INSIGHTS = {
 
 const SUGGESTIONS = [
     "Predict next month's sales revenue",
-    "How can we reduce cutting scrap in aluminium?",
+    "How can we reduce cutting scrap in profile materials?",
     "Check for recent financial budget overruns",
     "Summarize shift attendance performance"
 ];
 
 const CHAT_RESPONSES = {
     "predict next month's sales revenue": "Based on current pipeline inquiries, historical seasonal trends for August, and pending quotation conversions (including QT-2026-003), next month's estimated revenue is projected at **LKR 1,350,000 - 1,480,000** (Confidence: 89%). High probability wins include GLX Industries and K & A Engineering projects.",
-    "how can we reduce cutting scrap in aluminium?": "Analysis shows 68% of cutting scrap is due to sub-optimal profile length matching. I recommend: \n1. Implementing the **2D Visual Configurator** for batch layouts.\n2. Reusing cut-off pieces (> 1.2m) by registering them back to the scrap inventory database.\n3. Recalibrating machine alignment for double-head miter saws.",
+    "how can we reduce cutting scrap in profile materials?": "Analysis shows 68% of cutting scrap is due to sub-optimal profile length matching. I recommend: \n1. Implementing the **2D Visual Configurator** for batch layouts.\n2. Reusing cut-off pieces (> 1.2m) by registering them back to the scrap inventory database.\n3. Recalibrating machine alignment for double-head miter saws.",
     "check for recent financial budget overruns": "Financial auditing reports highlight no major overall budget overruns. However, **Company Expenses** for Transport & Fuel exceeded the threshold by **11.2%** this week, linked to additional client deliveries at the Colombo branch. Recommend enforcing vehicle trip logs for authorization.",
     "summarize shift attendance performance": "Average shift attendance stands at **91.2%**. Top-performing shifts are Shift A (95%) and Shift C (93%). The primary bottleneck is Friday night shifts (82.4% average attendance). Staff shortages on Fridays led to a **LKR 42,500** overtime surcharge to meet the weekly production schedule."
 };
@@ -122,11 +122,11 @@ export default function AIAnalyzerPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                         <Sparkles className="w-7 h-7 text-amber-500 animate-pulse" />
                         AI Strategic Analyzer
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                    <p className="text-sm text-slate-500">
                         Harness machine learning models to detect anomalies, forecast revenue, and optimize company assets
                     </p>
                 </div>
@@ -135,9 +135,9 @@ export default function AIAnalyzerPage() {
             {/* Top Section - Module Select and Insights */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Module Selector */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                     <div>
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-white mb-4">Select Domain for AI Audit</h3>
+                        <h3 className="text-sm font-semibold text-slate-800 mb-4">Select Domain for AI Audit</h3>
                         <div className="space-y-3">
                             {MODULES.map((m) => {
                                 const Icon = m.icon;
@@ -147,15 +147,15 @@ export default function AIAnalyzerPage() {
                                         onClick={() => setSelectedModule(m.id)}
                                         className={`w-full text-left p-3.5 rounded-lg border transition-all flex items-center gap-3 ${
                                             selectedModule === m.id
-                                                ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-950/20'
-                                                : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50'
+                                                ? 'border-amber-500 bg-amber-50/30'
+                                                : 'border-slate-200 hover:bg-slate-50'
                                         }`}
                                     >
-                                        <div className={`p-2 rounded-md ${selectedModule === m.id ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
+                                        <div className={`p-2 rounded-md ${selectedModule === m.id ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
                                             <Icon className="w-4 h-4" />
                                         </div>
                                         <div>
-                                            <p className="text-xs font-bold text-slate-750 dark:text-slate-200">{m.name}</p>
+                                            <p className="text-xs font-bold text-slate-700">{m.name}</p>
                                             <p className="text-[10px] text-slate-400 leading-tight mt-0.5">{m.description}</p>
                                         </div>
                                     </button>
@@ -183,22 +183,22 @@ export default function AIAnalyzerPage() {
                 </div>
 
                 {/* Audit Results Dashboard */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm lg:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm lg:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div>
-                            <h3 className="text-sm font-semibold text-slate-800 dark:text-white">AI Health Assessment</h3>
+                            <h3 className="text-sm font-semibold text-slate-800">AI Health Assessment</h3>
                             <p className="text-[11px] text-slate-400">Based on system database scan</p>
                         </div>
-                        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                        <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
                             <span className="text-xs text-slate-500">Health Index</span>
-                            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{results.score}</span>
+                            <span className="text-sm font-black text-emerald-600">{results.score}</span>
                         </div>
                     </div>
 
                     {/* Summary */}
                     <div>
                         <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Executive Summary</span>
-                        <p className="text-xs text-slate-650 dark:text-slate-350 leading-relaxed mt-1">{results.summary}</p>
+                        <p className="text-xs text-slate-600 leading-relaxed mt-1">{results.summary}</p>
                     </div>
 
                     {/* Anomalies detected */}
@@ -209,7 +209,7 @@ export default function AIAnalyzerPage() {
                         </span>
                         <div className="space-y-2 mt-1.5">
                             {results.anomalies.map((an, i) => (
-                                <div key={i} className="text-xs text-slate-600 dark:text-slate-300 p-2.5 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-lg">
+                                <div key={i} className="text-xs text-slate-600 p-2.5 bg-rose-50/50 border border-rose-100 rounded-lg">
                                     {an}
                                 </div>
                             ))}
@@ -218,13 +218,13 @@ export default function AIAnalyzerPage() {
 
                     {/* Recommendations */}
                     <div>
-                        <span className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 tracking-wider flex items-center gap-1.5">
+                        <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider flex items-center gap-1.5">
                             <CheckCircle className="w-3.5 h-3.5" />
                             Recommended Actions
                         </span>
                         <ul className="mt-2 space-y-2">
                             {results.recommendations.map((rec, i) => (
-                                <li key={i} className="flex gap-2 text-xs text-slate-600 dark:text-slate-300">
+                                <li key={i} className="flex gap-2 text-xs text-slate-600">
                                     <span className="text-amber-500 font-bold">•</span>
                                     <span>{rec}</span>
                                 </li>
@@ -235,11 +235,11 @@ export default function AIAnalyzerPage() {
             </div>
 
             {/* Chat Assistant Section */}
-            <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                     <Bot className="w-5 h-5 text-amber-500" />
                     <div>
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Ask AI Assistant</h3>
+                        <h3 className="text-sm font-semibold text-slate-800">Ask AI Assistant</h3>
                         <p className="text-[10px] text-slate-400">Natural language insights querying engine</p>
                     </div>
                 </div>
@@ -250,7 +250,7 @@ export default function AIAnalyzerPage() {
                         <button
                             key={i}
                             onClick={() => handleSendMessage(s)}
-                            className="text-[10px] font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-350 px-3 py-1.5 rounded-full transition"
+                            className="text-[10px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-full transition"
                         >
                             {s}
                         </button>
@@ -258,13 +258,13 @@ export default function AIAnalyzerPage() {
                 </div>
 
                 {/* Chat feed box */}
-                <div className="h-64 overflow-y-auto bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700 space-y-3 flex flex-col">
+                <div className="h-64 overflow-y-auto bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-3 flex flex-col">
                     {messages.map((m, i) => (
                         <div
                             key={i}
                             className={`flex gap-2 max-w-[80%] p-3 rounded-xl text-xs leading-relaxed ${
                                 m.sender === 'bot'
-                                    ? 'bg-amber-50/40 border border-amber-100 dark:bg-slate-850 dark:border-slate-800 text-slate-700 dark:text-slate-200 self-start'
+                                    ? 'bg-amber-50/40 border border-amber-100 text-slate-700 self-start'
                                     : 'bg-amber-500 text-white self-end rounded-br-none'
                             }`}
                         >
@@ -277,7 +277,7 @@ export default function AIAnalyzerPage() {
                         </div>
                     ))}
                     {sending && (
-                        <div className="flex gap-2 bg-amber-50/40 border border-amber-100 dark:bg-slate-850 dark:border-slate-800 p-3 rounded-xl text-xs self-start items-center">
+                        <div className="flex gap-2 bg-amber-50/40 border border-amber-100 p-3 rounded-xl text-xs self-start items-center">
                             <Bot className="w-4 h-4 text-amber-500 animate-spin" />
                             <span className="text-slate-400">Formulating response...</span>
                         </div>
@@ -292,7 +292,7 @@ export default function AIAnalyzerPage() {
                         onChange={(e) => setChatInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                         placeholder="Ask me something, e.g., 'How can we reduce cutting scrap?'"
-                        className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-amber-500"
+                        className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none focus:ring-2 focus:ring-amber-500"
                     />
                     <button
                         onClick={() => handleSendMessage()}

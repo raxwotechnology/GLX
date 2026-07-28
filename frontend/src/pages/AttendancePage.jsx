@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Calendar as CalendarIcon, Upload, Clock, FileSpreadsheet, ShieldAlert } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Upload, Clock, FileSpreadsheet, LogIn, LogOut, CheckCircle2, DollarSign, Edit, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -30,8 +30,9 @@ export default function AttendancePage() {
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [importLoading, setImportLoading] = useState(false);
     const [importResult, setImportResult] = useState(null);
+    const [actionLoadingId, setActionLoadingId] = useState(null);
 
-    const { data: attData, refetch: refetchAttendance } = useAttendance({ date: selectedDate, departmentId: departmentId || undefined, limit: 200 });
+    const { data: attData, refetch: refetchAttendance } = useAttendance({ date: selectedDate, departmentId: departmentId || undefined, limit: 300 });
     const { data: empData } = useEmployees({ departmentId: departmentId || undefined, status: 'active', limit: 500 });
     const { data: deptsData } = useDepartments();
     const bulkMark = useBulkMarkAttendance();
@@ -55,17 +56,104 @@ export default function AttendancePage() {
         return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
-    const openBulk = () => {
-        const attMap = new Map();
-        attendance.forEach((a) => {
-            if (a.employeeId) {
-                const id = typeof a.employeeId === 'object' ? a.employeeId._id : a.employeeId;
-                if (id) attMap.set(id.toString(), a);
-            }
-        });
+    // Helper: Map employees with attendance records
+    const attendanceMap = new Map();
+    attendance.forEach((a) => {
+        if (a.employeeId) {
+            const id = typeof a.employeeId === 'object' ? a.employeeId._id : a.employeeId;
+            if (id) attendanceMap.set(id.toString(), a);
+        }
+    });
 
+    // Create merged list of employees with attendance for table display
+    const mergedAttendanceList = employees.map((emp) => {
+        const existingAtt = attendanceMap.get(emp._id.toString());
+        return {
+            employeeId: emp._id,
+            employeeCode: emp.employeeCode,
+            employeeName: emp.fullName || `${emp.firstName} ${emp.lastName}`,
+            hourlyRate: emp.hourlyRate || emp.basicWageRate || 260,
+            department: emp.departmentId?.name || '',
+            existingAtt,
+            status: existingAtt?.status || 'not_marked',
+            checkInTime: existingAtt?.checkInTime || null,
+            checkOutTime: existingAtt?.checkOutTime || null,
+            totalWorkedMinutes: existingAtt?.totalWorkedMinutes || 0,
+            earnedSalary: existingAtt?.earnedSalary || (existingAtt?.totalWorkedMinutes ? Number(((existingAtt.totalWorkedMinutes / 60) * (emp.hourlyRate || 260)).toFixed(2)) : 0),
+            lateMinutes: existingAtt?.lateMinutes || 0,
+            overtimeMinutes: existingAtt?.overtimeMinutes || 0,
+            overtimeAmount: existingAtt?.overtimeAmount || 0,
+            importedViaFingerprint: existingAtt?.importedViaFingerprint || false,
+        };
+    });
+
+    // ── Single Click Clock In Handler ──
+    const handleClockIn = async (record) => {
+        setActionLoadingId(record.employeeId);
+        try {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const checkInStr = `${selectedDate}T${hours}:${minutes}`;
+
+            await api.post('/hr/attendance', {
+                employeeId: record.employeeId,
+                date: selectedDate,
+                checkInTime: checkInStr,
+                status: 'present',
+            });
+            toast.success(`Clocked IN ${record.employeeName} at ${hours}:${minutes}!`);
+            refetchAttendance();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to Clock In employee');
+        } finally {
+            setActionLoadingId(null);
+        }
+    };
+
+    // ── Single Click Clock Out & Salary Calculation Handler ──
+    const handleClockOut = async (record) => {
+        setActionLoadingId(record.employeeId);
+        try {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const checkOutStr = `${selectedDate}T${hours}:${minutes}`;
+
+            const res = await api.post('/hr/attendance', {
+                employeeId: record.employeeId,
+                date: selectedDate,
+                checkInTime: record.checkInTime ? formatDateTimeLocal(record.checkInTime) : `${selectedDate}T08:00`,
+                checkOutTime: checkOutStr,
+                status: record.status === 'not_marked' ? 'present' : record.status,
+            });
+
+            const saved = res.data?.data;
+            const workedMinutes = saved?.totalWorkedMinutes || 0;
+            const workedHours = (workedMinutes / 60).toFixed(2);
+            const calculatedSalary = saved?.earnedSalary || (workedMinutes / 60 * record.hourlyRate).toFixed(2);
+
+            toast.success(
+                <div>
+                    <p className="font-bold text-sm">Clocked OUT {record.employeeName}!</p>
+                    <p className="text-xs">Worked: <strong>{workedHours} hrs</strong> | Salary: <strong>Rs. {Number(calculatedSalary).toLocaleString()}</strong></p>
+                </div>,
+                { duration: 5000 }
+            );
+            refetchAttendance();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to Clock Out employee');
+        } finally {
+            setActionLoadingId(null);
+        }
+    };
+
+    const openBulk = () => {
         const records = employees.map((e) => {
-            const existing = attMap.get(e._id.toString());
+            const existing = attendanceMap.get(e._id.toString());
             return {
                 employeeId: e._id,
                 employeeName: `${e.firstName} ${e.lastName}`,
@@ -91,6 +179,7 @@ export default function AttendancePage() {
             });
             setIsBulkOpen(false);
             refetchAttendance();
+            toast.success('Bulk attendance updated!');
         } catch { }
     };
 
@@ -138,29 +227,135 @@ export default function AttendancePage() {
         reader.readAsBinaryString(file);
     };
 
+    const fmtCurrency = (val) => `Rs. ${Number(val || 0).toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
     const columns = [
         {
             key: 'employee', label: 'Employee', render: (r) => (
                 <div>
-                    <p className="font-medium text-sm">{r.employeeName || (r.employeeId ? `${r.employeeId.firstName} ${r.employeeId.lastName}` : '-')}</p>
-                    <p className="text-xs font-mono text-gray-500">{r.employeeCode}</p>
+                    <p className="font-bold text-sm text-gray-900">{r.employeeName}</p>
+                    <p className="text-xs font-mono text-gray-500">{r.employeeCode} {r.department && `· ${r.department}`}</p>
                 </div>
             )
         },
-        { key: 'status', label: 'Status', render: (r) => <Badge variant={statusVariant[r.status]}>{r.status?.replace(/_/g, ' ')}</Badge> },
-        { key: 'checkIn', label: 'Check In', render: (r) => r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString('en-LK', { hour: '2-digit', minute: '2-digit' }) : '—' },
-        { key: 'checkOut', label: 'Check Out', render: (r) => r.checkOutTime ? new Date(r.checkOutTime).toLocaleTimeString('en-LK', { hour: '2-digit', minute: '2-digit' }) : '—' },
-        { key: 'worked', label: 'Worked', render: (r) => r.totalWorkedMinutes ? `${(r.totalWorkedMinutes / 60).toFixed(1)} hrs` : '—' },
-        { key: 'late', label: 'Late', render: (r) => r.lateMinutes > 0 ? <span className="text-amber-600 font-semibold">{r.lateMinutes} min (-Rs. {r.latePenaltyAmount || 0})</span> : '—' },
-        { key: 'ot', label: 'OT Pay', render: (r) => r.overtimeMinutes > 0 ? <span className="text-emerald-600 font-semibold">{(r.overtimeMinutes / 60).toFixed(1)} hrs (+Rs. {r.overtimeAmount || 0})</span> : '—' },
-        { key: 'source', label: 'Method', render: (r) => r.importedViaFingerprint ? <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Biometric Fingerprint</span> : <span className="text-xs text-gray-500">Manual</span> },
+        {
+            key: 'status', label: 'Status', render: (r) => (
+                r.status === 'not_marked' ? (
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-500 border border-gray-200">Not Marked</span>
+                ) : (
+                    <Badge variant={statusVariant[r.status]}>{r.status?.replace(/_/g, ' ')}</Badge>
+                )
+            )
+        },
+        {
+            key: 'checkIn', label: 'Clock In', render: (r) => (
+                r.checkInTime ? (
+                    <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 flex items-center gap-1 w-max">
+                        <LogIn size={13} />
+                        {new Date(r.checkInTime).toLocaleTimeString('en-LK', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                ) : <span className="text-gray-400">—</span>
+            )
+        },
+        {
+            key: 'checkOut', label: 'Clock Out', render: (r) => (
+                r.checkOutTime ? (
+                    <span className="font-mono text-xs font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 flex items-center gap-1 w-max">
+                        <LogOut size={13} />
+                        {new Date(r.checkOutTime).toLocaleTimeString('en-LK', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                ) : <span className="text-gray-400">—</span>
+            )
+        },
+        {
+            key: 'worked', label: 'Worked Time', render: (r) => (
+                r.totalWorkedMinutes > 0 ? (
+                    <span className="font-mono text-xs font-bold text-indigo-700">
+                        {(r.totalWorkedMinutes / 60).toFixed(1)} hrs
+                    </span>
+                ) : (
+                    r.checkInTime && !r.checkOutTime ? (
+                        <span className="text-xs text-emerald-600 font-semibold animate-pulse">On Shift (Working...)</span>
+                    ) : '—'
+                )
+            )
+        },
+        {
+            key: 'earnedSalary', label: 'Earned Salary', render: (r) => (
+                <div className="font-mono text-xs">
+                    {r.earnedSalary > 0 ? (
+                        <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100 inline-block">
+                            {fmtCurrency(r.earnedSalary)}
+                        </span>
+                    ) : (
+                        <span className="text-gray-400">Rs. 0.00</span>
+                    )}
+                    <p className="text-[10px] text-gray-400">@{r.hourlyRate}/hr</p>
+                </div>
+            )
+        },
+        {
+            key: 'actions', label: 'Clock Action', render: (r) => {
+                const isClockedIn = Boolean(r.checkInTime);
+                const isClockedOut = Boolean(r.checkOutTime);
+                const isLoading = actionLoadingId === r.employeeId;
+
+                if (!isClockedIn) {
+                    return (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            loading={isLoading}
+                            onClick={() => handleClockIn(r)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                        >
+                            <LogIn size={14} /> Clock In
+                        </Button>
+                    );
+                }
+
+                if (isClockedIn && !isClockedOut) {
+                    return (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            loading={isLoading}
+                            onClick={() => handleClockOut(r)}
+                            className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm animate-pulse"
+                        >
+                            <LogOut size={14} /> Clock Out (End Shift)
+                        </Button>
+                    );
+                }
+
+                return (
+                    <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1">
+                            <CheckCircle2 size={13} className="text-emerald-500" /> Shift Completed
+                        </span>
+                        <button
+                            onClick={() => handleClockIn(r)}
+                            className="p-1 text-gray-400 hover:text-slate-700 rounded transition"
+                            title="Re-clock / Update check-in"
+                        >
+                            <Edit size={13} />
+                        </button>
+                    </div>
+                );
+            }
+        }
     ];
 
+    // Summary calculation for KPI cards
+    const clockedInCount = mergedAttendanceList.filter(r => r.checkInTime && !r.checkOutTime).length;
+    const clockedOutCount = mergedAttendanceList.filter(r => r.checkInTime && r.checkOutTime).length;
+    const totalEarnedSalaryToday = mergedAttendanceList.reduce((sum, r) => sum + (r.earnedSalary || 0), 0);
+
     return (
-        <div>
+        <div className="space-y-4">
             <PageHeader
-                title="Attendance & Fingerprint Log"
-                description="Daily staff attendance, biometric imports, and policy rules"
+                title="Employee Attendance & Clock In / Out"
+                description="Record daily employee clock-in & clock-out timestamps and compute earned daily wages automatically."
                 actions={
                     <div className="flex flex-wrap gap-2">
                         <Button variant="outline" onClick={() => navigate('/attendance-policies')}>
@@ -176,25 +371,87 @@ export default function AttendancePage() {
                 }
             />
 
-            <Card>
-                <div className="p-4 border-b flex flex-wrap gap-3">
-                    <div className="w-full sm:w-48">
-                        <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+            {/* Daily KPI Metric Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <Card className="p-4 bg-white border border-gray-100 shadow-xs rounded-2xl">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Total Staff</p>
+                            <p className="text-2xl font-black text-slate-800 mt-1">{employees.length}</p>
+                        </div>
+                        <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                            <Clock size={20} />
+                        </div>
                     </div>
-                    <div className="w-full sm:w-56">
-                        <Select placeholder="All Departments" options={deptOptions}
-                            value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} />
+                    <p className="text-xs text-gray-400 mt-2 font-medium">Active registered employees</p>
+                </Card>
+
+                <Card className="p-4 bg-white border border-gray-100 shadow-xs rounded-2xl">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Currently Clocked In</p>
+                            <p className="text-2xl font-black text-emerald-600 mt-1">{clockedInCount}</p>
+                        </div>
+                        <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                            <LogIn size={20} />
+                        </div>
+                    </div>
+                    <p className="text-xs text-emerald-600 mt-2 font-bold">Currently on duty</p>
+                </Card>
+
+                <Card className="p-4 bg-white border border-gray-100 shadow-xs rounded-2xl">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Clocked Out (Done)</p>
+                            <p className="text-2xl font-black text-amber-600 mt-1">{clockedOutCount}</p>
+                        </div>
+                        <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+                            <LogOut size={20} />
+                        </div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2 font-medium">Shifts completed today</p>
+                </Card>
+
+                <Card className="p-4 bg-white border border-gray-100 shadow-xs rounded-2xl">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Total Salary Earned Today</p>
+                            <p className="text-2xl font-black text-indigo-600 mt-1">{fmtCurrency(totalEarnedSalaryToday)}</p>
+                        </div>
+                        <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+                            <DollarSign size={20} />
+                        </div>
+                    </div>
+                    <p className="text-xs text-indigo-600 mt-2 font-medium">Calculated from worked hours</p>
+                </Card>
+            </div>
+
+            <Card>
+                <div className="p-4 border-b flex flex-wrap justify-between items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="w-full sm:w-48">
+                            <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+                        </div>
+                        <div className="w-full sm:w-56">
+                            <Select placeholder="All Departments" options={deptOptions}
+                                value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="text-xs text-gray-500 font-medium flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-amber-500" />
+                        Click <strong>Clock In</strong> to record start time, click <strong>Clock Out</strong> to calculate salary!
                     </div>
                 </div>
-                {attendance.length === 0
-                    ? <EmptyState icon={CalendarIcon} title="No attendance recorded for this date" description="Click 'Import Fingerprint Sheet' or 'Bulk Mark Attendance' to populate"
-                        action={
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => setIsImportOpen(true)}>Import Biometric Sheet</Button>
-                                <Button variant="primary" onClick={openBulk}>Mark Attendance</Button>
-                            </div>
-                        } />
-                    : <Table columns={columns} data={attendance} />}
+
+                {employees.length === 0 ? (
+                    <EmptyState
+                        icon={CalendarIcon}
+                        title="No active employees found"
+                        description="Add employees under HR -> Employees to record attendance"
+                    />
+                ) : (
+                    <Table columns={columns} data={mergedAttendanceList} />
+                )}
             </Card>
 
             {/* Bulk Mark Modal */}
@@ -262,9 +519,9 @@ export default function AttendancePage() {
                         Upload exported attendance Excel (.xlsx, .xls) or CSV logs from biometric fingerprint scanners. Records will be matched by Employee Code or Name and evaluated against active Attendance Policies.
                     </p>
 
-                    <div className="border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-xl p-6 text-center hover:border-indigo-400 transition-colors bg-indigo-50/50 dark:bg-indigo-950/20">
+                    <div className="border-2 border-dashed border-indigo-200 rounded-xl p-6 text-center hover:border-indigo-400 transition-colors bg-indigo-50/50">
                         <FileSpreadsheet className="w-10 h-10 text-indigo-500 mx-auto mb-2" />
-                        <label className="cursor-pointer text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
+                        <label className="cursor-pointer text-sm font-semibold text-indigo-600 hover:underline">
                             Choose Fingerprint Log File
                             <input
                                 type="file"
@@ -283,7 +540,7 @@ export default function AttendancePage() {
                     )}
 
                     {importResult && (
-                        <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-lg text-xs space-y-2">
+                        <div className="p-4 bg-gray-50 rounded-lg text-xs space-y-2">
                             <p className="font-bold text-emerald-600">✓ {importResult.message}</p>
                             {importResult.errors?.length > 0 && (
                                 <div className="text-rose-600 space-y-1 mt-2">

@@ -44,13 +44,21 @@ export default function PettyCashPage() {
         setLoading(true);
         try {
             const [entRes, balRes] = await Promise.all([
-                api.get('/finance/petty-cash?limit=50'),
-                api.get('/finance/petty-cash/balance'),
+                api.get('/finance/petty-cash?limit=50')
+                    .catch(() => api.get('/petty-cash?limit=50'))
+                    .catch(() => ({ data: { data: [] } })),
+                api.get('/finance/petty-cash/balance')
+                    .catch(() => api.get('/petty-cash/balance'))
+                    .catch(() => ({ data: { data: null } })),
             ]);
-            setEntries(entRes.data.data || []);
-            setBalance(balRes.data.data || null);
-        } catch { toast.error('Failed to load petty cash data'); }
-        finally { setLoading(false); }
+            setEntries(entRes.data?.data || []);
+            setBalance(balRes.data?.data || null);
+        } catch (err) {
+            console.error('Petty cash load error:', err);
+            toast.error('Failed to load petty cash data');
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     useEffect(() => { fetchAll(); }, [fetchAll]);

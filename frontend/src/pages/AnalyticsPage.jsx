@@ -82,12 +82,12 @@ export default function AnalyticsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                         <BarChart3 className="w-7 h-7 text-emerald-500" />
                         GLX Industries Business Analytics
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Real-time aluminium fabrication sales performance, conversions, and operational analytics
+                    <p className="text-sm text-slate-500">
+                        Real-time manufacturing sales performance, conversions, and operational analytics
                     </p>
                 </div>
 
@@ -96,7 +96,7 @@ export default function AnalyticsPage() {
                     <select
                         value={timeRange}
                         onChange={(e) => setTimeRange(e.target.value)}
-                        className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-770 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
                     >
                         <option value="7d">Last 7 Days</option>
                         <option value="30d">Last 30 Days</option>
@@ -109,16 +109,16 @@ export default function AnalyticsPage() {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Revenue */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Revenue</span>
-                        <div className="p-2 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
                             <DollarSign className="w-5 h-5" />
                         </div>
                     </div>
                     <div className="mt-2 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-slate-800 dark:text-white">LKR {stats.revenue.toLocaleString()}</span>
-                        <span className="flex items-center text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        <span className="text-2xl font-bold text-slate-800">LKR {stats.revenue.toLocaleString()}</span>
+                        <span className="flex items-center text-xs font-medium text-emerald-600">
                             <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />
                             {stats.revenueChange}%
                         </span>
@@ -126,16 +126,16 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Orders */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Sales Orders</span>
-                        <div className="p-2 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded-lg">
+                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                             <ShoppingCart className="w-5 h-5" />
                         </div>
                     </div>
                     <div className="mt-2 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-slate-800 dark:text-white">{stats.orders}</span>
-                        <span className="flex items-center text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        <span className="text-2xl font-bold text-slate-800">{stats.orders}</span>
+                        <span className="flex items-center text-xs font-medium text-emerald-600">
                             <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />
                             {stats.ordersChange}%
                         </span>
@@ -143,16 +143,16 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Expenses */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Expenses</span>
-                        <div className="p-2 bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-lg">
+                        <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
                             <TrendingDown className="w-5 h-5" />
                         </div>
                     </div>
                     <div className="mt-2 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-slate-800 dark:text-white">LKR {stats.expenses.toLocaleString()}</span>
-                        <span className="flex items-center text-xs font-medium text-rose-600 dark:text-rose-400">
+                        <span className="text-2xl font-bold text-slate-800">LKR {stats.expenses.toLocaleString()}</span>
+                        <span className="flex items-center text-xs font-medium text-rose-600">
                             <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />
                             {stats.expensesChange}%
                         </span>
@@ -160,16 +160,16 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Conversion Rate */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Conversion Rate</span>
-                        <div className="p-2 bg-violet-50 dark:bg-violet-950 text-violet-600 dark:text-violet-400 rounded-lg">
+                        <div className="p-2 bg-violet-50 text-violet-600 rounded-lg">
                             <Users className="w-5 h-5" />
                         </div>
                     </div>
                     <div className="mt-2 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-slate-800 dark:text-white">{stats.conversion}%</span>
-                        <span className="flex items-center text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        <span className="text-2xl font-bold text-slate-800">{stats.conversion}%</span>
+                        <span className="flex items-center text-xs font-medium text-emerald-600">
                             <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />
                             +{stats.conversionChange}%
                         </span>
@@ -180,13 +180,13 @@ export default function AnalyticsPage() {
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 {/* Revenue Trend Chart */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm lg:col-span-2">
-                    <h3 className="text-sm font-semibold text-slate-800 dark:text-white mb-4">Revenue Trend (LKR Millions)</h3>
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
+                    <h3 className="text-sm font-semibold text-slate-800 mb-4">Revenue Trend (LKR Millions)</h3>
                     <div className="h-64 flex items-end justify-between relative px-2 pt-4">
                         <div className="absolute inset-0 flex flex-col justify-between pointer-events-none text-[10px] text-slate-400">
-                            <div className="border-b border-slate-100 dark:border-slate-700/50 w-full pb-1">1.5M</div>
-                            <div className="border-b border-slate-100 dark:border-slate-700/50 w-full pb-1">1.0M</div>
-                            <div className="border-b border-slate-100 dark:border-slate-700/50 w-full pb-1">0.5M</div>
+                            <div className="border-b border-slate-100 w-full pb-1">1.5M</div>
+                            <div className="border-b border-slate-100 w-full pb-1">1.0M</div>
+                            <div className="border-b border-slate-100 w-full pb-1">0.5M</div>
                             <div className="w-full pb-1">0</div>
                         </div>
 
@@ -222,17 +222,17 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Top Selling Products */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                     <div>
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-white mb-4">Top Aluminium Configurations</h3>
+                        <h3 className="text-sm font-semibold text-slate-800 mb-4">Top Product Configurations</h3>
                         <div className="space-y-4">
                             {topProducts.map((p, index) => (
                                 <div key={index}>
-                                    <div className="flex justify-between text-xs font-semibold text-slate-600 dark:text-slate-350 mb-1">
+                                    <div className="flex justify-between text-xs font-semibold text-slate-600 mb-1">
                                         <span className="truncate max-w-[170px]" title={p.productName}>{p.productName}</span>
                                         <span>{p.quantitySold} units (LKR {p.revenue.toLocaleString()})</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                         <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, (p.quantitySold / 150) * 100)}%` }}></div>
                                     </div>
                                 </div>
@@ -245,58 +245,58 @@ export default function AnalyticsPage() {
             {/* Bottom Row - Performance Logs */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Recent Inquiries and Conversion Log */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Aluminium Projects Pipeline</h3>
+                        <h3 className="text-sm font-semibold text-slate-800">Active Projects Pipeline</h3>
                         <Activity className="w-4 h-4 text-emerald-500" />
                     </div>
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                             <div className="flex items-center gap-3">
                                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
                                 <div>
-                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200">GLX Industries</p>
+                                    <p className="text-xs font-bold text-slate-700">GLX Industries</p>
                                     <p className="text-[10px] text-slate-400">Double Glazed Sliding Windows (Colombo)</p>
                                 </div>
                             </div>
-                            <span className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 font-bold px-2 py-0.5 rounded">High Probability</span>
+                            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">High Probability</span>
                         </div>
 
-                        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                             <div className="flex items-center gap-3">
                                 <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
                                 <div>
-                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200">Lions Engineering & Tool Center</p>
+                                    <p className="text-xs font-bold text-slate-700">Lions Engineering & Tool Center</p>
                                     <p className="text-[10px] text-slate-400">Powder Coated Partition Frames</p>
                                 </div>
                             </div>
-                            <span className="text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400 font-bold px-2 py-0.5 rounded">In Negotiation</span>
+                            <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded">In Negotiation</span>
                         </div>
 
-                        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                             <div className="flex items-center gap-3">
                                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
                                 <div>
-                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200">K & A Engineering</p>
+                                    <p className="text-xs font-bold text-slate-700">K & A Engineering</p>
                                     <p className="text-[10px] text-slate-400">Casement Windows & Multi-Light Doors</p>
                                 </div>
                             </div>
-                            <span className="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400 font-bold px-2 py-0.5 rounded">Follow Up</span>
+                            <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Follow Up</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Performance Calendar / Milestone */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                     <div>
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-white mb-2">Monthly Target Progress</h3>
-                        <p className="text-[11px] text-slate-450">Track factory dispatch goals</p>
+                        <h3 className="text-sm font-semibold text-slate-800 mb-2">Monthly Target Progress</h3>
+                        <p className="text-[11px] text-slate-400">Track factory dispatch goals</p>
                     </div>
                     <div className="flex flex-col items-center justify-center py-4">
                         <div className="relative w-36 h-36 flex items-center justify-center">
                             <svg className="w-full h-full transform -rotate-95" viewBox="0 0 36 36">
                                 <path
-                                    className="text-slate-200 dark:text-slate-700"
+                                    className="text-slate-200"
                                     strokeWidth="3.5"
                                     stroke="currentColor"
                                     fill="none"
@@ -313,11 +313,11 @@ export default function AnalyticsPage() {
                                 />
                             </svg>
                             <div className="absolute text-center">
-                                <span className="text-2xl font-black text-slate-800 dark:text-white">75%</span>
-                                <p className="text-[9px] text-slate-450 uppercase tracking-widest font-bold">Of LKR 1.5M Goal</p>
+                                <span className="text-2xl font-black text-slate-800">75%</span>
+                                <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Of LKR 1.5M Goal</p>
                             </div>
                         </div>
-                        <p className="text-xs font-semibold text-slate-650 dark:text-slate-350 mt-4 text-center">
+                        <p className="text-xs font-semibold text-slate-600 mt-4 text-center">
                             Target remaining: <span className="font-bold text-emerald-500">LKR 375,000</span> to hit July's Sales Plan.
                         </p>
                     </div>

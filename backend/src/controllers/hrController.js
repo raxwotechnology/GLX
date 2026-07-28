@@ -279,13 +279,16 @@ export const markAttendance = asyncHandler(async (req, res) => {
         });
     }
 
-    // Calculate worked minutes
+    // Calculate worked minutes and earned salary
     if (att.checkInTime && att.checkOutTime) {
         const diff = (new Date(att.checkOutTime) - new Date(att.checkInTime)) / 60000;
         att.totalWorkedMinutes = Math.max(0, Math.floor(diff));
+        const rate = emp.hourlyRate || emp.basicWageRate || 260;
+        att.earnedSalary = Number(((att.totalWorkedMinutes / 60) * rate).toFixed(2));
     } else {
         att.totalWorkedMinutes = 0;
         att.overtimeMinutes = 0;
+        att.earnedSalary = 0;
     }
 
     await att.save();
@@ -331,7 +334,7 @@ export const getAttendance = asyncHandler(async (req, res) => {
 
     const [records, total] = await Promise.all([
         Attendance.find(filter)
-            .populate('employeeId', 'firstName lastName employeeCode departmentId')
+            .populate('employeeId', 'firstName lastName employeeCode departmentId hourlyRate basicWageRate')
             .populate('shiftId', 'name startTime endTime')
             .sort({ date: -1 })
             .skip(skip).limit(Number(limit)),
@@ -385,9 +388,12 @@ export const bulkMarkAttendance = asyncHandler(async (req, res) => {
         if (att.checkInTime && att.checkOutTime) {
             const diff = (new Date(att.checkOutTime) - new Date(att.checkInTime)) / 60000;
             att.totalWorkedMinutes = Math.max(0, Math.floor(diff));
+            const rate = emp.hourlyRate || emp.basicWageRate || 260;
+            att.earnedSalary = Number(((att.totalWorkedMinutes / 60) * rate).toFixed(2));
         } else {
             att.totalWorkedMinutes = 0;
             att.overtimeMinutes = 0;
+            att.earnedSalary = 0;
         }
         await att.save();
         results.push(att);

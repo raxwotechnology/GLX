@@ -129,11 +129,11 @@ export default function BankTransactionsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                         <Receipt className="w-7 h-7 text-emerald-500" />
                         Bank Transactions
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                    <p className="text-sm text-slate-500">
                         Monitor deposits, withdrawals, and bank ledger records across all registers
                     </p>
                 </div>
@@ -157,8 +157,7 @@ export default function BankTransactionsPage() {
                 </button>
             </div>
 
-            {/* Filter panel */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row gap-3">
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
                     <input
@@ -166,14 +165,14 @@ export default function BankTransactionsPage() {
                         placeholder="Search by description or reference..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none focus:ring-1 focus:ring-emerald-500"
+                        className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                 </div>
 
                 <select
                     value={accountFilter}
                     onChange={(e) => setAccountFilter(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
                 >
                     <option value="">All Accounts</option>
                     {accounts.map(acc => (
@@ -184,7 +183,7 @@ export default function BankTransactionsPage() {
                 <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
                 >
                     <option value="">All Types</option>
                     <option value="deposit">Deposits / Inflow</option>
@@ -193,15 +192,14 @@ export default function BankTransactionsPage() {
                 </select>
             </div>
 
-            {/* Transactions table */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 {loading ? (
                     <div className="py-16 text-center text-slate-500">Loading transactions...</div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                                <tr className="border-b border-slate-200 bg-slate-50 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                                     <th className="p-4">Date</th>
                                     <th className="p-4">Account</th>
                                     <th className="p-4">Reference No</th>
@@ -210,9 +208,9 @@ export default function BankTransactionsPage() {
                                     <th className="p-4 text-right">Amount</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-250 dark:divide-slate-700 text-xs">
+                            <tbody className="divide-y divide-slate-200 text-xs">
                                 {filteredTransactions.map(tx => (
-                                    <tr key={tx._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 text-slate-700 dark:text-slate-200">
+                                    <tr key={tx._id} className="hover:bg-slate-50/50 text-slate-700">
                                         <td className="p-4 font-medium">{new Date(tx.date).toLocaleDateString('en-LK')}</td>
                                         <td className="p-4">{tx.accountName}</td>
                                         <td className="p-4 font-mono">{tx.referenceNo || '—'}</td>
@@ -220,10 +218,10 @@ export default function BankTransactionsPage() {
                                         <td className="p-4">
                                             <span className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded text-[10px] uppercase ${
                                                 tx.type === 'deposit' 
-                                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400' 
+                                                    ? 'bg-emerald-100 text-emerald-800' 
                                                     : tx.type === 'withdrawal'
-                                                    ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
-                                                    : 'bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400'
+                                                    ? 'bg-rose-100 text-rose-800'
+                                                    : 'bg-blue-100 text-blue-800'
                                             }`}>
                                                 {tx.type === 'deposit' && <ArrowDownLeft size={10} />}
                                                 {tx.type === 'withdrawal' && <ArrowUpRight size={10} />}
@@ -232,7 +230,7 @@ export default function BankTransactionsPage() {
                                             </span>
                                         </td>
                                         <td className={`p-4 text-right font-bold ${
-                                            tx.type === 'deposit' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-450'
+                                            tx.type === 'deposit' ? 'text-emerald-600' : 'text-rose-600'
                                         }`}>
                                             LKR {tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
@@ -240,7 +238,7 @@ export default function BankTransactionsPage() {
                                 ))}
                                 {filteredTransactions.length === 0 && (
                                     <tr>
-                                        <td colSpan="6" className="text-center p-8 text-slate-450">No transactions recorded.</td>
+                                        <td colSpan="6" className="text-center p-8 text-slate-400">No transactions recorded.</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -249,13 +247,12 @@ export default function BankTransactionsPage() {
                 )}
             </div>
 
-            {/* Modal Dialog */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-md w-full overflow-hidden">
-                        <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                            <h3 className="font-bold text-slate-850 dark:text-white">Record Bank Transaction</h3>
-                            <button onClick={() => setShowModal(false)} className="text-slate-450 hover:text-slate-650">✕</button>
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-xl max-w-md w-full overflow-hidden">
+                        <div className="p-5 border-b border-slate-200 flex justify-between items-center">
+                            <h3 className="font-bold text-slate-800">Record Bank Transaction</h3>
+                            <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                         </div>
                         <form onSubmit={handleSubmit} className="p-5 space-y-4">
                             <div>
@@ -263,7 +260,7 @@ export default function BankTransactionsPage() {
                                 <select
                                     value={formData.accountId}
                                     onChange={(e) => setFormData(prev => ({ ...prev, accountId: e.target.value }))}
-                                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
+                                    className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
                                 >
                                     <option value="">Select Account</option>
                                     {accounts.map(acc => (
@@ -278,7 +275,7 @@ export default function BankTransactionsPage() {
                                     <select
                                         value={formData.type}
                                         onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                                        className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
+                                        className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
                                     >
                                         <option value="deposit">Deposit (Inflow)</option>
                                         <option value="withdrawal">Withdrawal (Outflow)</option>
@@ -293,7 +290,7 @@ export default function BankTransactionsPage() {
                                         placeholder="e.g. 25000"
                                         value={formData.amount}
                                         onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                                        className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
+                                        className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
                                     />
                                 </div>
                             </div>
@@ -306,7 +303,7 @@ export default function BankTransactionsPage() {
                                         required
                                         value={formData.date}
                                         onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                                        className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
+                                        className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
                                     />
                                 </div>
                                 <div>
@@ -316,7 +313,7 @@ export default function BankTransactionsPage() {
                                         placeholder="e.g. TRF-12049"
                                         value={formData.referenceNo}
                                         onChange={(e) => setFormData(prev => ({ ...prev, referenceNo: e.target.value }))}
-                                        className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
+                                        className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
                                     />
                                 </div>
                             </div>
@@ -328,16 +325,26 @@ export default function BankTransactionsPage() {
                                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                     placeholder="Enter details..."
                                     rows="2"
-                                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
-                                ></textarea>
+                                    className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
+                                />
                             </div>
 
-                            <button
-                                type="submit"
-                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg transition"
-                            >
-                                Post Ledger Entry
-                            </button>
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowModal(false)}
+                                    className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition disabled:opacity-50"
+                                >
+                                    {submitting ? 'Saving...' : 'Save Transaction'}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>

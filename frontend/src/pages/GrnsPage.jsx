@@ -77,23 +77,23 @@ export default function GrnsPage() {
     const fetchAllData = useCallback(async () => {
         setLoading(true);
         try {
-            const [grnRes, supRes, farmRes, whRes, prodRes, poRes, bankRes] = await Promise.all([
-                api.get('/grns'),
-                api.get('/suppliers'),
-                api.get('/farms?status=active'),
-                api.get('/warehouses'),
-                api.get('/products'),
-                api.get('/purchase-orders?status=approved,sent,partially_received'),
-                api.get('/finance/bank-accounts')
+            const [grnRes, supRes, whRes, prodRes, poRes, bankRes] = await Promise.all([
+                api.get('/grns').catch(() => ({ data: { data: [] } })),
+                api.get('/suppliers').catch(() => ({ data: { data: [] } })),
+                api.get('/warehouses').catch(() => ({ data: { data: [] } })),
+                api.get('/products').catch(() => ({ data: { data: [] } })),
+                api.get('/purchase-orders?status=approved,sent,partially_received').catch(() => ({ data: { data: [] } })),
+                api.get('/finance/bank-accounts').catch(() => ({ data: { data: [] } }))
             ]);
-            setGrns(grnRes.data.data || []);
-            setSuppliers(supRes.data.data || []);
-            setFarms(farmRes.data.data || []);
-            setWarehouses(whRes.data.data || []);
-            setProducts(prodRes.data.data || []);
-            setPurchaseOrders(poRes.data.data || []);
-            setBankAccounts(bankRes.data.data || []);
+            setGrns(grnRes.data?.data || []);
+            setSuppliers(supRes.data?.data || []);
+            setFarms([]);
+            setWarehouses(whRes.data?.data || []);
+            setProducts(prodRes.data?.data || []);
+            setPurchaseOrders(poRes.data?.data || []);
+            setBankAccounts(bankRes.data?.data || []);
         } catch (err) {
+            console.error('GRN fetch error:', err);
             toast.error('Failed to load material receipts (GRNs)');
         } finally {
             setLoading(false);
@@ -339,7 +339,7 @@ export default function GrnsPage() {
         <div className="space-y-6">
             <PageHeader
                 title="Material Receipts (GRN)"
-                description="Record materials intake from suppliers or company farms, and perform quality checks"
+                description="Record materials intake from suppliers and perform quality checks"
                 actions={canManage && <Button variant="primary" onClick={openForm}><Plus size={16} className="mr-1.5" />New GRN</Button>}
             />
 
@@ -356,7 +356,7 @@ export default function GrnsPage() {
                     <EmptyState
                         icon={FileText}
                         title="No GRN records"
-                        description="Log goods receipt notes to record stock intakes from farms or suppliers."
+                        description="Log goods receipt notes to record stock intakes from suppliers."
                         action={canManage && <Button variant="primary" onClick={openForm}><Plus size={16} className="mr-1.5" />New GRN</Button>}
                     />
                 ) : (

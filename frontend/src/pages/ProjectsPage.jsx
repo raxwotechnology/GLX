@@ -140,7 +140,7 @@ export default function ProjectsPage() {
                     <div className="flex justify-between items-center text-xs mb-1">
                         <span className="font-medium text-slate-700">{r.progress}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
                         <div className="bg-primary-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${r.progress}%` }}></div>
                     </div>
                 </div>

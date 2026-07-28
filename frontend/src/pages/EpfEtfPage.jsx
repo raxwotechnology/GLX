@@ -82,11 +82,11 @@ export default function EpfEtfPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                         <Coins className="w-7 h-7 text-emerald-500" />
                         EPF & ETF Monthly Contribution Dashboard
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                    <p className="text-sm text-slate-500">
                         Manage statutory EPF (Employer 12%, Employee 8%) and ETF (Employer 3%) compliance reports
                     </p>
                 </div>
@@ -94,7 +94,7 @@ export default function EpfEtfPage() {
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         onClick={handlePrint}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-750 dark:text-slate-250 transition"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold hover:bg-slate-50 text-slate-700 transition"
                     >
                         <Printer size={14} />
                         Print Schedule
@@ -110,7 +110,7 @@ export default function EpfEtfPage() {
             </div>
 
             {/* Selection filters */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 print:hidden">
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 print:hidden">
                 <div className="flex items-center gap-2 flex-1">
                     <div className="relative w-full max-w-xs">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
@@ -119,7 +119,7 @@ export default function EpfEtfPage() {
                             placeholder="Search by employee name / ID..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
+                            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
                         />
                     </div>
                 </div>
@@ -128,7 +128,7 @@ export default function EpfEtfPage() {
                     <select
                         value={month}
                         onChange={(e) => setMonth(e.target.value)}
-                        className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
                     >
                         <option value="1">January</option>
                         <option value="2">February</option>
@@ -147,7 +147,7 @@ export default function EpfEtfPage() {
                     <select
                         value={year}
                         onChange={(e) => setYear(e.target.value)}
-                        className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none"
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 outline-none"
                     >
                         <option value="2025">2025</option>
                         <option value="2026">2026</option>
@@ -158,50 +158,50 @@ export default function EpfEtfPage() {
 
             {/* Quick Summary Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
                         <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total EPF Liability (20%)</span>
-                        <p className="text-xl font-bold text-slate-800 dark:text-white mt-1">LKR {(totalEpfEmployee + totalEpfEmployer).toLocaleString()}</p>
+                        <p className="text-xl font-bold text-slate-800 mt-1">LKR {(totalEpfEmployee + totalEpfEmployer).toLocaleString()}</p>
                         <p className="text-[9px] text-slate-450 mt-1">EE (8%): LKR {totalEpfEmployee.toLocaleString()} · ER (12%): LKR {totalEpfEmployer.toLocaleString()}</p>
                     </div>
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                         <Calculator className="w-6 h-6" />
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
                         <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total ETF Liability (3%)</span>
-                        <p className="text-xl font-bold text-slate-800 dark:text-white mt-1">LKR {totalEtfEmployer.toLocaleString()}</p>
+                        <p className="text-xl font-bold text-slate-800 mt-1">LKR {totalEtfEmployer.toLocaleString()}</p>
                         <p className="text-[9px] text-slate-450 mt-1">100% Employer Contribution</p>
                     </div>
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded-xl">
+                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
                         <Coins className="w-6 h-6" />
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
                         <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Grand Total Compliance due</span>
-                        <p className="text-xl font-bold text-slate-800 dark:text-white mt-1">LKR {grandTotal.toLocaleString()}</p>
-                        <p className="text-[9px] text-emerald-600 dark:text-emerald-400 mt-1">Calculated across {filteredEPFData.length} active employees</p>
+                        <p className="text-xl font-bold text-slate-800 mt-1">LKR {grandTotal.toLocaleString()}</p>
+                        <p className="text-[9px] text-emerald-600 mt-1">Calculated across {filteredEPFData.length} active employees</p>
                     </div>
-                    <div className="p-3 bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 rounded-xl">
+                    <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
                         <Users className="w-6 h-6" />
                     </div>
                 </div>
             </div>
 
             {/* Main Table schedule */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <h3 className="text-sm font-semibold text-slate-800 dark:text-white">EPF / ETF Schedule for {month}/{year}</h3>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-slate-200 flex justify-between items-center">
+                    <h3 className="text-sm font-semibold text-slate-800">EPF / ETF Schedule for {month}/{year}</h3>
                     <HelpCircle className="w-4 h-4 text-slate-450 cursor-pointer print:hidden" title="Statutory rates: Employees' Provident Fund (EPF) and Employees' Trust Fund (ETF) Sri Lanka" />
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                            <tr className="border-b border-slate-200 bg-slate-50 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                                 <th className="p-4">Emp Code</th>
                                 <th className="p-4">Employee Name</th>
                                 <th className="p-4 text-right">Basic Salary</th>
@@ -211,26 +211,26 @@ export default function EpfEtfPage() {
                                 <th className="p-4 text-right">Total Payable (23%)</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-250 dark:divide-slate-700 text-xs">
+                        <tbody className="divide-y divide-slate-200 text-xs">
                             {filteredEPFData.map(emp => (
-                                <tr key={emp._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 text-slate-700 dark:text-slate-200">
+                                <tr key={emp._id} className="hover:bg-slate-50/50 text-slate-700">
                                     <td className="p-4 font-mono text-[11px]">{emp.employeeCode || '—'}</td>
                                     <td className="p-4 font-bold">{emp.firstName} {emp.lastName}</td>
                                     <td className="p-4 text-right font-medium">LKR {emp.salary.toLocaleString()}</td>
-                                    <td className="p-4 text-right text-slate-600 dark:text-slate-350">LKR {emp.epfEmployee.toLocaleString()}</td>
-                                    <td className="p-4 text-right text-slate-600 dark:text-slate-350">LKR {emp.epfEmployer.toLocaleString()}</td>
-                                    <td className="p-4 text-right text-slate-600 dark:text-slate-350">LKR {emp.etfEmployer.toLocaleString()}</td>
-                                    <td className="p-4 text-right text-emerald-600 dark:text-emerald-400 font-bold">LKR {emp.totalContribution.toLocaleString()}</td>
+                                    <td className="p-4 text-right text-slate-600">LKR {emp.epfEmployee.toLocaleString()}</td>
+                                    <td className="p-4 text-right text-slate-600">LKR {emp.epfEmployer.toLocaleString()}</td>
+                                    <td className="p-4 text-right text-slate-600">LKR {emp.etfEmployer.toLocaleString()}</td>
+                                    <td className="p-4 text-right text-emerald-600 font-bold">LKR {emp.totalContribution.toLocaleString()}</td>
                                 </tr>
                             ))}
                             {/* Summary row */}
-                            <tr className="bg-slate-50 dark:bg-slate-900/70 text-xs font-bold text-slate-800 dark:text-white border-t border-slate-300 dark:border-slate-600">
+                            <tr className="bg-slate-50 text-xs font-bold text-slate-800 border-t border-slate-300">
                                 <td colSpan="2" className="p-4">TOTALS</td>
                                 <td className="p-4 text-right">LKR {totalSalaries.toLocaleString()}</td>
                                 <td className="p-4 text-right">LKR {totalEpfEmployee.toLocaleString()}</td>
                                 <td className="p-4 text-right">LKR {totalEpfEmployer.toLocaleString()}</td>
                                 <td className="p-4 text-right">LKR {totalEtfEmployer.toLocaleString()}</td>
-                                <td className="p-4 text-right text-emerald-600 dark:text-emerald-450">LKR {grandTotal.toLocaleString()}</td>
+                                <td className="p-4 text-right text-emerald-600">LKR {grandTotal.toLocaleString()}</td>
                             </tr>
                         </tbody>
                     </table>

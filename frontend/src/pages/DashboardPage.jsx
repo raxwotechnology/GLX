@@ -159,18 +159,18 @@ export default function DashboardPage() {
                         <span className="text-xs font-bold text-gray-850">Stock Overview</span>
                     </div>
                 </button>
-                <button onClick={() => navigate('/alu/quotations')} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition text-left">
+                <button onClick={() => navigate('/crm/quotations')} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition text-left">
                     <span className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><FileText size={16} /></span>
                     <div>
-                        <span className="text-[9px] text-gray-400 block font-semibold uppercase">Aluminium</span>
-                        <span className="text-xs font-bold text-gray-850">Alu Quotations</span>
+                        <span className="text-[9px] text-gray-400 block font-semibold uppercase">Sales & CRM</span>
+                        <span className="text-xs font-bold text-gray-850">Quotations</span>
                     </div>
                 </button>
-                <button onClick={() => navigate('/alu/database')} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition text-left">
+                <button onClick={() => navigate('/settings')} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition text-left">
                     <span className="p-2 bg-violet-50 text-violet-600 rounded-lg"><Settings size={16} /></span>
                     <div>
                         <span className="text-[9px] text-gray-400 block font-semibold uppercase">Configuration</span>
-                        <span className="text-xs font-bold text-gray-850">Alu Database</span>
+                        <span className="text-xs font-bold text-gray-850">System Settings</span>
                     </div>
                 </button>
             </div>
@@ -209,11 +209,11 @@ export default function DashboardPage() {
                         <span className="font-bold text-sm">New GRN Inbound</span>
                         <span className="text-[10px] text-primary-100 mt-1">Receive Supplier Materials</span>
                     </button>
-                    <button onClick={() => navigate('/alu/quotations/new')}
+                    <button onClick={() => navigate('/crm/quotations')}
                         className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-violet-600 to-violet-700 text-white rounded-2xl shadow-md active:scale-95 transition-all text-center">
                         <FileText size={32} className="mb-2" />
-                        <span className="font-bold text-sm">New Alu Quotation</span>
-                        <span className="text-[10px] text-violet-100 mt-1">Estimate window & door profiles</span>
+                        <span className="font-bold text-sm">New Quotation</span>
+                        <span className="text-[10px] text-violet-100 mt-1">Estimate & calculate project costs</span>
                     </button>
                     <button onClick={triggerCamera}
                         className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-emerald-600 to-emerald-700 text-white rounded-2xl shadow-md active:scale-95 transition-all text-center">
@@ -288,7 +288,7 @@ export default function DashboardPage() {
                                     <Card className="p-6">
                                         <h3 className="text-sm font-bold text-gray-700 mb-4">Live Control Actions</h3>
                                         <div className="space-y-2">
-                                            <Button fullWidth variant="primary" onClick={() => navigate('/alu/quotations/new')}>New Aluminium Quotation <Plus size={14} className="ml-auto" /></Button>
+                                            <Button fullWidth variant="primary" onClick={() => navigate('/crm/quotations')}>New Quotation <Plus size={14} className="ml-auto" /></Button>
                                             <Button fullWidth variant="outline" onClick={() => navigate('/sales-orders/new')}>New Sales Order <ArrowRight size={14} className="ml-auto" /></Button>
                                             <Button fullWidth variant="outline" onClick={() => navigate('/payments/new')}>Record Payment <ArrowRight size={14} className="ml-auto" /></Button>
                                             <Button fullWidth variant="outline" onClick={() => navigate('/purchase-orders/new')}>New Purchase Order <ArrowRight size={14} className="ml-auto" /></Button>
@@ -338,7 +338,7 @@ export default function DashboardPage() {
                         {activeTab === 'operations' && (
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 <Card className="lg:col-span-2 p-6 space-y-6">
-                                    <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5"><Factory className="text-indigo-600" /> Aluminium Fabrication & Output status</h3>
+                                    <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5"><Factory className="text-indigo-600" /> Production Fabrication & Output Status</h3>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-indigo-900">
                                             <p className="text-[10px] font-bold uppercase text-indigo-600">Active Fabrication Jobs</p>

@@ -104,8 +104,8 @@ app.use(cors({
         const defaultOrigins = [
             'https://glx-raxwo.netlify.app',
             'https://glx-4a76.onrender.com',
-            'https://alueco.netlify.app',
-            'https://alueco.onrender.com',
+            'https://glx-industries.netlify.app',
+            'https://glxindustries.netlify.app',
             'https://export-lanka.netlify.app',
             'http://localhost:5173',
             'http://localhost:3000',
@@ -240,6 +240,7 @@ app.use('/api/crm', crmRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/export-shipments', exportShipmentRoutes);
 app.use('/api/petty-cash', pettyCashRoutes);
+app.use('/api/finance/petty-cash', pettyCashRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/finance/fixed-assets', fixedAssetRoutes);
 app.use('/api/finance/bank-accounts', bankAccountRoutes);

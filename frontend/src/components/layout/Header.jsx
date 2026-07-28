@@ -72,10 +72,11 @@ export default function Header({ onToggleSidebar }) {
 
                 <button
                     onClick={handleLogout}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition border border-rose-200/80 shadow-xs"
+                    title="Log out of system"
                 >
                     <LogOut size={16} />
-                    <span className="hidden sm:inline">Logout</span>
+                    <span>Logout</span>
                 </button>
             </div>
         </header>
