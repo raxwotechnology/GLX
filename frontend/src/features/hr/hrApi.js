@@ -74,4 +74,13 @@ export const payrollApi = {
     markPaid: async (id) => (await api.patch(`/payroll/${id}/mark-paid`)).data,
     getPayslip: async (payrollId, employeeId) => (await api.get(`/payroll/${payrollId}/payslip/${employeeId}`)).data,
     getMyPayslips: async () => (await api.get('/payroll/my-payslips')).data,
+    getPublicPayslip: async (token) => (await api.get(`/payroll/payslips/share/${token}`)).data,
+};
+
+export const advancesApi = {
+    list: async (params = {}) => (await api.get('/hr/advances', { params })).data,
+    getByEmployee: async (employeeId) => (await api.get(`/hr/employees/${employeeId}/advances`)).data,
+    create: async (data) => (await api.post('/hr/advances', data)).data,
+    approve: async (id, data = {}) => (await api.patch(`/hr/advances/${id}/approve`, data)).data,
+    decline: async (id, data = {}) => (await api.patch(`/hr/advances/${id}/decline`, data)).data,
 };

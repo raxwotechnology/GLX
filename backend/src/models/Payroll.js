@@ -26,6 +26,7 @@ const payslipSchema = new mongoose.Schema({
     daysAbsent: { type: Number, default: 0 },
     leaveDays: { type: Number, default: 0 },
     unpaidLeaveDays: { type: Number, default: 0 },
+    uninformedLeaveDays: { type: Number, default: 0 },
     overtimeHours: { type: Number, default: 0 },
 
     // Earnings
@@ -49,6 +50,9 @@ const payslipSchema = new mongoose.Schema({
 
     // Net
     netPay: { type: Number, default: 0 },
+
+    // Security & Link Sharing
+    payslipShareToken: { type: String },
 
     // Payment info
     paymentStatus: {

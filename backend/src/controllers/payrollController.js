@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler';
+import crypto from 'crypto';
 import Payroll from '../models/Payroll.js';
 import Employee from '../models/Employee.js';
 import Attendance from '../models/Attendance.js';
@@ -190,13 +191,17 @@ export const processPayroll = asyncHandler(async (req, res) => {
         const advances = await SalaryAdvance.find({
             employeeId: emp._id,
             status: 'approved',
-            repaymentMonth: { $gte: startOfMonth, $lte: endOfMonth },
+            isDeducted: false,
+            date: { $lte: endOfMonth },
         });
 
+        let totalAdvanceForEmp = 0;
         advances.forEach((adv) => {
+            const advAmt = adv.amount || 0;
+            totalAdvanceForEmp += advAmt;
             otherDeductions.push({
-                name: `Salary Advance (${adv.advanceNumber || 'Advance'})`,
-                amount: adv.monthlyDeduction || adv.amount || 0,
+                name: `Salary Advance (${adv.advanceType === 'percentage' ? adv.requestedPercentage + '%' : 'LKR ' + advAmt})`,
+                amount: advAmt,
                 type: 'advance',
             });
         });
@@ -213,6 +218,8 @@ export const processPayroll = asyncHandler(async (req, res) => {
             },
             overtimeRate: overtimeRatePerHour,
         });
+
+        const shareToken = crypto.randomBytes(16).toString('hex');
 
         payslips.push({
             employeeId: emp._id,
@@ -233,7 +240,9 @@ export const processPayroll = asyncHandler(async (req, res) => {
             epfEmployerContribution: calc.epfEmployerContribution,
             etfContribution: calc.etfContribution,
             apitAmount: calc.apitAmount,
+            advanceDeducted: totalAdvanceForEmp,
             netPay: calc.netPay,
+            payslipShareToken: shareToken,
             paymentStatus: 'pending',
         });
     }
@@ -250,6 +259,13 @@ export const processPayroll = asyncHandler(async (req, res) => {
         createdBy: req.user._id,
     });
     await payroll.save();
+
+    // Mark deducted advances as deducted in DB
+    const processedEmpIds = employees.map(e => e._id);
+    await SalaryAdvance.updateMany(
+        { employeeId: { $in: processedEmpIds }, status: 'approved', isDeducted: false },
+        { $set: { isDeducted: true, deductedPayrollId: payroll._id } }
+    );
 
     res.status(201).json({ success: true, data: payroll });
 });
@@ -777,5 +793,34 @@ export const getDailyPayrollHistory = asyncHandler(async (req, res) => {
         totalPaid,
         count: history.length,
         data: history
+    });
+});
+
+/**
+ * @desc    Get public shareable payslip by share token
+ * @route   GET /api/payroll/payslips/share/:token
+ * @access  Public
+ */
+export const getPublicPayslipByToken = asyncHandler(async (req, res) => {
+    const { token } = req.params;
+    const payroll = await Payroll.findOne(
+        { 'payslips.payslipShareToken': token, deletedAt: null },
+        { 'payslips.$': 1, periodMonth: 1, periodYear: 1, payrollNumber: 1, createdAt: 1 }
+    ).populate('payslips.employeeId', 'firstName lastName employeeCode departmentId designationId phone secondaryPhone email bankDetails gsCertificate policeReport educationCertificates paymentType labourRate');
+
+    if (!payroll || !payroll.payslips || payroll.payslips.length === 0) {
+        res.status(404);
+        throw new Error('Payslip link invalid or expired');
+    }
+
+    const payslip = payroll.payslips[0];
+    res.json({
+        success: true,
+        data: {
+            payrollNumber: payroll.payrollNumber,
+            periodMonth: payroll.periodMonth,
+            periodYear: payroll.periodYear,
+            payslip,
+        }
     });
 });

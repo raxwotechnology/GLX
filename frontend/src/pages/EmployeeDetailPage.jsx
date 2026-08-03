@@ -59,14 +59,20 @@ export default function EmployeeDetailPage() {
                     <Card className="p-6">
                         <div className="flex items-center gap-2 mb-4">
                             <Mail size={18} className="text-gray-600" />
-                            <h3 className="text-sm font-semibold">Contact</h3>
+                            <h3 className="text-sm font-semibold">Contact Details (සම්බන්ධ කරගන්නා අංක 2)</h3>
                         </div>
-                        <div className="space-y-2 text-sm">
-                            {emp.email && <p><Mail size={12} className="inline mr-2" />{emp.email}</p>}
-                            {emp.phone && <p><Phone size={12} className="inline mr-2" />{emp.phone}</p>}
-                            {emp.mobile && <p><Phone size={12} className="inline mr-2" />{emp.mobile} (mobile)</p>}
+                        <div className="space-y-3 text-sm">
+                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <span className="text-gray-600 font-medium">Contact 1 (Primary)</span>
+                                <span className="font-semibold text-gray-900"><Phone size={12} className="inline mr-1" />{emp.phone || '—'}</span>
+                            </div>
+                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <span className="text-gray-600 font-medium">Contact 2 (Secondary)</span>
+                                <span className="font-semibold text-gray-900"><Phone size={12} className="inline mr-1" />{emp.secondaryPhone || '—'}</span>
+                            </div>
+                            {emp.email && <p><Mail size={12} className="inline mr-2 text-gray-500" />{emp.email}</p>}
                             {emp.permanentAddress?.line1 && (
-                                <p><MapPin size={12} className="inline mr-2" />
+                                <p><MapPin size={12} className="inline mr-2 text-gray-500" />
                                     {emp.permanentAddress.line1}, {emp.permanentAddress.city} {emp.permanentAddress.postalCode}</p>
                             )}
                         </div>
@@ -81,6 +87,42 @@ export default function EmployeeDetailPage() {
 
                     <Card className="p-6">
                         <div className="flex items-center gap-2 mb-4">
+                            <FileText size={18} className="text-gray-600" />
+                            <h3 className="text-sm font-semibold">Required Documents (අවශ්‍ය ලේඛන)</h3>
+                        </div>
+                        <div className="space-y-3 text-sm">
+                            <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded border">
+                                <div>
+                                    <p className="font-medium text-gray-900">Grama Niladhari Cert (GS)</p>
+                                    <p className="text-xs text-gray-500">No: {emp.gsCertificate?.certificateNo || '—'}</p>
+                                </div>
+                                <Badge variant={emp.gsCertificate?.status === 'verified' ? 'success' : emp.gsCertificate?.status === 'submitted' ? 'info' : 'warning'}>
+                                    {emp.gsCertificate?.status || 'pending'}
+                                </Badge>
+                            </div>
+                            <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded border">
+                                <div>
+                                    <p className="font-medium text-gray-900">Education Certificates</p>
+                                    <p className="text-xs text-gray-500">{emp.educationCertificates?.summary || '—'}</p>
+                                </div>
+                                <Badge variant={emp.educationCertificates?.status === 'verified' ? 'success' : emp.educationCertificates?.status === 'submitted' ? 'info' : 'warning'}>
+                                    {emp.educationCertificates?.status || 'pending'}
+                                </Badge>
+                            </div>
+                            <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded border">
+                                <div>
+                                    <p className="font-medium text-gray-900">Police Report</p>
+                                    <p className="text-xs text-gray-500">Ref: {emp.policeReport?.reportNo || '—'}</p>
+                                </div>
+                                <Badge variant={emp.policeReport?.status === 'verified' ? 'success' : emp.policeReport?.status === 'submitted' ? 'info' : emp.policeReport?.status === 'expired' ? 'danger' : 'warning'}>
+                                    {emp.policeReport?.status || 'pending'}
+                                </Badge>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-6">
+                        <div className="flex items-center gap-2 mb-4">
                             <Briefcase size={18} className="text-gray-600" />
                             <h3 className="text-sm font-semibold">Employment</h3>
                         </div>
@@ -90,10 +132,8 @@ export default function EmployeeDetailPage() {
                             <div><p className="text-gray-500">Employment Type</p><p>{emp.employmentType?.replace(/_/g, ' ')}</p></div>
                             <div><p className="text-gray-500">Employee Category</p><p>{emp.employeeCategory || 'Permanent'}</p></div>
                             <div><p className="text-gray-500">Date of Joining</p><p>{fmtDate(emp.dateOfJoining)}</p></div>
-                            {emp.probationEndDate && <div><p className="text-gray-500">Probation Ends</p><p>{fmtDate(emp.probationEndDate)}</p></div>}
                             {emp.workLocation && <div><p className="text-gray-500">Work Location</p><p>{emp.workLocation}</p></div>}
                             {emp.workShift?.name && <div><p className="text-gray-500">Shift</p><p>{emp.workShift.name}</p></div>}
-                            {emp.reportsToId && <div><p className="text-gray-500">Reports To</p><p>{emp.reportsToId.firstName} {emp.reportsToId.lastName}</p></div>}
                         </div>
                     </Card>
 
@@ -111,21 +151,21 @@ export default function EmployeeDetailPage() {
                             <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Bank Details</p>
                             <p className="text-sm">{emp.bankDetails?.bankName || '—'} · {emp.bankDetails?.branchName}</p>
                             <p className="text-sm font-mono">{emp.bankDetails?.accountNumber || '—'}</p>
-                            <p className="text-sm">{emp.bankDetails?.accountName}</p>
                         </div>
                     </Card>
                 </div>
 
                 <div className="space-y-6">
                     <Card className="p-6">
-                        <h3 className="text-sm font-semibold mb-4">Compensation</h3>
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between"><span className="text-gray-600">Basic Salary</span><span className="font-semibold">{fmt(emp.basicSalary)}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-600">Basic Wage Rate</span><span className="font-semibold">{fmt(emp.basicWageRate)}/hr</span></div>
+                        <h3 className="text-sm font-semibold mb-4">Compensation & Labour Rate</h3>
+                        <div className="space-y-3 text-sm">
+                            <div className="flex justify-between p-2 bg-emerald-50 border border-emerald-100 rounded">
+                                <span className="text-emerald-900 font-medium">Payment Type</span>
+                                <span className="font-bold text-emerald-700 capitalize">{emp.paymentType ? emp.paymentType.replace('_', ' ') : 'Monthly'}</span>
+                            </div>
+                            <div className="flex justify-between"><span className="text-gray-600">Labour Rate</span><span className="font-semibold">{fmt(emp.labourRate)} / {emp.paymentType === 'per_hour' ? 'hr' : 'day'}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-600">Basic Monthly Salary</span><span className="font-semibold">{fmt(emp.basicSalary)}</span></div>
                             <div className="flex justify-between"><span className="text-gray-600">OT Monthly Cutoff</span><span className="font-semibold">{emp.otCutoffHours || 45} hours</span></div>
-                            {emp.salaryStructureId && (
-                                <div className="flex justify-between"><span className="text-gray-600">Structure</span><span>{emp.salaryStructureId.name}</span></div>
-                            )}
                         </div>
                     </Card>
 

@@ -21,9 +21,10 @@ const employeeSchema = new mongoose.Schema({
     religion: String,
     bloodGroup: String,
 
-    // Contact
+    // Contact (Mandatory 2 Contact Numbers)
     email: { type: String, lowercase: true, trim: true },
-    phone: String,
+    phone: String,          // Contact Number 1
+    secondaryPhone: String, // Contact Number 2
     mobile: String,
     permanentAddress: {
         line1: String, line2: String, city: String, state: String,
@@ -40,6 +41,40 @@ const employeeSchema = new mongoose.Schema({
         phone: String,
         mobile: String,
         address: String,
+    },
+
+    // Labour Rate & Payment Scheme (ගෙවීම් ක්‍රමය - පැයකට / දිනකට / මාසිකව)
+    paymentType: {
+        type: String,
+        enum: ['monthly', 'per_day', 'per_hour'],
+        default: 'monthly',
+    },
+    labourRate: {
+        type: Number,
+        default: 0, // rate per day or per hour
+    },
+
+    // Mandatory Document Tracking (Grama Niladhari, Education, Police Report)
+    gsCertificate: {
+        status: { type: String, enum: ['pending', 'submitted', 'verified', 'rejected'], default: 'pending' },
+        certificateNo: String,
+        issueDate: Date,
+        url: String,
+        notes: String,
+    },
+    educationCertificates: {
+        status: { type: String, enum: ['pending', 'submitted', 'verified', 'rejected'], default: 'pending' },
+        summary: String,
+        url: String,
+        notes: String,
+    },
+    policeReport: {
+        status: { type: String, enum: ['pending', 'submitted', 'verified', 'expired'], default: 'pending' },
+        reportNo: String,
+        issueDate: Date,
+        expiryDate: Date,
+        url: String,
+        notes: String,
     },
 
     // Employment details
@@ -105,10 +140,10 @@ const employeeSchema = new mongoose.Schema({
 
     // Leave balances (current year)
     leaveBalances: {
-        annual: { type: Number, default: 14 }, // default SL standard
+        annual: { type: Number, default: 14 },
         sick: { type: Number, default: 7 },
         casual: { type: Number, default: 7 },
-        maternity: { type: Number, default: 84 }, // 12 weeks SL
+        maternity: { type: Number, default: 84 },
         paternity: { type: Number, default: 3 },
         unpaid: { type: Number, default: 0 },
     },
@@ -122,9 +157,9 @@ const employeeSchema = new mongoose.Schema({
         grade: String,
     }],
 
-    // Documents (URLs only — upload infra is future)
+    // Documents
     documents: [{
-        type: { type: String }, // 'id_copy', 'contract', 'certificate', etc.
+        type: { type: String },
         title: String,
         url: String,
         uploadedAt: { type: Date, default: Date.now },
@@ -138,9 +173,7 @@ const employeeSchema = new mongoose.Schema({
 
     dateOfExit: Date,
     exitReason: String,
-
     photoUrl: String,
-
     notes: String,
     internalNotes: String,
 
@@ -149,7 +182,6 @@ const employeeSchema = new mongoose.Schema({
     deletedAt: { type: Date, default: null },
 }, { timestamps: true });
 
-// removed duplicate index
 employeeSchema.index({ firstName: 'text', lastName: 'text', email: 'text' });
 employeeSchema.index({ departmentId: 1, status: 1 });
 employeeSchema.index({ designationId: 1 });

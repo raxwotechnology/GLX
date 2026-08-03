@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, FileText, CheckCircle, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import PageHeader from '../components/ui/PageHeader';
@@ -16,10 +16,11 @@ import {
 
 const tabs = [
     { id: 'basic', label: 'Basic Info' },
-    { id: 'contact', label: 'Contact' },
+    { id: 'contact', label: 'Contact Details (සම්බන්ධ කරගන්නා අංක 2)' },
     { id: 'employment', label: 'Employment' },
+    { id: 'documents', label: 'Documents (අවශ්‍ය ලේඛන)' },
     { id: 'statutory', label: 'Statutory & Bank' },
-    { id: 'compensation', label: 'Compensation' },
+    { id: 'compensation', label: 'Compensation & Labour Rate' },
 ];
 
 export default function EmployeeFormPage() {
@@ -40,13 +41,15 @@ export default function EmployeeFormPage() {
     const [form, setForm] = useState({
         firstName: '', lastName: '', gender: '', dateOfBirth: '', nationalIdNumber: '',
         maritalStatus: '', nationality: 'Sri Lankan', bloodGroup: '',
-        email: '', phone: '', mobile: '',
+        email: '', phone: '', secondaryPhone: '', mobile: '',
         permanentAddress: { line1: '', city: '', postalCode: '' },
         currentAddress: { line1: '', city: '', postalCode: '' },
         emergencyContact: { name: '', relationship: '', phone: '' },
         departmentId: '', designationId: '', reportsToId: '',
         employmentType: 'permanent', dateOfJoining: '', probationEndDate: '',
         workLocation: '', workShift: '',
+        paymentType: 'monthly',
+        labourRate: 0,
         epfNumber: '', etfNumber: '', taxRegistrationNumber: '',
         bankDetails: { bankName: '', branchName: '', accountNumber: '', accountName: '' },
         salaryStructureId: '', leaveStructureId: '', basicSalary: 0,
@@ -57,6 +60,9 @@ export default function EmployeeFormPage() {
         etfRate: 3,
         basicWageRate: 0,
         otCutoffHours: 45,
+        gsCertificate: { status: 'pending', certificateNo: '', issueDate: '', url: '', notes: '' },
+        educationCertificates: { status: 'pending', summary: '', url: '', notes: '' },
+        policeReport: { status: 'pending', reportNo: '', issueDate: '', expiryDate: '', url: '', notes: '' },
     });
 
     useEffect(() => {
@@ -69,7 +75,7 @@ export default function EmployeeFormPage() {
                 nationalIdNumber: e.nationalIdNumber || '',
                 maritalStatus: e.maritalStatus || '', nationality: e.nationality || 'Sri Lankan',
                 bloodGroup: e.bloodGroup || '',
-                email: e.email || '', phone: e.phone || '', mobile: e.mobile || '',
+                email: e.email || '', phone: e.phone || '', secondaryPhone: e.secondaryPhone || '', mobile: e.mobile || '',
                 permanentAddress: e.permanentAddress || { line1: '', city: '', postalCode: '' },
                 currentAddress: e.currentAddress || { line1: '', city: '', postalCode: '' },
                 emergencyContact: e.emergencyContact || { name: '', relationship: '', phone: '' },
@@ -79,6 +85,8 @@ export default function EmployeeFormPage() {
                 dateOfJoining: e.dateOfJoining ? e.dateOfJoining.slice(0, 10) : '',
                 probationEndDate: e.probationEndDate ? e.probationEndDate.slice(0, 10) : '',
                 workLocation: e.workLocation || '', workShift: e.workShift?._id || '',
+                paymentType: e.paymentType || 'monthly',
+                labourRate: e.labourRate || 0,
                 epfNumber: e.epfNumber || '', etfNumber: e.etfNumber || '',
                 taxRegistrationNumber: e.taxRegistrationNumber || '',
                 bankDetails: e.bankDetails || { bankName: '', branchName: '', accountNumber: '', accountName: '' },
@@ -92,6 +100,27 @@ export default function EmployeeFormPage() {
                 etfRate: e.etfRate !== undefined ? e.etfRate : 3,
                 basicWageRate: e.basicWageRate || 0,
                 otCutoffHours: e.otCutoffHours !== undefined ? e.otCutoffHours : 45,
+                gsCertificate: {
+                    status: e.gsCertificate?.status || 'pending',
+                    certificateNo: e.gsCertificate?.certificateNo || '',
+                    issueDate: e.gsCertificate?.issueDate ? e.gsCertificate.issueDate.slice(0, 10) : '',
+                    url: e.gsCertificate?.url || '',
+                    notes: e.gsCertificate?.notes || '',
+                },
+                educationCertificates: {
+                    status: e.educationCertificates?.status || 'pending',
+                    summary: e.educationCertificates?.summary || '',
+                    url: e.educationCertificates?.url || '',
+                    notes: e.educationCertificates?.notes || '',
+                },
+                policeReport: {
+                    status: e.policeReport?.status || 'pending',
+                    reportNo: e.policeReport?.reportNo || '',
+                    issueDate: e.policeReport?.issueDate ? e.policeReport.issueDate.slice(0, 10) : '',
+                    expiryDate: e.policeReport?.expiryDate ? e.policeReport.expiryDate.slice(0, 10) : '',
+                    url: e.policeReport?.url || '',
+                    notes: e.policeReport?.notes || '',
+                },
             });
         }
     }, [isEdit, existingData]);
@@ -101,8 +130,13 @@ export default function EmployeeFormPage() {
             const copy = { ...prev };
             const parts = path.split('.');
             if (parts.length === 1) copy[parts[0]] = value;
-            else {
+            else if (parts.length === 2) {
                 copy[parts[0]] = { ...copy[parts[0]], [parts[1]]: value };
+            } else if (parts.length === 3) {
+                copy[parts[0]] = {
+                    ...copy[parts[0]],
+                    [parts[1]]: { ...copy[parts[0]][parts[1]], [parts[2]]: value }
+                };
             }
             return copy;
         });
@@ -114,10 +148,16 @@ export default function EmployeeFormPage() {
             setTab('basic');
             return;
         }
+        if (!form.phone || !form.secondaryPhone) {
+            toast.error('සෑම සේවකයෙකුගෙන්ම දුරකථන අංක 2ක් (Contact 1 & Contact 2) ඇතුළත් කිරීම අනිවාර්ය වේ!');
+            setTab('contact');
+            return;
+        }
         try {
             const payload = {
                 ...form,
                 basicSalary: +form.basicSalary || 0,
+                labourRate: +form.labourRate || 0,
                 departmentId: form.departmentId || undefined,
                 designationId: form.designationId || undefined,
                 reportsToId: form.reportsToId || undefined,
@@ -144,7 +184,7 @@ export default function EmployeeFormPage() {
     return (
         <div>
             <PageHeader
-                title={isEdit ? 'Edit Employee' : 'New Employee'}
+                title={isEdit ? 'Edit Employee / Labour Details' : 'New Employee / Labour Registration'}
                 actions={<Button variant="outline" onClick={() => navigate('/employees')}>
                     <ArrowLeft size={16} className="mr-1.5" /> Back
                 </Button>} />
@@ -153,7 +193,7 @@ export default function EmployeeFormPage() {
                 <div className="border-b flex gap-1 px-4 overflow-x-auto">
                     {tabs.map((t) => (
                         <button key={t.id} onClick={() => setTab(t.id)}
-                            className={`px-4 py-3 text-sm font-medium border-b-2 ${tab === t.id ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-600 hover:text-gray-900'
+                            className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap ${tab === t.id ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-600 hover:text-gray-900'
                                 }`}>
                             {t.label}
                         </button>
@@ -176,7 +216,7 @@ export default function EmployeeFormPage() {
                                     value={form.gender} onChange={(e) => update('gender', e.target.value)} />
                                 <Input label="Date of Birth" type="date" value={form.dateOfBirth}
                                     onChange={(e) => update('dateOfBirth', e.target.value)} />
-                                <Input label="NIC Number" value={form.nationalIdNumber}
+                                <Input label="NIC Number (ජාතික හැඳුනුම්පත් අංකය)" value={form.nationalIdNumber}
                                     onChange={(e) => update('nationalIdNumber', e.target.value)} />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -195,13 +235,16 @@ export default function EmployeeFormPage() {
 
                     {tab === 'contact' && (
                         <>
+                            <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs sm:text-sm text-amber-900 mb-2">
+                                📌 <strong>අවශ්‍යයි (Requirement):</strong> සෑම සේවකයෙකුගෙන්ම දුරකථන අංක 2ක් (Contact Number 1 සහ Contact Number 2) ඇතුළත් කිරීම අනිවාර්ය වේ.
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                                <Input label="Email" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} />
-                                <Input label="Phone" value={form.phone} onChange={(e) => update('phone', e.target.value)} />
-                                <Input label="Mobile" value={form.mobile} onChange={(e) => update('mobile', e.target.value)} />
+                                <Input label="Primary Phone (සම්බන්ධ කරගන්නා අංකය 1)" required placeholder="e.g. 0771234567" value={form.phone} onChange={(e) => update('phone', e.target.value)} />
+                                <Input label="Secondary Phone (සම්බන්ධ කරගන්නා අංකය 2)" required placeholder="e.g. 0719876543" value={form.secondaryPhone} onChange={(e) => update('secondaryPhone', e.target.value)} />
+                                <Input label="Email Address" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} />
                             </div>
                             <div>
-                                <p className="text-sm font-semibold mb-2">Permanent Address</p>
+                                <p className="text-sm font-semibold mb-2">Permanent Address (ස්ථිර ලිපිනය)</p>
                                 <Input label="Line 1" value={form.permanentAddress.line1}
                                     onChange={(e) => update('permanentAddress.line1', e.target.value)} />
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-2">
@@ -212,9 +255,9 @@ export default function EmployeeFormPage() {
                                 </div>
                             </div>
                             <div>
-                                <p className="text-sm font-semibold mb-2">Emergency Contact</p>
+                                <p className="text-sm font-semibold mb-2">Emergency Contact (හදිසි අවස්ථාවකදී)</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                                    <Input label="Name" value={form.emergencyContact.name}
+                                    <Input label="Contact Name" value={form.emergencyContact.name}
                                         onChange={(e) => update('emergencyContact.name', e.target.value)} />
                                     <Input label="Relationship" value={form.emergencyContact.relationship}
                                         onChange={(e) => update('emergencyContact.relationship', e.target.value)} />
@@ -237,36 +280,115 @@ export default function EmployeeFormPage() {
                                 <Select label="Employment Type"
                                     options={[
                                         { value: 'permanent', label: 'Permanent' },
-                                        { value: 'contract', label: 'Contract' },
+                                        { value: 'contract', label: 'Contract / Labour' },
                                         { value: 'probation', label: 'Probation' },
                                         { value: 'intern', label: 'Intern' },
                                         { value: 'part_time', label: 'Part-time' },
-                                        { value: 'consultant', label: 'Consultant' },
                                     ]}
                                     value={form.employmentType} onChange={(e) => update('employmentType', e.target.value)} />
                                 <Input label="Date of Joining" required type="date" value={form.dateOfJoining}
                                     onChange={(e) => update('dateOfJoining', e.target.value)} />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                                <Input label="Probation End Date" type="date" value={form.probationEndDate}
-                                    onChange={(e) => update('probationEndDate', e.target.value)} />
                                 <Input label="Work Location" value={form.workLocation}
                                     onChange={(e) => update('workLocation', e.target.value)} />
                                 <Select label="Work Shift" placeholder="Select..." options={shiftOptions}
                                     value={form.workShift} onChange={(e) => update('workShift', e.target.value)} />
+                                <Select label="Status"
+                                    options={[
+                                        { value: 'active', label: 'Active' },
+                                        { value: 'probation', label: 'Probation' },
+                                        { value: 'on_leave', label: 'On Leave' },
+                                        { value: 'suspended', label: 'Suspended' },
+                                        { value: 'terminated', label: 'Terminated' },
+                                    ]}
+                                    value={form.status} onChange={(e) => update('status', e.target.value)} />
                             </div>
-                            <Select label="Status"
-                                options={[
-                                    { value: 'active', label: 'Active' },
-                                    { value: 'probation', label: 'Probation' },
-                                    { value: 'on_leave', label: 'On Leave' },
-                                    { value: 'suspended', label: 'Suspended' },
-                                    { value: 'terminated', label: 'Terminated' },
-                                    { value: 'resigned', label: 'Resigned' },
-                                    { value: 'retired', label: 'Retired' },
-                                ]}
-                                value={form.status} onChange={(e) => update('status', e.target.value)} />
                         </>
+                    )}
+
+                    {tab === 'documents' && (
+                        <div className="space-y-6">
+                            <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs sm:text-sm text-blue-900">
+                                📄 <strong>අවශ්‍ය ලේඛන (Required Documents):</strong> Grama Niladhari Certificate, Education Certificates, සහ Police Report වල තත්ත්වය සහ විස්තර ඇතුළත් කරන්න.
+                            </div>
+
+                            {/* Grama Niladhari Certificate */}
+                            <div className="border rounded-lg p-4 bg-gray-50/50 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                                        <FileText size={18} className="text-primary-600" />
+                                        1. Grama Niladhari Certificate (GS Certificate / ග්‍රාම නිලධාරී සහතිකය)
+                                    </h4>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    <Select label="Status"
+                                        options={[
+                                            { value: 'pending', label: 'Pending (තවම ලබාදී නැත)' },
+                                            { value: 'submitted', label: 'Submitted (ලබාදී ඇත)' },
+                                            { value: 'verified', label: 'Verified (තහවුරු කර ඇත)' },
+                                            { value: 'rejected', label: 'Rejected (ප්‍රතික්ෂේපිතයි)' },
+                                        ]}
+                                        value={form.gsCertificate.status}
+                                        onChange={(e) => update('gsCertificate.status', e.target.value)} />
+                                    <Input label="Certificate No" value={form.gsCertificate.certificateNo}
+                                        onChange={(e) => update('gsCertificate.certificateNo', e.target.value)} />
+                                    <Input label="Issue Date" type="date" value={form.gsCertificate.issueDate}
+                                        onChange={(e) => update('gsCertificate.issueDate', e.target.value)} />
+                                    <Input label="Document URL / Link" placeholder="https://..." value={form.gsCertificate.url}
+                                        onChange={(e) => update('gsCertificate.url', e.target.value)} />
+                                </div>
+                            </div>
+
+                            {/* Education Certificates */}
+                            <div className="border rounded-lg p-4 bg-gray-50/50 space-y-3">
+                                <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                                    <FileText size={18} className="text-indigo-600" />
+                                    2. Education Certificates (අධ්‍යාපන සහතික)
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <Select label="Status"
+                                        options={[
+                                            { value: 'pending', label: 'Pending (තවම ලබාදී නැත)' },
+                                            { value: 'submitted', label: 'Submitted (ලබාදී ඇත)' },
+                                            { value: 'verified', label: 'Verified (තහවුරු කර ඇත)' },
+                                        ]}
+                                        value={form.educationCertificates.status}
+                                        onChange={(e) => update('educationCertificates.status', e.target.value)} />
+                                    <Input label="Qualifications Summary" placeholder="O/L, A/L, NVQ, Diploma" value={form.educationCertificates.summary}
+                                        onChange={(e) => update('educationCertificates.summary', e.target.value)} />
+                                    <Input label="Document URL / Link" placeholder="https://..." value={form.educationCertificates.url}
+                                        onChange={(e) => update('educationCertificates.url', e.target.value)} />
+                                </div>
+                            </div>
+
+                            {/* Police Report */}
+                            <div className="border rounded-lg p-4 bg-gray-50/50 space-y-3">
+                                <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                                    <FileText size={18} className="text-rose-600" />
+                                    3. Police Report (පොලිස් වාර්තාව)
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    <Select label="Status"
+                                        options={[
+                                            { value: 'pending', label: 'Pending (තවම ලබාදී නැත)' },
+                                            { value: 'submitted', label: 'Submitted (ලබාදී ඇත)' },
+                                            { value: 'verified', label: 'Verified (තහවුරු කර ඇත)' },
+                                            { value: 'expired', label: 'Expired (කල් ඉකුත් වී ඇත)' },
+                                        ]}
+                                        value={form.policeReport.status}
+                                        onChange={(e) => update('policeReport.status', e.target.value)} />
+                                    <Input label="Report Reference No" value={form.policeReport.reportNo}
+                                        onChange={(e) => update('policeReport.reportNo', e.target.value)} />
+                                    <Input label="Issue Date" type="date" value={form.policeReport.issueDate}
+                                        onChange={(e) => update('policeReport.issueDate', e.target.value)} />
+                                    <Input label="Expiry Date" type="date" value={form.policeReport.expiryDate}
+                                        onChange={(e) => update('policeReport.expiryDate', e.target.value)} />
+                                </div>
+                                <Input label="Document URL / Link" placeholder="https://..." value={form.policeReport.url}
+                                    onChange={(e) => update('policeReport.url', e.target.value)} />
+                            </div>
+                        </div>
                     )}
 
                     {tab === 'statutory' && (
@@ -293,6 +415,20 @@ export default function EmployeeFormPage() {
 
                     {tab === 'compensation' && (
                         <>
+                            <div className="bg-emerald-50 border border-emerald-200 rounded p-3 text-xs sm:text-sm text-emerald-900 mb-2">
+                                💰 <strong>Labour Rate (ගෙවීම් ක්‍රමය):</strong> පැයකට (Per Hour) හෝ දිනකට (Per Day) හෝ මාසිකව ගෙවන ගාස්තු සටහන් කිරීම.
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                <Select label="Labour Payment Type (ගෙවීම් ක්‍රමය)" required
+                                    options={[
+                                        { value: 'monthly', label: 'Monthly (මාසික වැටුප්)' },
+                                        { value: 'per_day', label: 'Per Day (දිනකට ගෙවන ගාස්තුව)' },
+                                        { value: 'per_hour', label: 'Per Hour (පැයකට ගෙවන ගාස්තුව)' },
+                                    ]}
+                                    value={form.paymentType} onChange={(e) => update('paymentType', e.target.value)} />
+                                <Input label="Labour Rate Amount (LKR per hour/day)" type="number" step="0.01" min="0"
+                                    value={form.labourRate} onChange={(e) => update('labourRate', Number(e.target.value))} />
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <Select label="Employee Category" required
                                     options={[
@@ -300,8 +436,8 @@ export default function EmployeeFormPage() {
                                         { value: 'Trainee', label: 'Trainee' }
                                     ]}
                                     value={form.employeeCategory} onChange={(e) => update('employeeCategory', e.target.value)} />
-                                <Input label="Basic Wage Rate (LKR/hour)" type="number" min="0"
-                                    value={form.basicWageRate} onChange={(e) => update('basicWageRate', Number(e.target.value))} />
+                                <Input label="Monthly Basic Salary (LKR/month)" type="number" step="0.01" min="0"
+                                    value={form.basicSalary} onChange={(e) => update('basicSalary', e.target.value)} />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                 <Input label="EPF Rate (%)" type="number" min="0" max="100"
@@ -317,11 +453,6 @@ export default function EmployeeFormPage() {
                                 <Select label="Leave Structure" placeholder="None (use default standard balances)" options={leaveStructureOptions}
                                     value={form.leaveStructureId} onChange={(e) => update('leaveStructureId', e.target.value)} />
                             </div>
-                            <Input label="Basic Salary (LKR/month)" type="number" step="0.01" min="0"
-                                value={form.basicSalary} onChange={(e) => update('basicSalary', e.target.value)} />
-                            <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-900 mt-2">
-                                <strong>Payroll tip:</strong> Allowances from the salary structure will be added on top of basic when payroll runs. EPF (employee rate + employer 12%) and ETF (employer rate) auto-calculate. Hourly wage rates and OT hour cutoffs apply based on shift details.
-                            </div>
                             <Textarea label="Notes" rows={3} value={form.notes} onChange={(e) => update('notes', e.target.value)} />
                         </>
                     )}
@@ -331,7 +462,7 @@ export default function EmployeeFormPage() {
                     <Button variant="outline" onClick={() => navigate('/employees')}>Cancel</Button>
                     <Button variant="primary" onClick={submit}
                         loading={createMutation.isPending || updateMutation.isPending}>
-                        <Save size={16} className="mr-1.5" /> {isEdit ? 'Update' : 'Create Employee'}
+                        <Save size={16} className="mr-1.5" /> {isEdit ? 'Update Details' : 'Save Employee'}
                     </Button>
                 </div>
             </Card>

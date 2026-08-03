@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
     departmentsApi, designationsApi, employeesApi, shiftsApi,
-    attendanceApi, leavesApi, holidaysApi, salaryStructuresApi, payrollApi, leaveStructuresApi,
+    attendanceApi, leavesApi, holidaysApi, salaryStructuresApi, payrollApi, leaveStructuresApi, advancesApi,
 } from './hrApi';
 
 const onErr = (err) => toast.error(err.response?.data?.message || 'Failed');
@@ -88,3 +88,40 @@ export const useDeleteLeaveStructure = () => { const qc = useQueryClient(); retu
 // Self-Service hooks
 export const useMyProfile = () => useQuery({ queryKey: ['myProfile'], queryFn: employeesApi.getMyProfile });
 export const useMyPayslips = () => useQuery({ queryKey: ['myPayslips'], queryFn: payrollApi.getMyPayslips });
+
+export const usePublicPayslip = (token) => useQuery({
+    queryKey: ['publicPayslip', token],
+    queryFn: () => payrollApi.getPublicPayslip(token),
+    enabled: !!token,
+});
+
+// Salary Advance hooks
+export const useSalaryAdvances = (filters = {}) => useQuery({
+    queryKey: ['salaryAdvances', filters],
+    queryFn: () => advancesApi.list(filters),
+});
+
+export const useCreateSalaryAdvance = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: advancesApi.create,
+        onSuccess: () => { invalidate(qc, ['salaryAdvances', 'employee'])(); toast.success('Salary advance request submitted'); },
+        onError: onErr,
+    });
+};
+
+export const useAdvanceActions = () => {
+    const qc = useQueryClient();
+    return {
+        approve: useMutation({
+            mutationFn: ({ id, approvalNotes }) => advancesApi.approve(id, { approvalNotes }),
+            onSuccess: () => { invalidate(qc, ['salaryAdvances'])(); toast.success('Advance Approved'); },
+            onError: onErr,
+        }),
+        decline: useMutation({
+            mutationFn: ({ id, rejectedReason }) => advancesApi.decline(id, { rejectedReason }),
+            onSuccess: () => { invalidate(qc, ['salaryAdvances'])(); toast.success('Advance Declined'); },
+            onError: onErr,
+        }),
+    };
+};

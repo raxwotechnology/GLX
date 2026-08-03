@@ -129,6 +129,7 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
       <Route path="/public/documents/:token" element={<PublicDocumentViewPage />} />
+      <Route path="/payslip/share/:token" element={<PayslipDetailPage isPublicView={true} />} />
 
       <Route
         element={

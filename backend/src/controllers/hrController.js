@@ -466,6 +466,7 @@ export const getLeaveRequests = asyncHandler(async (req, res) => {
     }
     if (status) filter.status = status;
     if (leaveType) filter.leaveType = leaveType;
+    if (req.query.isUninformed !== undefined) filter.isUninformed = req.query.isUninformed === 'true';
     if (startDate || endDate) {
         filter.fromDate = {};
         if (startDate) filter.fromDate.$gte = new Date(startDate);
@@ -902,21 +903,82 @@ export const importFingerprintAttendance = asyncHandler(async (req, res) => {
 // ============================================================
 
 export const createSalaryAdvance = asyncHandler(async (req, res) => {
-    const { employeeId, date, amount, reason } = req.body;
+    const { employeeId, date, amount, advanceType, requestedPercentage, reason } = req.body;
+    const emp = await Employee.findById(employeeId);
+    if (!emp) {
+        res.status(404);
+        throw new Error('Employee not found');
+    }
+
+    let finalAmount = Number(amount) || 0;
+    let calcAmount = 0;
+    if (advanceType === 'percentage' && requestedPercentage) {
+        const baseSalary = emp.basicSalary || (emp.labourRate ? (emp.paymentType === 'per_day' ? emp.labourRate * 26 : emp.labourRate * 200) : 0);
+        calcAmount = +((baseSalary * Number(requestedPercentage)) / 100).toFixed(2);
+        if (calcAmount > 0) finalAmount = calcAmount;
+    }
+
+    const isDirectAdmin = req.user?.role === 'admin' || req.user?.role === 'superadmin' || req.user?.role === 'hr_manager';
+
     const advance = await SalaryAdvance.create({
         employeeId,
-        date: new Date(date),
-        amount: Number(amount) || 0,
+        date: date ? new Date(date) : new Date(),
+        advanceType: advanceType || 'amount',
+        requestedPercentage: Number(requestedPercentage) || 0,
+        calculatedAmount: calcAmount,
+        amount: finalAmount,
         reason: reason || '',
+        status: isDirectAdmin ? 'approved' : 'pending',
+        approvedBy: isDirectAdmin ? req.user._id : undefined,
+        approvedAt: isDirectAdmin ? new Date() : undefined,
         createdBy: req.user._id,
-        status: 'approved'
     });
     res.status(201).json({ success: true, data: advance });
 });
 
+export const approveSalaryAdvance = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { approvalNotes } = req.body;
+    const advance = await SalaryAdvance.findById(id);
+    if (!advance) {
+        res.status(404);
+        throw new Error('Salary advance request not found');
+    }
+    advance.status = 'approved';
+    if (approvalNotes) advance.approvalNotes = approvalNotes;
+    advance.approvedBy = req.user._id;
+    advance.approvedAt = new Date();
+    await advance.save();
+    res.json({ success: true, data: advance });
+});
+
+export const declineSalaryAdvance = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { rejectedReason } = req.body;
+    const advance = await SalaryAdvance.findById(id);
+    if (!advance) {
+        res.status(404);
+        throw new Error('Salary advance request not found');
+    }
+    advance.status = 'rejected';
+    if (rejectedReason) advance.rejectedReason = rejectedReason;
+    advance.rejectedBy = req.user._id;
+    advance.rejectedAt = new Date();
+    await advance.save();
+    res.json({ success: true, data: advance });
+});
+
 export const getSalaryAdvances = asyncHandler(async (req, res) => {
     const { employeeId } = req.params;
-    const advances = await SalaryAdvance.find({ employeeId }).sort({ date: -1 });
+    const filter = {};
+    if (employeeId) filter.employeeId = employeeId;
+    if (req.query.status) filter.status = req.query.status;
+
+    const advances = await SalaryAdvance.find(filter)
+        .populate('employeeId', 'firstName lastName employeeCode departmentId basicSalary labourRate paymentType')
+        .populate('approvedBy', 'firstName lastName')
+        .populate('rejectedBy', 'firstName lastName')
+        .sort({ date: -1 });
     res.json({ success: true, data: advances });
 });
 

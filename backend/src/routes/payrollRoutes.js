@@ -4,12 +4,17 @@ import {
     approvePayroll, markPayrollPaid,
     getEmployeePayslip, previewPayslip, getMyPayslips,
     downloadPayrollSheet,
-    getDailyPayrollSummary, processDailyPayout, getDailyPayrollHistory
+    getDailyPayrollSummary, processDailyPayout, getDailyPayrollHistory,
+    getPublicPayslipByToken
 } from '../controllers/payrollController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
 
 const router = express.Router();
+
+// Public shareable link route (unprotected)
+router.get('/payslips/share/:token', getPublicPayslipByToken);
+
 router.use(protect);
 
 router.get('/daily-summary', requirePermission('hr.payroll.view'), getDailyPayrollSummary);

@@ -23,6 +23,10 @@ const leaveRequestSchema = new mongoose.Schema({
     reason: { type: String, required: false },
     attachmentUrl: String, // medical certificate, etc.
 
+    // Uninformed Leave Tracking (පූර්ව දැනුම්දීමකින් තොරව ගත් නිවාඩු)
+    isUninformed: { type: Boolean, default: false },
+    uninformedNotes: String,
+
     status: {
         type: String,
         default: 'pending',
