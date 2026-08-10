@@ -9,7 +9,7 @@ import {
     ChevronDown, ChevronRight, CheckSquare, ClipboardCheck, BadgeCheck,
     PackageCheck, CreditCard, Tag, Mail, Sparkles, Home, Search, Scale,
     Plus, ArrowLeftRight, Sliders, LineChart, PieChart, TrendingUp, UserCheck,
-    MapPin, Download
+    MapPin, Download, Barcode
 } from 'lucide-react';
 import { usePermission } from '../../hooks/usePermission';
 import { useSettings } from '../../features/settings/useSettings';
@@ -31,6 +31,7 @@ const menuGroups = [
         icon: FolderTree,
         items: [
             { label: 'Products', icon: Package, path: '/products', permission: 'products.view' },
+            { label: 'Barcode Generator', icon: Barcode, path: '/barcode-generator', permission: 'products.view' },
             { label: 'Categories', icon: FolderTree, path: '/categories', permission: 'products.view' },
             { label: 'Brands', icon: Award, path: '/brands', permission: 'products.view' },
         ],
@@ -60,6 +61,7 @@ const menuGroups = [
         label: 'FINANCE',
         icon: DollarSign,
         items: [
+            { label: 'Receipts & Vouchers', icon: Wallet, path: '/payments', permission: 'payments.view' },
             { label: 'Income & Expenses', icon: Wallet, path: '/finance/expenses', permission: 'payments.view' },
             { label: 'Petty Cash', icon: DollarSign, path: '/finance/petty-cash', permission: 'payments.view' },
             { label: 'Cheques', icon: FileSpreadsheet, path: '/finance/cheques', permission: 'payments.view' },
@@ -68,7 +70,6 @@ const menuGroups = [
             { label: 'Income Tax', icon: Scale, path: '/finance/income-tax', permission: 'payments.view' },
             { label: 'Export Centre', icon: Download, path: '/export-centre', permission: 'dashboard.view' },
             { label: 'Customer Invoices', icon: FileText, path: '/invoices', permission: 'invoices.view' },
-            { label: 'Payments', icon: Wallet, path: '/payments', permission: 'payments.view' },
             { label: 'Capital Expenditure (CapEx)', icon: Tag, path: '/finance/fixed-assets', permission: 'payments.view' },
             { label: 'Credit Notes', icon: FileMinus, path: '/credit-notes', permission: 'credit_notes.view' },
         ],
@@ -138,6 +139,7 @@ const menuGroups = [
         icon: Settings,
         adminOnly: true,
         items: [
+            { label: 'Progress & Handoff (50-60%)', icon: Award, path: '/system-handoff', permission: 'admin.settings' },
             { label: 'Users', icon: Users, path: '/users', permission: 'admin.users.view' },
             { label: 'Roles & Permissions', icon: ShieldCheck, path: '/roles', permission: 'admin.roles.view' },
             { label: 'Data Import', icon: Upload, path: '/import', permission: 'admin.settings' },

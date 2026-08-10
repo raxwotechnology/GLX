@@ -3,7 +3,7 @@ import { getNextSequence } from './Counter.js';
 
 const paymentAllocationSchema = new mongoose.Schema({
     documentType: {
-        type: String,
+        type: String, // invoice | bill | quotation | estimate | grn | transport_hire
         required: false,
     },
     documentId: { type: mongoose.Schema.Types.ObjectId, required: false },
@@ -15,11 +15,24 @@ const paymentSchema = new mongoose.Schema({
     paymentNumber: { type: String, unique: true, trim: true, uppercase: true },
 
     direction: {
-        type: String, // received from customer | paid to supplier
+        type: String, // received (Cash IN) | paid (Cash OUT)
         required: false,
+        default: 'received',
     },
 
-    // Customer (if received) OR supplier (if paid)
+    // Voucher details
+    voucherType: {
+        type: String, // customer_advance_refund | supplier_payment | transport_hire | operational_expense
+        required: false,
+    },
+    voucherCategory: { type: String, trim: true },
+
+    // Transport / Hire Expense attributes
+    hireNoteNumber: { type: String, trim: true },
+    vehicleNo: { type: String, trim: true },
+    transportDriver: { type: String, trim: true },
+
+    // Customer (if received / advance refund) OR supplier (if paid)
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
     supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
     bankAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'BankAccount' },
@@ -32,7 +45,7 @@ const paymentSchema = new mongoose.Schema({
 
     method: {
         type: String,
-        required: false,
+        default: 'cash', // cash | cheque | bank_transfer | online
     },
 
     // Method-specific
@@ -43,9 +56,9 @@ const paymentSchema = new mongoose.Schema({
     bankName: String,
     transactionReference: String,
 
-    // What the payment is applied to
+    // What the payment/voucher is applied to
     allocations: [paymentAllocationSchema],
-    unallocatedAmount: { type: Number, default: 0 }, // advance payment
+    unallocatedAmount: { type: Number, default: 0 }, // advance payment or unused voucher balance
 
     status: {
         type: String,
@@ -53,6 +66,7 @@ const paymentSchema = new mongoose.Schema({
     },
 
     notes: String,
+    signatureNote: String,
     receiptImageUrl: String,
 
     receivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -60,19 +74,22 @@ const paymentSchema = new mongoose.Schema({
     deletedAt: { type: Date, default: null },
 }, { timestamps: true });
 
-// removed duplicate index
+// indexes
 paymentSchema.index({ customerId: 1, paymentDate: -1 });
 paymentSchema.index({ supplierId: 1, paymentDate: -1 });
 paymentSchema.index({ direction: 1, status: 1 });
+paymentSchema.index({ voucherType: 1 });
 
 paymentSchema.pre('save', async function () {
     if (this.isNew && !this.paymentNumber) {
-        const seq = await getNextSequence(this.direction === 'received' ? 'payment_receipt' : 'payment_made');
-        const prefix = this.direction === 'received' ? 'REC' : 'PAY';
+        const isVoucher = this.direction === 'paid' || !!this.voucherType;
+        const seqKey = isVoucher ? 'voucher' : 'payment_receipt';
+        const seq = await getNextSequence(seqKey);
+        const prefix = isVoucher ? 'VOU' : 'REC';
         this.paymentNumber = `${prefix}-${seq}`;
     }
 
-    const totalAllocated = (this.allocations || []).reduce((s, a) => s + a.amount, 0);
+    const totalAllocated = (this.allocations || []).reduce((s, a) => s + (a.amount || 0), 0);
     this.unallocatedAmount = +(this.amount - totalAllocated).toFixed(2);
 });
 

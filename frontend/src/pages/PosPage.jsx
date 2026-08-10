@@ -196,6 +196,69 @@ export default function PosPage() {
     }));
 
     // Cart actions
+    const playBeep = () => {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.12);
+        } catch (_) {}
+    };
+
+    const handleBarcodeScan = async (codeToScan) => {
+        const rawCode = (codeToScan || '').trim();
+        if (!rawCode) return;
+
+        const codeLower = rawCode.toLowerCase();
+        
+        // 1. Try finding in loaded products list
+        let matched = products.find((p) => 
+            p.barcode?.toLowerCase() === codeLower ||
+            p.sku?.toLowerCase() === codeLower ||
+            p.productCode?.toLowerCase() === codeLower ||
+            p.productShortCode?.toLowerCase() === codeLower ||
+            p.name?.toLowerCase() === codeLower
+        );
+
+        if (!matched && /^\d+$/.test(rawCode)) {
+            // Check padded string like 0021
+            const numVal = parseInt(rawCode, 10);
+            matched = products.find(p => 
+                p.barcode === rawCode ||
+                p.productShortCode === rawCode ||
+                p.productCode?.endsWith(String(numVal))
+            );
+        }
+
+        if (matched) {
+            addToCart(matched);
+            playBeep();
+            toast.success(`Scanned: ${matched.name}`);
+            setSearchQuery('');
+            return;
+        }
+
+        // 2. Fallback API barcode lookup
+        try {
+            const { data: apiRes } = await api.get(`/products/barcode/${encodeURIComponent(rawCode)}`);
+            if (apiRes?.data) {
+                addToCart(apiRes.data);
+                playBeep();
+                toast.success(`Scanned: ${apiRes.data.name}`);
+                setSearchQuery('');
+                return;
+            }
+        } catch (err) {
+            toast.error(`No product found matching barcode "${rawCode}".`);
+        }
+    };
+
     const addToCart = (product) => {
         const stock = stockMap.get(product._id);
         const available = stock ? Math.max(0, stock.openStock - stock.reserved) : 0;
@@ -530,26 +593,38 @@ export default function PosPage() {
                     </div>
                 )}
 
-                {/* Search bar */}
+                {/* Search bar & Barcode Scanner input */}
                 <div className="px-3 py-2">
                     <div className="relative">
-                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600 dark:text-emerald-400" />
                         <input
                             ref={searchRef}
                             type="text"
-                            placeholder="Search products by name, code or barcode..."
-                            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-100 transition-all outline-none"
+                            placeholder="Scan Barcode (e.g. 0021) or type name/SKU and press Enter..."
+                            className="w-full pl-9 pr-24 py-2.5 border-2 border-emerald-500/30 rounded-xl text-sm bg-emerald-50/20 dark:bg-slate-800 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all outline-none font-medium"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleBarcodeScan(searchQuery);
+                                }
+                            }}
                         />
-                        {searchQuery && (
-                            <button
-                                onClick={() => setSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                                <X size={14} />
-                            </button>
-                        )}
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                            {searchQuery ? (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <X size={14} />
+                                </button>
+                            ) : (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300">
+                                    Scanner Active ⚡
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
 

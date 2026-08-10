@@ -9,6 +9,24 @@ export const createCustomer = asyncHandler(async (req, res) => {
     if (!payload.assignedSalesRep) delete payload.assignedSalesRep;
     if (!payload.introducer) delete payload.introducer;
 
+    // Check if customer with exact same name already exists to prevent duplicates
+    const searchName = (payload.displayName || payload.companyName || '').trim();
+    if (searchName) {
+        const existing = await Customer.findOne({
+            $or: [
+                { displayName: new RegExp(`^${searchName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+                { companyName: new RegExp(`^${searchName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+            ],
+            deletedAt: null,
+        })
+        .populate('assignedSalesRep', 'firstName lastName')
+        .populate('introducer', 'firstName lastName callingName employeeCode designation');
+
+        if (existing) {
+            return res.status(200).json({ success: true, data: existing, message: 'Existing customer resolved' });
+        }
+    }
+
     const customer = await Customer.create(payload);
     const populated = await Customer.findById(customer._id)
         .populate('assignedSalesRep', 'firstName lastName')

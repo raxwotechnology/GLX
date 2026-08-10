@@ -13,7 +13,7 @@
     },
     "defaultDiscountPercent": 0,
     "creditStatus": {
-      "currentBalance": 0,
+      "currentBalance": 2150000,
       "overdueAmount": 0,
       "availableCredit": 0,
       "isOverdue": false,
@@ -30,8 +30,8 @@
     "deletedAt": null,
     "contacts": [],
     "shippingAddresses": [],
-    "createdAt": {},
-    "updatedAt": {},
+    "createdAt": "2026-07-27T08:17:23.546Z",
+    "updatedAt": "2026-07-27T07:51:00.805Z",
     "customerCode": "CUST-1",
     "__v": 0,
     "phone": "—"
@@ -67,8 +67,8 @@
     "deletedAt": null,
     "contacts": [],
     "shippingAddresses": [],
-    "createdAt": {},
-    "updatedAt": {},
+    "createdAt": "2026-07-27T08:17:23.546Z",
+    "updatedAt": "2026-07-27T08:17:24.298Z",
     "customerCode": "CUST-2",
     "__v": 0,
     "phone": "—"
@@ -104,8 +104,8 @@
     "deletedAt": null,
     "contacts": [],
     "shippingAddresses": [],
-    "createdAt": {},
-    "updatedAt": {},
+    "createdAt": "2026-07-27T08:17:23.546Z",
+    "updatedAt": "2026-07-27T08:17:24.298Z",
     "customerCode": "CUST-3",
     "__v": 0,
     "phone": "—"
@@ -144,8 +144,8 @@
     "deletedAt": null,
     "contacts": [],
     "shippingAddresses": [],
-    "createdAt": {},
-    "updatedAt": {},
+    "createdAt": "2026-07-27T08:17:23.546Z",
+    "updatedAt": "2026-07-27T08:17:24.298Z",
     "customerCode": "CUST-4",
     "__v": 0,
     "phone": "0784231627"
@@ -167,7 +167,7 @@
     },
     "defaultDiscountPercent": 0,
     "creditStatus": {
-      "currentBalance": 0,
+      "currentBalance": 4298300,
       "overdueAmount": 0,
       "availableCredit": 0,
       "isOverdue": false,
@@ -184,8 +184,8 @@
     "deletedAt": null,
     "contacts": [],
     "shippingAddresses": [],
-    "createdAt": {},
-    "updatedAt": {},
+    "createdAt": "2026-07-27T08:17:23.546Z",
+    "updatedAt": "2026-07-28T05:37:47.959Z",
     "customerCode": "CUST-5",
     "__v": 0,
     "phone": "0716151423"
@@ -256,8 +256,151 @@
     "contacts": [],
     "shippingAddresses": [],
     "createdAt": "2026-07-27T06:48:48.422Z",
-    "updatedAt": "2026-07-27T06:48:48.422Z",
+    "updatedAt": "2026-07-27T07:53:30.570Z",
     "customerCode": "CUST-6",
+    "__v": 0,
+    "phone": "—"
+  },
+  {
+    "_id": "6a670fb5a3ea993394922034",
+    "customerType": "company",
+    "businessType": "retailer",
+    "displayName": "Walk-in Customer",
+    "tags": [],
+    "paymentTerms": {
+      "type": "cod",
+      "creditDays": 0,
+      "creditLimit": 0
+    },
+    "defaultDiscountPercent": 0,
+    "creditStatus": {
+      "currentBalance": 0,
+      "overdueAmount": 0,
+      "availableCredit": 0,
+      "isOverdue": false,
+      "daysPastDue": 0,
+      "onCreditHold": false
+    },
+    "analytics": {
+      "totalOrders": 0,
+      "totalOrderValue": 0,
+      "totalPaidAmount": 0
+    },
+    "status": "active",
+    "deletedAt": null,
+    "contacts": [],
+    "shippingAddresses": [],
+    "createdAt": "2026-07-27T07:58:45.193Z",
+    "updatedAt": "2026-07-27T07:58:45.193Z",
+    "customerCode": "CUST-7",
+    "__v": 0,
+    "phone": "—"
+  },
+  {
+    "_id": "6a7961c48d5a5fc5816c38ff",
+    "customerType": "company",
+    "businessType": "retailer",
+    "displayName": "Dilum",
+    "tags": [],
+    "paymentTerms": {
+      "type": "cod",
+      "creditDays": 0,
+      "creditLimit": 0
+    },
+    "defaultDiscountPercent": 0,
+    "creditStatus": {
+      "currentBalance": 0,
+      "overdueAmount": 0,
+      "availableCredit": 0,
+      "isOverdue": false,
+      "daysPastDue": 0,
+      "onCreditHold": false
+    },
+    "analytics": {
+      "totalOrders": 0,
+      "totalOrderValue": 0,
+      "totalPaidAmount": 0
+    },
+    "status": "active",
+    "createdBy": "6a60dd14d7d790f4f2e73b4f",
+    "deletedAt": null,
+    "contacts": [],
+    "shippingAddresses": [],
+    "createdAt": "2026-08-10T05:29:40.683Z",
+    "updatedAt": "2026-08-10T05:29:40.683Z",
+    "customerCode": "CUST-8",
+    "__v": 0,
+    "phone": "—"
+  },
+  {
+    "_id": "6a7961c58d5a5fc5816c3901",
+    "customerType": "company",
+    "businessType": "retailer",
+    "displayName": "Dilum",
+    "tags": [],
+    "paymentTerms": {
+      "type": "cod",
+      "creditDays": 0,
+      "creditLimit": 0
+    },
+    "defaultDiscountPercent": 0,
+    "creditStatus": {
+      "currentBalance": 0,
+      "overdueAmount": 0,
+      "availableCredit": 0,
+      "isOverdue": false,
+      "daysPastDue": 0,
+      "onCreditHold": false
+    },
+    "analytics": {
+      "totalOrders": 0,
+      "totalOrderValue": 0,
+      "totalPaidAmount": 0
+    },
+    "status": "active",
+    "createdBy": "6a60dd14d7d790f4f2e73b4f",
+    "deletedAt": null,
+    "contacts": [],
+    "shippingAddresses": [],
+    "createdAt": "2026-08-10T05:29:41.008Z",
+    "updatedAt": "2026-08-10T05:30:14.897Z",
+    "customerCode": "CUST-9",
+    "__v": 0,
+    "phone": "—"
+  },
+  {
+    "_id": "6a7962108d5a5fc5816c3917",
+    "customerType": "company",
+    "businessType": "retailer",
+    "displayName": "D",
+    "tags": [],
+    "paymentTerms": {
+      "type": "cod",
+      "creditDays": 0,
+      "creditLimit": 0
+    },
+    "defaultDiscountPercent": 0,
+    "creditStatus": {
+      "currentBalance": 0,
+      "overdueAmount": 0,
+      "availableCredit": 0,
+      "isOverdue": false,
+      "daysPastDue": 0,
+      "onCreditHold": false
+    },
+    "analytics": {
+      "totalOrders": 0,
+      "totalOrderValue": 0,
+      "totalPaidAmount": 0
+    },
+    "status": "active",
+    "createdBy": "6a60dd14d7d790f4f2e73b4f",
+    "deletedAt": null,
+    "contacts": [],
+    "shippingAddresses": [],
+    "createdAt": "2026-08-10T05:30:56.857Z",
+    "updatedAt": "2026-08-10T05:30:56.857Z",
+    "customerCode": "CUST-10",
     "__v": 0,
     "phone": "—"
   }

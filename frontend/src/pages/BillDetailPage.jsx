@@ -9,6 +9,7 @@ import { useBill } from '../features/bills/useBills';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useSettings } from '../features/settings/useSettings';
+import DocumentPaymentAudit from '../components/finance/DocumentPaymentAudit';
 
 const statusVariant = {
     unpaid: 'warning', partially_paid: 'info', paid: 'success',
@@ -260,6 +261,9 @@ export default function BillDetailPage() {
                         </table>
                         </div>
                     </Card>
+
+                    {/* Payment Audit */}
+                    <DocumentPaymentAudit documentId={bill._id} />
                 </div>
 
                 <div className="space-y-6">

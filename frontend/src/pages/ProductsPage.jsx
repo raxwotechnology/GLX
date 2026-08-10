@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, Barcode } from 'lucide-react';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -12,6 +12,7 @@ import Pagination from '../components/ui/Pagination';
 import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ProductFormModal from '../features/products/ProductFormModal';
+import BarcodeGeneratorModal from '../components/barcode/BarcodeGeneratorModal';
 import { useProducts, useCategories, useDeleteProduct } from '../features/products/useProducts';
 import { useAuthStore } from '../store/authStore';
 import ExportButtons from '../components/ui/ExportButtons';
@@ -38,6 +39,8 @@ export default function ProductsPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [deletingProduct, setDeletingProduct] = useState(null);
+    const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
+    const [barcodeProduct, setBarcodeProduct] = useState(null);
 
     const { data, isLoading, isFetching } = useProducts(filters);
     const { data: categoriesData } = useCategories();
@@ -130,6 +133,17 @@ export default function ProductsPage() {
             width: '120px',
             render: (row) => (
                 <div className="flex gap-1">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setBarcodeProduct(row);
+                            setIsBarcodeModalOpen(true);
+                        }}
+                        className="p-1.5 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded transition"
+                        title="Generate Barcode Label"
+                    >
+                        <Barcode size={16} />
+                    </button>
                     {canManage && (
                         <>
                             <button
@@ -289,6 +303,14 @@ export default function ProductsPage() {
                 confirmText="Delete"
                 variant="danger"
                 loading={deleteProduct.isPending}
+            />
+            <BarcodeGeneratorModal
+                isOpen={isBarcodeModalOpen}
+                onClose={() => {
+                    setIsBarcodeModalOpen(false);
+                    setBarcodeProduct(null);
+                }}
+                initialProduct={barcodeProduct}
             />
         </div>
     );

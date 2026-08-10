@@ -83,6 +83,8 @@ import ExportCentrePage from './pages/ExportCentrePage';
 
 import ExpensesPage from './pages/ExpensesPage';
 import AttendancePoliciesPage from './pages/AttendancePoliciesPage';
+import BarcodeGeneratorPage from './pages/BarcodeGeneratorPage';
+import SystemProgressHandoffPage from './pages/SystemProgressHandoffPage';
 
 import EmployeesPage from './pages/EmployeesPage';
 import EmployeeFormPage from './pages/EmployeeFormPage';
@@ -141,6 +143,7 @@ function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/products" element={<ProtectedRoute requiredPermission="products.view"><ProductsPage /></ProtectedRoute>} />
+        <Route path="/barcode-generator" element={<ProtectedRoute requiredPermission="products.view"><BarcodeGeneratorPage /></ProtectedRoute>} />
         <Route path="/categories" element={<ProtectedRoute requiredPermission="products.view"><CategoriesPage /></ProtectedRoute>} />
         <Route path="/brands" element={<ProtectedRoute requiredPermission="products.view"><BrandsPage /></ProtectedRoute>} />
         <Route path="/customers" element={<ProtectedRoute requiredPermission="customers.view"><CustomersPage /></ProtectedRoute>} />
@@ -270,6 +273,7 @@ function App() {
         <Route path="/finance/bank-transactions" element={<ProtectedRoute requiredPermission="payments.view"><BankTransactionsPage /></ProtectedRoute>} />
         <Route path="/finance/income-tax" element={<ProtectedRoute requiredPermission="payments.view"><IncomeTaxPage /></ProtectedRoute>} />
         <Route path="/export-centre" element={<ProtectedRoute requiredPermission="dashboard.view"><ExportCentrePage /></ProtectedRoute>} />
+        <Route path="/system-handoff" element={<ProtectedRoute requiredPermission="admin.settings"><SystemProgressHandoffPage /></ProtectedRoute>} />
 
 
         <Route path="/profile" element={<ProfilePage />} />

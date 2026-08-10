@@ -17,10 +17,24 @@ export default function CustomerAutocompleteSelect({
     const [localCustomers, setLocalCustomers] = useState([]);
     const wrapperRef = useRef(null);
     const blurTimeoutRef = useRef(null);
+    const isCreatingRef = useRef(false);
 
-    // Initialize/sync local list with prop
+    // Fetch customers automatically if prop is not provided or empty
     useEffect(() => {
-        setLocalCustomers(customers);
+        if (Array.isArray(customers) && customers.length > 0) {
+            setLocalCustomers(customers);
+        } else {
+            api.get('/customers?limit=500')
+                .then((res) => {
+                    const list = res.data?.data || res.data || [];
+                    if (Array.isArray(list)) {
+                        setLocalCustomers(list);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch customers in Autocomplete:', err);
+                });
+        }
     }, [customers]);
 
     const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
@@ -30,7 +44,7 @@ export default function CustomerAutocompleteSelect({
         if (isValidObjectId(value)) {
             const found = localCustomers.find(c => c._id === value);
             if (found) {
-                setInputValue(found.displayName);
+                setInputValue(found.displayName || found.companyName || `${found.firstName || ''} ${found.lastName || ''}`.trim());
             }
             if (blurTimeoutRef.current) {
                 clearTimeout(blurTimeoutRef.current);
@@ -65,35 +79,50 @@ export default function CustomerAutocompleteSelect({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [wrapperRef]);
 
-    const filtered = localCustomers.filter(c =>
-        c.displayName?.toLowerCase().includes(inputValue.toLowerCase()) ||
-        c.customerCode?.toLowerCase().includes(inputValue.toLowerCase()) ||
-        c.primaryContact?.phone?.toLowerCase().includes(inputValue.toLowerCase())
-    );
+    const queryLower = (inputValue || '').toLowerCase();
+    const filtered = localCustomers.filter(c => {
+        const name = (c.displayName || c.companyName || `${c.firstName || ''} ${c.lastName || ''}`).toLowerCase();
+        const code = (c.customerCode || '').toLowerCase();
+        const phone = (c.primaryContact?.phone || c.primaryContact?.mobile || '').toLowerCase();
+        return name.includes(queryLower) || code.includes(queryLower) || phone.includes(queryLower);
+    });
 
     const handleSelectOption = (customer) => {
         if (blurTimeoutRef.current) {
             clearTimeout(blurTimeoutRef.current);
         }
-        setInputValue(customer.displayName);
+        const selectedName = customer.displayName || customer.companyName || `${customer.firstName || ''} ${customer.lastName || ''}`.trim();
+        setInputValue(selectedName);
         onChange(customer._id, customer);
         setIsOpen(false);
     };
 
     // Auto-create customer if it doesn't exist
     const handleAutoCreate = async (nameToCreate) => {
-        if (!nameToCreate.trim()) return;
+        if (!nameToCreate || !nameToCreate.trim() || isCreatingRef.current) return;
+
+        // Check if customer with exact same name already exists in local list
+        const nameClean = nameToCreate.trim();
+        const existing = localCustomers.find(c =>
+            (c.displayName || c.companyName || `${c.firstName || ''} ${c.lastName || ''}`).toLowerCase() === nameClean.toLowerCase()
+        );
+        if (existing) {
+            handleSelectOption(existing);
+            return;
+        }
+
+        isCreatingRef.current = true;
         if (blurTimeoutRef.current) {
             clearTimeout(blurTimeoutRef.current);
         }
 
         // Parse name and phone
-        const match = nameToCreate.trim().match(/(\+?\d{8,14})/);
+        const match = nameClean.match(/(\+?\d{8,14})/);
         let phone = '';
-        let displayName = nameToCreate.trim();
+        let displayName = nameClean;
         if (match) {
             phone = match[1];
-            displayName = nameToCreate.trim().replace(phone, '').trim();
+            displayName = nameClean.replace(phone, '').trim();
             if (!displayName) {
                 displayName = `Customer ${phone}`;
             }
@@ -121,7 +150,10 @@ export default function CustomerAutocompleteSelect({
                 toast.success(`Created customer: ${newCust.displayName}`);
                 
                 // Add to local state list
-                setLocalCustomers(prev => [...prev, newCust]);
+                setLocalCustomers(prev => {
+                    if (prev.some(c => c._id === newCust._id)) return prev;
+                    return [...prev, newCust];
+                });
                 setInputValue(newCust.displayName);
                 onChange(newCust._id, newCust);
                 onCreated?.(newCust);
@@ -129,6 +161,8 @@ export default function CustomerAutocompleteSelect({
         } catch (err) {
             console.error('Customer auto-creation failed:', err.response?.data || err);
             toast.error(err.response?.data?.message || 'Failed to auto-create new customer');
+        } finally {
+            isCreatingRef.current = false;
         }
     };
 
@@ -142,13 +176,11 @@ export default function CustomerAutocompleteSelect({
                 return;
             }
             // Check if exactly matches an option
-            const exactMatch = localCustomers.find(c => c.displayName.toLowerCase() === inputValue.trim().toLowerCase());
+            const exactMatch = localCustomers.find(c =>
+                (c.displayName || c.companyName || `${c.firstName || ''} ${c.lastName || ''}`).toLowerCase() === inputValue.trim().toLowerCase()
+            );
             if (exactMatch) {
-                setInputValue(exactMatch.displayName);
-                onChange(exactMatch._id, exactMatch);
-            } else {
-                // If it is a new name, auto-create it
-                handleAutoCreate(inputValue);
+                handleSelectOption(exactMatch);
             }
         }, 250);
     };
@@ -203,8 +235,8 @@ export default function CustomerAutocompleteSelect({
                             onMouseDown={() => handleSelectOption(c)}
                             className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition flex items-center justify-between"
                         >
-                            <span className="font-medium text-gray-900">{c.displayName}</span>
-                            <span className="text-gray-400 text-xs font-mono">({c.customerCode}{c.primaryContact?.phone ? ` - ${c.primaryContact.phone}` : ''})</span>
+                            <span className="font-medium text-gray-900">{c.displayName || c.companyName || `${c.firstName || ''} ${c.lastName || ''}`.trim()}</span>
+                            <span className="text-gray-400 text-xs font-mono">({c.customerCode || 'CUST'}{c.primaryContact?.phone ? ` - ${c.primaryContact.phone}` : ''})</span>
                         </button>
                     ))}
                     {inputValue.trim() && !localCustomers.some(c => c.displayName.toLowerCase() === inputValue.trim().toLowerCase()) && (

@@ -19,6 +19,7 @@ import { exportDocumentToPDF, exportElementToPDF } from '../utils/dataExport';
 import { getApiUrl } from '../api/config';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsApi } from '../features/payments/paymentsApi';
+import DocumentPaymentAudit from '../components/finance/DocumentPaymentAudit';
 
 const paymentStatusVariant = {
     unpaid: 'warning', partially_paid: 'info', paid: 'success',
@@ -344,6 +345,9 @@ export default function InvoiceDetailPage() {
                         </table>
                         </div>
                     </Card>
+
+                    {/* Payment Audit & History */}
+                    <DocumentPaymentAudit documentId={inv._id} />
 
                     {(inv.notes || inv.paymentInstructions) && (
                         <Card className="p-6">

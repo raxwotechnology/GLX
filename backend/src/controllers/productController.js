@@ -398,3 +398,52 @@ export const getProductForecasting = asyncHandler(async (req, res) => {
         }
     });
 });
+
+/**
+ * GET /api/products/barcode/:code
+ * Fast Barcode Reader lookup for POS and Billing
+ */
+export const getProductByBarcode = asyncHandler(async (req, res) => {
+    const rawCode = (req.params.code || '').trim();
+    if (!rawCode) {
+        res.status(400); throw new Error('Barcode / product code is required');
+    }
+
+    const codeRegex = new RegExp(`^${rawCode}$`, 'i');
+    
+    // Find matching product by barcode, sku, productCode, or short code
+    let product = await Product.findOne({
+        $or: [
+            { barcode: codeRegex },
+            { sku: codeRegex },
+            { productCode: codeRegex },
+            { productShortCode: codeRegex },
+            { barcode: rawCode },
+        ],
+        deletedAt: null,
+    })
+    .populate('categoryId', 'name code')
+    .populate('brandId', 'name');
+
+    if (!product) {
+        // Partial fallback search if exact match fails
+        product = await Product.findOne({
+            $or: [
+                { barcode: { $regex: rawCode, $options: 'i' } },
+                { sku: { $regex: rawCode, $options: 'i' } },
+                { productCode: { $regex: rawCode, $options: 'i' } },
+                { name: { $regex: rawCode, $options: 'i' } },
+            ],
+            deletedAt: null,
+        })
+        .populate('categoryId', 'name code')
+        .populate('brandId', 'name');
+    }
+
+    if (!product) {
+        res.status(404);
+        throw new Error(`No product found matching barcode "${rawCode}"`);
+    }
+
+    res.json({ success: true, data: product });
+});

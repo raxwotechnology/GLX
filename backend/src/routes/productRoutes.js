@@ -8,6 +8,7 @@ import {
     predictYield,
     getNextProductCode,
     getProductForecasting,
+    getProductByBarcode,
 } from '../controllers/productController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
@@ -20,6 +21,7 @@ router.use(protect);
 
 router.get('/predict-yield', requirePermission('products.view'), predictYield);
 router.get('/next-code', requirePermission('products.create'), getNextProductCode);
+router.get('/barcode/:code', requirePermission('products.view'), getProductByBarcode);
 
 router
     .route('/')

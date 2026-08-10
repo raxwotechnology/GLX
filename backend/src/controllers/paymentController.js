@@ -320,15 +320,16 @@ export const updatePaymentChequeStatus = asyncHandler(async (req, res) => {
 
 export const getPayments = asyncHandler(async (req, res) => {
     const {
-        direction, customerId, supplierId, method, status,
-        startDate, endDate,
-        page = 1, limit = 20,
+        direction, voucherType, customerId, supplierId, method, status,
+        startDate, endDate, search,
+        page = 1, limit = 50,
     } = req.query;
 
     const { documentId } = req.query;
 
     const filter = {};
     if (direction) filter.direction = direction;
+    if (voucherType) filter.voucherType = voucherType;
     if (customerId) filter.customerId = customerId;
     if (documentId) {
         filter['allocations.documentId'] = documentId;
@@ -341,15 +342,27 @@ export const getPayments = asyncHandler(async (req, res) => {
         if (startDate) filter.paymentDate.$gte = new Date(startDate);
         if (endDate) filter.paymentDate.$lte = new Date(endDate);
     }
+    if (search) {
+        const searchRegex = new RegExp(search, 'i');
+        filter.$or = [
+            { paymentNumber: searchRegex },
+            { partyName: searchRegex },
+            { notes: searchRegex },
+            { hireNoteNumber: searchRegex },
+            { vehicleNo: searchRegex },
+            { 'allocations.documentNumber': searchRegex },
+        ];
+    }
 
     const skip = (Number(page) - 1) * Number(limit);
 
     const [payments, total] = await Promise.all([
         Payment.find(filter)
-            .populate('customerId', 'displayName customerCode')
-            .populate('supplierId', 'displayName supplierCode')
+            .populate('customerId', 'displayName customerCode companyName')
+            .populate('supplierId', 'displayName supplierCode companyName')
             .populate('receivedBy', 'firstName lastName')
-            .sort({ paymentDate: -1 }).skip(skip).limit(Number(limit)),
+            .populate('createdBy', 'firstName lastName')
+            .sort({ paymentDate: -1, createdAt: -1 }).skip(skip).limit(Number(limit)),
         Payment.countDocuments(filter),
     ]);
 
@@ -363,10 +376,328 @@ export const getPayments = asyncHandler(async (req, res) => {
 
 export const getPaymentById = asyncHandler(async (req, res) => {
     const payment = await Payment.findById(req.params.id)
-        .populate('customerId', 'displayName customerCode')
-        .populate('supplierId', 'displayName supplierCode')
+        .populate('customerId', 'displayName customerCode companyName')
+        .populate('supplierId', 'displayName supplierCode companyName')
         .populate('receivedBy', 'firstName lastName')
         .populate('createdBy', 'firstName lastName');
-    if (!payment) { res.status(404); throw new Error('Payment not found'); }
+    if (!payment) { res.status(404); throw new Error('Payment or Voucher not found'); }
     res.json({ success: true, data: payment });
 });
+
+/**
+ * POST /api/payments/voucher
+ * Issue a Voucher (Cash OUT / Payment Out)
+ * Reason Types:
+ * 1. customer_advance_refund (Customer Advance Refund)
+ * 2. supplier_payment (Supplier Payment)
+ * 3. transport_hire (Transport & Hire Expense)
+ * 4. operational_expense (Petty Cash / Daily Yard Expenses)
+ */
+export const createVoucher = asyncHandler(async (req, res) => {
+    const {
+        voucherType,
+        customerId,
+        supplierId,
+        partyName,
+        bankAccountId,
+        amount,
+        method = 'cash',
+        chequeNumber,
+        chequeDate,
+        bankName,
+        transactionReference,
+        hireNoteNumber,
+        vehicleNo,
+        transportDriver,
+        notes,
+        signatureNote,
+        allocations = [],
+    } = req.body;
+
+    if (!voucherType) {
+        res.status(400); throw new Error('voucherType is required for issuing a voucher');
+    }
+
+    const numAmount = Number(amount);
+    if (!numAmount || numAmount <= 0) {
+        res.status(400); throw new Error('Valid positive voucher amount is required');
+    }
+
+    const session = await mongoose.startSession();
+    let voucher;
+
+    try {
+        await session.withTransaction(async () => {
+            let resolvedPartyName = partyName || '';
+
+            // Handle party name resolution and party validation
+            if (voucherType === 'customer_advance_refund') {
+                if (!customerId) throw new Error('customerId is required for Customer Advance Refund');
+                const c = await Customer.findById(customerId).session(session);
+                if (!c) throw new Error('Customer not found');
+                resolvedPartyName = c.displayName || c.companyName || `${c.firstName} ${c.lastName}`;
+            } else if (voucherType === 'supplier_payment') {
+                if (!supplierId) throw new Error('supplierId is required for Supplier Payment');
+                const Supplier = (await import('../models/Supplier.js')).default;
+                const s = await Supplier.findById(supplierId).session(session);
+                if (!s) throw new Error('Supplier not found');
+                resolvedPartyName = s.displayName || s.companyName;
+            }
+
+            // Update bank account if provided
+            if (bankAccountId) {
+                const bankAccount = await BankAccount.findById(bankAccountId).session(session);
+                if (!bankAccount) throw new Error('Selected bank account not found');
+                bankAccount.balance = +(bankAccount.balance - numAmount).toFixed(2);
+                await bankAccount.save({ session });
+            }
+
+            // Create Voucher payment doc
+            voucher = new Payment({
+                direction: 'paid',
+                voucherType,
+                voucherCategory: voucherType,
+                customerId: voucherType === 'customer_advance_refund' ? customerId : undefined,
+                supplierId: voucherType === 'supplier_payment' ? supplierId : undefined,
+                partyName: resolvedPartyName,
+                bankAccountId,
+                amount: numAmount,
+                method,
+                chequeNumber,
+                chequeDate: chequeDate ? new Date(chequeDate) : undefined,
+                bankName,
+                transactionReference,
+                hireNoteNumber,
+                vehicleNo,
+                transportDriver,
+                notes,
+                signatureNote,
+                allocations,
+                receivedBy: req.user._id,
+                createdBy: req.user._id,
+            });
+
+            await voucher.save({ session });
+
+            // Apply allocations or update document amounts
+            for (const alloc of allocations) {
+                if (alloc.documentType === 'invoice' && alloc.documentId) {
+                    const inv = await Invoice.findById(alloc.documentId).session(session);
+                    if (inv) {
+                        if (voucherType === 'customer_advance_refund') {
+                            inv.amountPaid = Math.max(0, +(inv.amountPaid - alloc.amount).toFixed(2));
+                        } else {
+                            inv.amountPaid = +(inv.amountPaid + alloc.amount).toFixed(2);
+                        }
+                        inv.lastPaymentDate = voucher.paymentDate;
+                        await inv.save({ session });
+                    }
+                } else if (alloc.documentType === 'bill' && alloc.documentId) {
+                    const bill = await Bill.findById(alloc.documentId).session(session);
+                    if (bill) {
+                        bill.amountPaid = +(bill.amountPaid + alloc.amount).toFixed(2);
+                        bill.lastPaymentDate = voucher.paymentDate;
+                        await bill.save({ session });
+                    }
+                }
+            }
+
+            // Update customer balance if advance refund
+            if (voucherType === 'customer_advance_refund' && customerId) {
+                await updateCustomerBalance(customerId, session);
+            }
+        });
+
+        // Broadcast financial update
+        try {
+            broadcast('financial_update', {
+                message: `New Voucher issued: ${voucher.paymentNumber} (${voucherType})`,
+            });
+        } catch (_) {}
+
+        const populated = await Payment.findById(voucher._id)
+            .populate('customerId', 'displayName customerCode companyName')
+            .populate('supplierId', 'displayName supplierCode companyName')
+            .populate('bankAccountId', 'bankName accountNumber accountName')
+            .populate('receivedBy', 'firstName lastName');
+
+        res.status(201).json({ success: true, data: populated });
+    } catch (err) {
+        res.status(400);
+        throw new Error(err.message || 'Failed to issue voucher');
+    } finally {
+        session.endSession();
+    }
+});
+
+/**
+ * GET /api/payments/linkable-documents
+ * Search for Invoices, Quotations, Estimates, Bills, GRNs for document linking during Voucher / Receipt entry
+ */
+export const searchLinkableDocuments = asyncHandler(async (req, res) => {
+    const { customerId, supplierId, search, type } = req.query;
+    const documents = [];
+
+    // Customer documents (Invoices, Quotations, Estimates)
+    if (customerId || type === 'customer') {
+        const queryFilter = {};
+        if (customerId) queryFilter.customerId = customerId;
+
+        // Invoices
+        const invList = await Invoice.find(queryFilter)
+            .select('_id invoiceNumber invoiceCode grandTotal amountPaid status createdAt')
+            .sort({ createdAt: -1 })
+            .limit(30);
+
+        invList.forEach(inv => {
+            const balanceDue = +(inv.grandTotal - (inv.amountPaid || 0)).toFixed(2);
+            documents.push({
+                documentType: 'invoice',
+                documentId: inv._id,
+                documentNumber: inv.invoiceNumber || inv.invoiceCode,
+                totalAmount: inv.grandTotal,
+                amountPaid: inv.amountPaid || 0,
+                balanceDue: balanceDue > 0 ? balanceDue : 0,
+                status: inv.status,
+                label: `Invoice: ${inv.invoiceNumber || inv.invoiceCode} (Total: LKR ${inv.grandTotal.toLocaleString()})`,
+            });
+        });
+
+        // Quotations & Estimates
+        const Quotation = (await import('../models/Quotation.js')).default;
+        const qList = await Quotation.find(queryFilter)
+            .select('_id quotationCode quoteNumber documentType grandTotal status createdAt')
+            .sort({ createdAt: -1 })
+            .limit(30);
+
+        qList.forEach(q => {
+            documents.push({
+                documentType: q.documentType || 'quotation',
+                documentId: q._id,
+                documentNumber: q.quoteNumber || q.quotationCode,
+                totalAmount: q.grandTotal,
+                amountPaid: 0,
+                balanceDue: q.grandTotal,
+                status: q.status,
+                label: `${q.documentType === 'estimate' ? 'Estimate' : 'Quotation'}: ${q.quoteNumber || q.quotationCode} (LKR ${q.grandTotal.toLocaleString()})`,
+            });
+        });
+    }
+
+    // Supplier documents (Bills & GRNs)
+    if (supplierId || type === 'supplier') {
+        const queryFilter = {};
+        if (supplierId) queryFilter.supplierId = supplierId;
+
+        const billList = await Bill.find(queryFilter)
+            .select('_id billNumber totalAmount amountPaid status createdAt')
+            .sort({ createdAt: -1 })
+            .limit(30);
+
+        billList.forEach(b => {
+            const balanceDue = +(b.totalAmount - (b.amountPaid || 0)).toFixed(2);
+            documents.push({
+                documentType: 'bill',
+                documentId: b._id,
+                documentNumber: b.billNumber,
+                totalAmount: b.totalAmount,
+                amountPaid: b.amountPaid || 0,
+                balanceDue: balanceDue > 0 ? balanceDue : 0,
+                status: b.status,
+                label: `Supplier Bill: ${b.billNumber} (Total: LKR ${b.totalAmount.toLocaleString()})`,
+            });
+        });
+
+        const GoodsReceiptNote = (await import('../models/GoodsReceiptNote.js')).default;
+        const grnList = await GoodsReceiptNote.find(queryFilter)
+            .select('_id grnNumber totalAmount status createdAt')
+            .sort({ createdAt: -1 })
+            .limit(30);
+
+        grnList.forEach(grn => {
+            documents.push({
+                documentType: 'grn',
+                documentId: grn._id,
+                documentNumber: grn.grnNumber,
+                totalAmount: grn.totalAmount || 0,
+                amountPaid: 0,
+                balanceDue: grn.totalAmount || 0,
+                status: grn.status,
+                label: `GRN: ${grn.grnNumber}`,
+            });
+        });
+    }
+
+    // Filter by search text if provided
+    let results = documents;
+    if (search) {
+        const s = search.toLowerCase();
+        results = documents.filter(d => 
+            d.documentNumber.toLowerCase().includes(s) || 
+            d.label.toLowerCase().includes(s)
+        );
+    }
+
+    res.json({ success: true, count: results.length, data: results });
+});
+
+/**
+ * GET /api/payments/document-summary/:documentId
+ * Fetch Payment History Audit & Total Paid Summary for a given document (Invoice, Quotation, Estimate, Bill, GRN, etc.)
+ */
+export const getDocumentPaymentSummary = asyncHandler(async (req, res) => {
+    const { documentId } = req.params;
+    if (!documentId) {
+        res.status(400); throw new Error('documentId is required');
+    }
+
+    // Find all payments / vouchers where allocations contain this documentId
+    const payments = await Payment.find({
+        'allocations.documentId': documentId,
+        status: 'confirmed',
+    })
+    .populate('customerId', 'displayName customerCode companyName')
+    .populate('supplierId', 'displayName supplierCode companyName')
+    .populate('receivedBy', 'firstName lastName')
+    .populate('createdBy', 'firstName lastName')
+    .sort({ paymentDate: -1 });
+
+    let totalPaidSoFar = 0;
+    const auditLogs = payments.map(p => {
+        const alloc = p.allocations.find(a => a.documentId?.toString() === documentId.toString());
+        const allocAmount = alloc ? alloc.amount : p.amount;
+        
+        // Receipts add to net paid; Advance Refunds deduct from net paid
+        if (p.direction === 'paid' || p.voucherType === 'customer_advance_refund') {
+            totalPaidSoFar -= allocAmount;
+        } else {
+            totalPaidSoFar += allocAmount;
+        }
+
+        return {
+            paymentId: p._id,
+            paymentNumber: p.paymentNumber,
+            direction: p.direction,
+            voucherType: p.voucherType,
+            paymentDate: p.paymentDate,
+            amount: allocAmount,
+            totalPaymentAmount: p.amount,
+            method: p.method,
+            chequeNumber: p.chequeNumber,
+            signatureNote: p.signatureNote,
+            notes: p.notes,
+            partyName: p.partyName,
+            handledBy: p.receivedBy ? `${p.receivedBy.firstName || ''} ${p.receivedBy.lastName || ''}`.trim() : 'System Administrator',
+        };
+    });
+
+    res.json({
+        success: true,
+        documentId,
+        totalPaidSoFar: +totalPaidSoFar.toFixed(2),
+        formattedTotalPaid: `LKR ${totalPaidSoFar.toLocaleString('en-LK', { minimumFractionDigits: 2 })}`,
+        summaryText: `Total amount settled so far via vouchers/receipts for this document: LKR ${totalPaidSoFar.toLocaleString('en-LK', { minimumFractionDigits: 2 })}`,
+        count: auditLogs.length,
+        payments: auditLogs,
+    });
+});
