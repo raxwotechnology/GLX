@@ -12,6 +12,78 @@ import LeaveStructure from '../models/LeaveStructure.js';
 import AttendancePolicy from '../models/AttendancePolicy.js';
 
 // ============================================================
+// DEPARTMENTS
+// ============================================================
+
+export const createDepartment = asyncHandler(async (req, res) => {
+    const dept = await Department.create(req.body);
+    res.status(201).json({ success: true, data: dept });
+});
+
+export const getDepartments = asyncHandler(async (req, res) => {
+    const { isActive } = req.query;
+    const filter = {};
+    if (isActive !== undefined) filter.isActive = isActive === 'true';
+
+    const depts = await Department.find(filter)
+        .populate('managerId', 'firstName lastName employeeCode')
+        .populate('parentDepartmentId', 'name code')
+        .sort({ name: 1 });
+
+    res.json({ success: true, count: depts.length, data: depts });
+});
+
+export const updateDepartment = asyncHandler(async (req, res) => {
+    const dept = await Department.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!dept) { res.status(404); throw new Error('Department not found'); }
+    res.json({ success: true, data: dept });
+});
+
+export const deleteDepartment = asyncHandler(async (req, res) => {
+    const dept = await Department.findById(req.params.id);
+    if (!dept) { res.status(404); throw new Error('Department not found'); }
+    dept.deletedAt = new Date();
+    dept.isActive = false;
+    await dept.save();
+    res.json({ success: true });
+});
+
+// ============================================================
+// DESIGNATIONS
+// ============================================================
+
+export const createDesignation = asyncHandler(async (req, res) => {
+    const des = await Designation.create(req.body);
+    res.status(201).json({ success: true, data: des });
+});
+
+export const getDesignations = asyncHandler(async (req, res) => {
+    const { departmentId, isActive } = req.query;
+    const filter = {};
+    if (departmentId) filter.departmentId = departmentId;
+    if (isActive !== undefined) filter.isActive = isActive === 'true';
+
+    const list = await Designation.find(filter)
+        .populate('departmentId', 'name code')
+        .sort({ level: 1, name: 1 });
+
+    res.json({ success: true, count: list.length, data: list });
+});
+
+export const updateDesignation = asyncHandler(async (req, res) => {
+    const d = await Designation.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!d) { res.status(404); throw new Error('Designation not found'); }
+    res.json({ success: true, data: d });
+});
+
+export const deleteDesignation = asyncHandler(async (req, res) => {
+    const d = await Designation.findById(req.params.id);
+    if (!d) { res.status(404); throw new Error('Designation not found'); }
+    d.deletedAt = new Date(); d.isActive = false; await d.save();
+    res.json({ success: true });
+});
+
+// ============================================================
 // EMPLOYEES
 // ============================================================
 
