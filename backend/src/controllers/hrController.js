@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler';
+import User from '../models/User.js';
 import Department from '../models/Department.js';
 import Designation from '../models/Designation.js';
 import Employee from '../models/Employee.js';
@@ -9,97 +10,65 @@ import Holiday from '../models/Holiday.js';
 import SalaryStructure from '../models/SalaryStructure.js';
 import LeaveStructure from '../models/LeaveStructure.js';
 import AttendancePolicy from '../models/AttendancePolicy.js';
-import SalaryAdvance from '../models/SalaryAdvance.js';
-
-// ============================================================
-// DEPARTMENTS
-// ============================================================
-
-export const createDepartment = asyncHandler(async (req, res) => {
-    const dept = await Department.create(req.body);
-    res.status(201).json({ success: true, data: dept });
-});
-
-export const getDepartments = asyncHandler(async (req, res) => {
-    const { isActive } = req.query;
-    const filter = {};
-    if (isActive !== undefined) filter.isActive = isActive === 'true';
-
-    const depts = await Department.find(filter)
-        .populate('managerId', 'firstName lastName employeeCode')
-        .populate('parentDepartmentId', 'name code')
-        .sort({ name: 1 });
-
-    res.json({ success: true, count: depts.length, data: depts });
-});
-
-export const updateDepartment = asyncHandler(async (req, res) => {
-    const dept = await Department.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!dept) { res.status(404); throw new Error('Department not found'); }
-    res.json({ success: true, data: dept });
-});
-
-export const deleteDepartment = asyncHandler(async (req, res) => {
-    const dept = await Department.findById(req.params.id);
-    if (!dept) { res.status(404); throw new Error('Department not found'); }
-    dept.deletedAt = new Date();
-    dept.isActive = false;
-    await dept.save();
-    res.json({ success: true });
-});
-
-// ============================================================
-// DESIGNATIONS
-// ============================================================
-
-export const createDesignation = asyncHandler(async (req, res) => {
-    const des = await Designation.create(req.body);
-    res.status(201).json({ success: true, data: des });
-});
-
-export const getDesignations = asyncHandler(async (req, res) => {
-    const { departmentId, isActive } = req.query;
-    const filter = {};
-    if (departmentId) filter.departmentId = departmentId;
-    if (isActive !== undefined) filter.isActive = isActive === 'true';
-
-    const list = await Designation.find(filter)
-        .populate('departmentId', 'name code')
-        .sort({ level: 1, name: 1 });
-
-    res.json({ success: true, count: list.length, data: list });
-});
-
-export const updateDesignation = asyncHandler(async (req, res) => {
-    const d = await Designation.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!d) { res.status(404); throw new Error('Designation not found'); }
-    res.json({ success: true, data: d });
-});
-
-export const deleteDesignation = asyncHandler(async (req, res) => {
-    const d = await Designation.findById(req.params.id);
-    if (!d) { res.status(404); throw new Error('Designation not found'); }
-    d.deletedAt = new Date(); d.isActive = false; await d.save();
-    res.json({ success: true });
-});
 
 // ============================================================
 // EMPLOYEES
 // ============================================================
 
 export const createEmployee = asyncHandler(async (req, res) => {
+    let linkedUserId = req.body.userId || null;
+
+    if (req.body.createLogin) {
+        const loginEmail = (req.body.loginEmail || req.body.email || '').trim().toLowerCase();
+        const loginPassword = req.body.loginPassword;
+        const loginRole = req.body.loginRole || 'employee';
+
+        if (!loginEmail) {
+            res.status(400);
+            throw new Error('Email is required to create a user login.');
+        }
+        if (!loginPassword || loginPassword.length < 6) {
+            res.status(400);
+            throw new Error('Password must be at least 6 characters for user login.');
+        }
+
+        const existingUser = await User.findOne({ email: loginEmail });
+        if (existingUser) {
+            res.status(400);
+            throw new Error(`A user account with email "${loginEmail}" already exists in the system.`);
+        }
+
+        const newUser = await User.create({
+            firstName: req.body.firstName || '',
+            lastName: req.body.lastName || '',
+            email: loginEmail,
+            phone: req.body.phone || req.body.mobile || '',
+            password: loginPassword,
+            role: loginRole,
+            createdBy: req.user._id,
+        });
+
+        linkedUserId = newUser._id;
+    }
+
     if (req.body.leaveStructureId) {
         const ls = await LeaveStructure.findById(req.body.leaveStructureId);
         if (ls) req.body.leaveBalances = ls.leaveBalances;
     }
-    const emp = new Employee({ ...req.body, createdBy: req.user._id });
+
+    const emp = new Employee({
+        ...req.body,
+        userId: linkedUserId,
+        createdBy: req.user._id,
+    });
     await emp.save();
 
     const populated = await Employee.findById(emp._id)
         .populate('departmentId', 'name code')
         .populate('designationId', 'name code')
         .populate('reportsToId', 'firstName lastName employeeCode')
-        .populate('leaveStructureId', 'name code leaveBalances');
+        .populate('leaveStructureId', 'name code leaveBalances')
+        .populate('userId', 'email role isActive');
 
     res.status(201).json({ success: true, data: populated });
 });
@@ -143,6 +112,7 @@ export const getEmployees = asyncHandler(async (req, res) => {
             .populate('departmentId', 'name code')
             .populate('designationId', 'name code')
             .populate('reportsToId', 'firstName lastName employeeCode')
+            .populate('userId', 'email role isActive')
             .sort(sortObj).skip(skip).limit(Number(limit)),
         Employee.countDocuments(filter),
     ]);
@@ -174,16 +144,61 @@ export const getEmployeeById = asyncHandler(async (req, res) => {
 });
 
 export const updateEmployee = asyncHandler(async (req, res) => {
+    const existingEmp = await Employee.findById(req.params.id);
+    if (!existingEmp) {
+        res.status(404);
+        throw new Error('Employee not found');
+    }
+
+    let linkedUserId = existingEmp.userId;
+
+    if (req.body.createLogin && !linkedUserId) {
+        const loginEmail = (req.body.loginEmail || req.body.email || existingEmp.email || '').trim().toLowerCase();
+        const loginPassword = req.body.loginPassword;
+        const loginRole = req.body.loginRole || 'employee';
+
+        if (!loginEmail) {
+            res.status(400);
+            throw new Error('Email is required to create a user login.');
+        }
+        if (!loginPassword || loginPassword.length < 6) {
+            res.status(400);
+            throw new Error('Password must be at least 6 characters for user login.');
+        }
+
+        const existingUser = await User.findOne({ email: loginEmail });
+        if (existingUser) {
+            res.status(400);
+            throw new Error(`A user account with email "${loginEmail}" already exists in the system.`);
+        }
+
+        const newUser = await User.create({
+            firstName: req.body.firstName || existingEmp.firstName || '',
+            lastName: req.body.lastName || existingEmp.lastName || '',
+            email: loginEmail,
+            phone: req.body.phone || req.body.mobile || existingEmp.phone || '',
+            password: loginPassword,
+            role: loginRole,
+            createdBy: req.user._id,
+        });
+
+        linkedUserId = newUser._id;
+    }
+
     if (req.body.leaveStructureId) {
         const ls = await LeaveStructure.findById(req.body.leaveStructureId);
         if (ls) req.body.leaveBalances = ls.leaveBalances;
     }
+
     const emp = await Employee.findByIdAndUpdate(
         req.params.id,
-        { ...req.body, updatedBy: req.user._id },
+        { ...req.body, userId: linkedUserId, updatedBy: req.user._id },
         { new: true, runValidators: true }
-    );
-    if (!emp) { res.status(404); throw new Error('Employee not found'); }
+    )
+    .populate('departmentId', 'name code')
+    .populate('designationId', 'name code')
+    .populate('userId', 'email role isActive');
+
     res.json({ success: true, data: emp });
 });
 
@@ -195,10 +210,6 @@ export const deleteEmployee = asyncHandler(async (req, res) => {
     await emp.save();
     res.json({ success: true });
 });
-
-// ============================================================
-// SHIFTS
-// ============================================================
 
 export const createShift = asyncHandler(async (req, res) => {
     const shift = await Shift.create(req.body);
@@ -903,7 +914,17 @@ export const importFingerprintAttendance = asyncHandler(async (req, res) => {
 // ============================================================
 
 export const createSalaryAdvance = asyncHandler(async (req, res) => {
-    const { employeeId, date, amount, advanceType, requestedPercentage, reason } = req.body;
+    let { employeeId, date, amount, advanceType, requestedPercentage, reason } = req.body;
+
+    if (req.user?.role === 'employee' || !employeeId) {
+        const linkedEmp = await Employee.findOne({ userId: req.user._id });
+        if (!linkedEmp) {
+            res.status(404);
+            throw new Error('Employee profile not found for this user');
+        }
+        employeeId = linkedEmp._id;
+    }
+
     const emp = await Employee.findById(employeeId);
     if (!emp) {
         res.status(404);
@@ -971,7 +992,17 @@ export const declineSalaryAdvance = asyncHandler(async (req, res) => {
 export const getSalaryAdvances = asyncHandler(async (req, res) => {
     const { employeeId } = req.params;
     const filter = {};
-    if (employeeId) filter.employeeId = employeeId;
+
+    if (req.user?.role === 'employee') {
+        const linkedEmp = await Employee.findOne({ userId: req.user._id });
+        if (!linkedEmp) {
+            return res.json({ success: true, data: [] });
+        }
+        filter.employeeId = linkedEmp._id;
+    } else {
+        if (employeeId) filter.employeeId = employeeId;
+        else if (req.query.employeeId) filter.employeeId = req.query.employeeId;
+    }
     if (req.query.status) filter.status = req.query.status;
 
     const advances = await SalaryAdvance.find(filter)
@@ -980,6 +1011,136 @@ export const getSalaryAdvances = asyncHandler(async (req, res) => {
         .populate('rejectedBy', 'firstName lastName')
         .sort({ date: -1 });
     res.json({ success: true, data: advances });
+});
+
+export const getMyAdvanceLedger = asyncHandler(async (req, res) => {
+    let targetEmployeeId = req.query.employeeId || req.params.employeeId;
+
+    if (req.user?.role === 'employee' || !targetEmployeeId) {
+        const linkedEmp = await Employee.findOne({ userId: req.user._id });
+        if (!linkedEmp) {
+            res.status(404);
+            throw new Error('Employee profile not found for this user');
+        }
+        targetEmployeeId = linkedEmp._id;
+    }
+
+    const emp = await Employee.findById(targetEmployeeId)
+        .populate('departmentId', 'name')
+        .populate('designationId', 'name');
+
+    if (!emp) {
+        res.status(404);
+        throw new Error('Employee not found');
+    }
+
+    const advances = await SalaryAdvance.find({ employeeId: targetEmployeeId })
+        .populate('approvedBy', 'firstName lastName')
+        .populate('rejectedBy', 'firstName lastName')
+        .populate('deductedPayrollId', 'periodMonth periodYear status')
+        .sort({ date: 1, createdAt: 1 });
+
+    let totalRequested = 0;
+    let totalApproved = 0;
+    let totalPending = 0;
+    let totalRejected = 0;
+    let totalDeducted = 0;
+    let runningBalance = 0;
+
+    const ledgerEntries = [];
+
+    advances.forEach((adv) => {
+        const amt = adv.amount || 0;
+        totalRequested += amt;
+
+        if (adv.status === 'pending') {
+            totalPending += amt;
+            ledgerEntries.push({
+                _id: adv._id,
+                date: adv.date,
+                type: 'request',
+                description: `Requested Salary Advance (${adv.advanceType === 'percentage' ? adv.requestedPercentage + '%' : 'LKR ' + amt.toLocaleString()}) - ${adv.reason || 'No reason'}`,
+                amount: amt,
+                deduction: 0,
+                status: 'pending',
+                runningBalance: runningBalance,
+            });
+        } else if (adv.status === 'rejected') {
+            totalRejected += amt;
+            ledgerEntries.push({
+                _id: adv._id,
+                date: adv.date,
+                type: 'rejected',
+                description: `Advance Request Rejected (${adv.rejectedReason || 'Declined by Admin'})`,
+                amount: amt,
+                deduction: 0,
+                status: 'rejected',
+                runningBalance: runningBalance,
+            });
+        } else if (adv.status === 'approved') {
+            totalApproved += amt;
+            runningBalance += amt;
+
+            ledgerEntries.push({
+                _id: adv._id,
+                date: adv.date,
+                type: 'advance_issued',
+                description: `Salary Advance Approved (${adv.advanceType === 'percentage' ? adv.requestedPercentage + '%' : 'LKR ' + amt.toLocaleString()})`,
+                amount: amt,
+                deduction: 0,
+                status: adv.isDeducted ? 'approved' : 'active',
+                runningBalance: runningBalance,
+            });
+
+            if (adv.isDeducted) {
+                totalDeducted += amt;
+                runningBalance -= amt;
+                const monthName = adv.deductedPayrollId?.periodMonth
+                    ? new Date(2000, adv.deductedPayrollId.periodMonth - 1, 1).toLocaleString('en-US', { month: 'short' })
+                    : '';
+                const periodLabel = adv.deductedPayrollId
+                    ? `${monthName} ${adv.deductedPayrollId.periodYear}`
+                    : 'Payroll';
+
+                ledgerEntries.push({
+                    _id: `${adv._id}-deduction`,
+                    date: adv.updatedAt || adv.date,
+                    type: 'payroll_deduction',
+                    description: `Payroll Deduction Recovery (${periodLabel})`,
+                    amount: 0,
+                    deduction: amt,
+                    status: 'deducted',
+                    runningBalance: runningBalance,
+                });
+            }
+        }
+    });
+
+    const outstandingBalance = Math.max(0, runningBalance);
+
+    res.json({
+        success: true,
+        data: {
+            employee: {
+                id: emp._id,
+                employeeCode: emp.employeeCode,
+                fullName: `${emp.firstName} ${emp.lastName}`,
+                department: emp.departmentId?.name || '',
+                designation: emp.designationId?.name || '',
+                basicSalary: emp.basicSalary || (emp.labourRate ? (emp.paymentType === 'per_day' ? emp.labourRate * 26 : emp.labourRate * 200) : 0),
+            },
+            summary: {
+                totalRequested,
+                totalApproved,
+                totalPending,
+                totalRejected,
+                totalDeducted,
+                outstandingBalance,
+            },
+            ledger: ledgerEntries.reverse(),
+            advances,
+        }
+    });
 });
 
 export const getEmployeePaymentSheet = asyncHandler(async (req, res) => {

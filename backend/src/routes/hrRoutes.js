@@ -10,7 +10,7 @@ import {
     createSalaryStructure, getSalaryStructures, updateSalaryStructure, deleteSalaryStructure,
     createLeaveStructure, getLeaveStructures, updateLeaveStructure, deleteLeaveStructure, getMyEmployeeProfile,
     createAttendancePolicy, getAttendancePolicies, updateAttendancePolicy, deleteAttendancePolicy, importFingerprintAttendance,
-    getEmployeePaymentSheet, createSalaryAdvance, getSalaryAdvances, approveSalaryAdvance, declineSalaryAdvance,
+    getEmployeePaymentSheet, createSalaryAdvance, getSalaryAdvances, approveSalaryAdvance, declineSalaryAdvance, getMyAdvanceLedger,
 } from '../controllers/hrController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission, requireAnyPermission } from '../middleware/permissionMiddleware.js';
@@ -195,9 +195,11 @@ router.get('/employee-of-month', requirePermission('hr.employees.view'), async (
 
 
 // ── Salary Advances & Payment Sheets
+router.get('/advances/my-ledger', getMyAdvanceLedger);
+
 router.route('/advances')
-    .get(requirePermission('hr.employees.view'), getSalaryAdvances)
-    .post(requirePermission('hr.employees.manage'), createSalaryAdvance);
+    .get(getSalaryAdvances)
+    .post(createSalaryAdvance);
 
 router.patch('/advances/:id/approve', requirePermission('hr.employees.manage'), approveSalaryAdvance);
 router.patch('/advances/:id/decline', requirePermission('hr.employees.manage'), declineSalaryAdvance);
@@ -206,7 +208,7 @@ router.route('/employees/:id/payment-sheet')
     .get(requirePermission('hr.employees.view'), getEmployeePaymentSheet);
 
 router.route('/employees/:id/advances')
-    .get(requirePermission('hr.employees.view'), getSalaryAdvances)
-    .post(requirePermission('hr.employees.manage'), createSalaryAdvance);
+    .get(getSalaryAdvances)
+    .post(createSalaryAdvance);
 
 export default router;

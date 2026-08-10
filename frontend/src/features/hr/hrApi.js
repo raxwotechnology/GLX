@@ -80,6 +80,7 @@ export const payrollApi = {
 export const advancesApi = {
     list: async (params = {}) => (await api.get('/hr/advances', { params })).data,
     getByEmployee: async (employeeId) => (await api.get(`/hr/employees/${employeeId}/advances`)).data,
+    getMyLedger: async (params = {}) => (await api.get('/hr/advances/my-ledger', { params })).data,
     create: async (data) => (await api.post('/hr/advances', data)).data,
     approve: async (id, data = {}) => (await api.patch(`/hr/advances/${id}/approve`, data)).data,
     decline: async (id, data = {}) => (await api.patch(`/hr/advances/${id}/decline`, data)).data,

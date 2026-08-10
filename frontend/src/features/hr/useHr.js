@@ -95,7 +95,11 @@ export const usePublicPayslip = (token) => useQuery({
     enabled: !!token,
 });
 
-// Salary Advance hooks
+export const useMyAdvanceLedger = (params = {}) => useQuery({
+    queryKey: ['myAdvanceLedger', params],
+    queryFn: () => advancesApi.getMyLedger(params),
+});
+
 export const useSalaryAdvances = (filters = {}) => useQuery({
     queryKey: ['salaryAdvances', filters],
     queryFn: () => advancesApi.list(filters),
@@ -105,7 +109,10 @@ export const useCreateSalaryAdvance = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: advancesApi.create,
-        onSuccess: () => { invalidate(qc, ['salaryAdvances', 'employee'])(); toast.success('Salary advance request submitted'); },
+        onSuccess: () => { 
+            invalidate(qc, ['salaryAdvances', 'myAdvanceLedger', 'employee'])(); 
+            toast.success('Salary advance request submitted'); 
+        },
         onError: onErr,
     });
 };

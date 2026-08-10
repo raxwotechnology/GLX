@@ -22,8 +22,8 @@ const menuGroups = [
         icon: LayoutDashboard,
         items: [
             { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'dashboard.view' },
-            { label: 'Analytics', icon: BarChart3, path: '/analytics', permission: 'dashboard.view' },
-            { label: 'AI Analyzer', icon: Sparkles, path: '/ai-analyzer', permission: 'dashboard.view' },
+            { label: 'Analytics', icon: BarChart3, path: '/analytics', permission: 'dashboard.view', excludeRoles: ['employee'] },
+            { label: 'AI Analyzer', icon: Sparkles, path: '/ai-analyzer', permission: 'dashboard.view', excludeRoles: ['employee'] },
         ],
     },
     {
@@ -455,6 +455,10 @@ export default function Sidebar({ isOpen, onClose }) {
             }
 
             const matchedItems = g.items.filter((item) => {
+                if (item.excludeRoles && item.excludeRoles.includes(user?.role)) {
+                    return false;
+                }
+
                 const isPermitted = isAdmin ||
                     (!item.permission && !item.anyPermission) ||
                     (item.permission && hasPermission(item.permission)) ||

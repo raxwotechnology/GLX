@@ -267,8 +267,8 @@ function App() {
         <Route path="/audit-logs/sms" element={<ProtectedRoute requiredPermission="view_audit_logs"><SmsLogsPage /></ProtectedRoute>} />
 
         {/* Added sidebar routes */}
-        <Route path="/analytics" element={<ProtectedRoute requiredPermission="dashboard.view"><AnalyticsPage /></ProtectedRoute>} />
-        <Route path="/ai-analyzer" element={<ProtectedRoute requiredPermission="dashboard.view"><AIAnalyzerPage /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute requiredPermission="dashboard.view" excludeRoles={['employee']}><AnalyticsPage /></ProtectedRoute>} />
+        <Route path="/ai-analyzer" element={<ProtectedRoute requiredPermission="dashboard.view" excludeRoles={['employee']}><AIAnalyzerPage /></ProtectedRoute>} />
         <Route path="/hr/epf-etf" element={<ProtectedRoute requiredPermission="hr.payroll.view" excludeRoles={['employee']}><EpfEtfPage /></ProtectedRoute>} />
         <Route path="/finance/bank-transactions" element={<ProtectedRoute requiredPermission="payments.view"><BankTransactionsPage /></ProtectedRoute>} />
         <Route path="/finance/income-tax" element={<ProtectedRoute requiredPermission="payments.view"><IncomeTaxPage /></ProtectedRoute>} />

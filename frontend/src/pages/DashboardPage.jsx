@@ -27,7 +27,7 @@ import api from '../api/axios';
 import { useDashboardKpis, useRevenueChart } from '../features/reports/useReports';
 import { useSocket } from '../hooks/useSocket';
 import { useAuthStore } from '../store/authStore';
-import { useMyProfile, useMyPayslips, useLeaves, useAttendance, useCreateLeave } from '../features/hr/useHr';
+import { useMyProfile, useMyPayslips, useLeaves, useAttendance, useCreateLeave, useMyAdvanceLedger, useCreateSalaryAdvance } from '../features/hr/useHr';
 import toast from 'react-hot-toast';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
@@ -636,13 +636,24 @@ function EmployeeDashboard() {
         profile ? { employeeId: profile._id, limit: 31 } : { enabled: false }
     );
     const { data: payslipsRes } = useMyPayslips();
+    const { data: ledgerRes, isLoading: ledgerLoading } = useMyAdvanceLedger();
 
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+    const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
+
     const createLeaveM = useCreateLeave();
+    const createAdvanceM = useCreateSalaryAdvance();
 
     const [form, setForm] = useState({
         employeeId: '', leaveType: 'annual', fromDate: '', toDate: '',
         isHalfDay: false, reason: '',
+    });
+
+    const [advanceForm, setAdvanceForm] = useState({
+        advanceType: 'amount',
+        requestedPercentage: 50,
+        amount: '',
+        reason: '',
     });
 
     useEffect(() => {
@@ -662,6 +673,31 @@ function EmployeeDashboard() {
         } catch { }
     };
 
+    const submitAdvance = async () => {
+        if (advanceForm.advanceType === 'amount' && (!advanceForm.amount || Number(advanceForm.amount) <= 0)) {
+            toast.error('Please enter a valid advance amount');
+            return;
+        }
+        if (advanceForm.advanceType === 'percentage' && (!advanceForm.requestedPercentage || Number(advanceForm.requestedPercentage) <= 0)) {
+            toast.error('Please enter a valid percentage');
+            return;
+        }
+        try {
+            await createAdvanceM.mutateAsync({
+                employeeId: profile._id,
+                advanceType: advanceForm.advanceType,
+                amount: advanceForm.advanceType === 'amount' ? Number(advanceForm.amount) : 0,
+                requestedPercentage: advanceForm.advanceType === 'percentage' ? Number(advanceForm.requestedPercentage) : 0,
+                reason: advanceForm.reason,
+                date: new Date().toISOString(),
+            });
+            setIsAdvanceModalOpen(false);
+            setAdvanceForm({ advanceType: 'amount', requestedPercentage: 50, amount: '', reason: '' });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to submit advance request');
+        }
+    };
+
     if (profileLoading) return <div className="py-16 text-center text-gray-500 font-sans">Loading employee portal...</div>;
     if (!profile) return <div className="py-16 text-center text-red-500 font-sans font-bold">No employee profile linked to this account. Contact HR.</div>;
 
@@ -669,23 +705,76 @@ function EmployeeDashboard() {
     const attendance = attendanceRes?.data || [];
     const payslips = payslipsRes?.data || [];
 
+    const ledgerData = ledgerRes?.data;
+    const ledgerSummary = ledgerData?.summary || {
+        totalRequested: 0,
+        totalApproved: 0,
+        totalPending: 0,
+        totalDeducted: 0,
+        outstandingBalance: 0,
+    };
+    const ledger = ledgerData?.ledger || [];
+
     const todayStr = new Date().toISOString().slice(0, 10);
     const todayAtt = attendance.find(a => new Date(a.date).toISOString().slice(0, 10) === todayStr);
 
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 0 }).format(n || 0);
 
+    const baseSalary = profile.basicSalary || (profile.labourRate ? (profile.paymentType === 'per_day' ? profile.labourRate * 26 : profile.labourRate * 200) : 0);
+    const calcPreview = advanceForm.advanceType === 'percentage'
+        ? ((baseSalary * (Number(advanceForm.requestedPercentage) || 0)) / 100).toFixed(2)
+        : Number(advanceForm.amount) || 0;
+
     return (
         <div className="space-y-6">
-            <div className="bg-gradient-to-r from-primary-600 to-indigo-750 text-white p-6 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="bg-gradient-to-r from-primary-600 via-indigo-700 to-slate-900 text-white p-6 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-xl md:text-2xl font-bold">Welcome back, {profile.firstName}!</h2>
                     <p className="text-primary-100 text-sm mt-1">{profile.designationId?.name || 'Staff'} • {profile.departmentId?.name || 'General'}</p>
-                    <p className="text-primary-200 text-xs mt-1">Employee ID: {profile.employeeCode}</p>
+                    <p className="text-primary-200 text-xs mt-1 font-mono">Employee ID: {profile.employeeCode}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button variant="secondary" onClick={() => setIsLeaveModalOpen(true)}>
                         <Plus size={16} className="mr-1.5" /> Request Leave
                     </Button>
+                    <Button className="bg-emerald-500 hover:bg-emerald-600 text-white border-0" onClick={() => setIsAdvanceModalOpen(true)}>
+                        <DollarSign size={16} className="mr-1.5" /> Request Advance
+                    </Button>
+                </div>
+            </div>
+
+            {/* Advance Ledger KPI Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-200/80 p-4 rounded-2xl">
+                    <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block">Outstanding Balance (ශේෂය)</span>
+                    <span className="text-xl sm:text-2xl font-extrabold text-amber-900 mt-1 block font-mono">
+                        {fmt(ledgerSummary.outstandingBalance)}
+                    </span>
+                    <span className="text-[10px] text-amber-600 mt-0.5 block font-medium">To be deducted in upcoming payroll</span>
+                </div>
+
+                <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl">
+                    <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block">Total Approved Advances</span>
+                    <span className="text-xl sm:text-2xl font-extrabold text-emerald-900 mt-1 block font-mono">
+                        {fmt(ledgerSummary.totalApproved)}
+                    </span>
+                    <span className="text-[10px] text-emerald-600 mt-0.5 block font-medium">Total advances granted to date</span>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl">
+                    <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block">Pending Approval</span>
+                    <span className="text-xl sm:text-2xl font-extrabold text-blue-900 mt-1 block font-mono">
+                        {fmt(ledgerSummary.totalPending)}
+                    </span>
+                    <span className="text-[10px] text-blue-600 mt-0.5 block font-medium">Awaiting HR/Admin approval</span>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+                    <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">Deducted in Payroll</span>
+                    <span className="text-xl sm:text-2xl font-extrabold text-slate-800 mt-1 block font-mono">
+                        {fmt(ledgerSummary.totalDeducted)}
+                    </span>
+                    <span className="text-[10px] text-slate-500 mt-0.5 block font-medium">Recovered in previous payslips</span>
                 </div>
             </div>
 
@@ -734,6 +823,84 @@ function EmployeeDashboard() {
                     </div>
                 </Card>
             </div>
+
+            {/* Advance Ledger Detailed Section */}
+            <Card className="p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b pb-3">
+                    <div>
+                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                            <DollarSign size={18} className="text-emerald-600" />
+                            Salary Advance Ledger (අත්පිට මුදල් ලේජරය)
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">Real-time record of requested advances, payroll recoveries, and active balances.</p>
+                    </div>
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setIsAdvanceModalOpen(true)}>
+                        <Plus size={14} className="mr-1" /> New Advance Request
+                    </Button>
+                </div>
+
+                {ledgerLoading ? (
+                    <div className="py-8 text-center text-xs text-gray-400 font-medium">Loading advance ledger transactions...</div>
+                ) : ledger.length === 0 ? (
+                    <div className="text-center py-10 border-2 border-dashed border-gray-150 rounded-xl bg-gray-50/50">
+                        <DollarSign size={32} className="mx-auto text-gray-300 mb-2" />
+                        <p className="text-sm font-semibold text-gray-600">No Advance Transactions Found</p>
+                        <p className="text-xs text-gray-400 mt-1">You haven't requested any salary advances yet.</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                            <thead>
+                                <tr className="text-gray-400 border-b pb-2 uppercase tracking-wider font-semibold text-[10px]">
+                                    <th className="pb-2.5">Date</th>
+                                    <th className="pb-2.5">Transaction Description</th>
+                                    <th className="pb-2.5 text-right">Advance (+)</th>
+                                    <th className="pb-2.5 text-right">Recovery (-)</th>
+                                    <th className="pb-2.5 text-center">Status</th>
+                                    <th className="pb-2.5 text-right">Ledger Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {ledger.map((entry) => {
+                                    const isDeduction = entry.type === 'payroll_deduction';
+                                    const isRejected = entry.type === 'rejected';
+                                    const isPending = entry.type === 'request';
+                                    
+                                    return (
+                                        <tr key={entry._id} className="hover:bg-gray-50/80 transition">
+                                            <td className="py-3 font-medium text-gray-700 whitespace-nowrap">
+                                                {new Date(entry.date).toLocaleDateString('en-LK', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                            </td>
+                                            <td className="py-3 max-w-xs truncate text-gray-800 font-medium">
+                                                {entry.description}
+                                            </td>
+                                            <td className="py-3 text-right font-mono font-semibold text-emerald-600">
+                                                {entry.amount > 0 ? `+${fmt(entry.amount)}` : '—'}
+                                            </td>
+                                            <td className="py-3 text-right font-mono font-semibold text-rose-600">
+                                                {entry.deduction > 0 ? `-${fmt(entry.deduction)}` : '—'}
+                                            </td>
+                                            <td className="py-3 text-center">
+                                                <Badge variant={
+                                                    entry.status === 'approved' || entry.status === 'active' ? 'success' :
+                                                    entry.status === 'deducted' ? 'info' :
+                                                    entry.status === 'pending' ? 'warning' : 'danger'
+                                                }>
+                                                    {entry.status === 'active' ? 'Approved (Active)' :
+                                                     entry.status === 'deducted' ? 'Payroll Recovered' : entry.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="py-3 text-right font-mono font-bold text-slate-900">
+                                                {fmt(entry.runningBalance)}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="p-5">
@@ -816,6 +983,7 @@ function EmployeeDashboard() {
                 </Card>
             </div>
 
+            {/* Modal: Leave Request */}
             <Modal isOpen={isLeaveModalOpen} onClose={() => setIsLeaveModalOpen(false)} title="New Leave Request" size="md">
                 <div className="p-6 space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -849,6 +1017,64 @@ function EmployeeDashboard() {
                 <div className="flex justify-end gap-2 px-6 py-4 border-t bg-gray-50">
                     <Button variant="outline" onClick={() => setIsLeaveModalOpen(false)}>Cancel</Button>
                     <Button variant="primary" onClick={submitLeave} loading={createLeaveM.isPending}>Submit</Button>
+                </div>
+            </Modal>
+
+            {/* Modal: Salary Advance Request */}
+            <Modal isOpen={isAdvanceModalOpen} onClose={() => setIsAdvanceModalOpen(false)} title="Request Salary Advance (අත්පිට මුදල් ඉල්ලුම් කිරීම)" size="md">
+                <div className="p-6 space-y-4">
+                    <Select
+                        label="Calculation Type (ගණනය කිරීමේ ක්‍රමය)"
+                        options={[
+                            { value: 'amount', label: 'Fixed Amount (LKR)' },
+                            { value: 'percentage', label: 'Percentage (%) of Basic Salary' },
+                        ]}
+                        value={advanceForm.advanceType}
+                        onChange={(e) => setAdvanceForm((f) => ({ ...f, advanceType: e.target.value }))}
+                    />
+
+                    {advanceForm.advanceType === 'amount' ? (
+                        <Input
+                            label="Requested Amount (LKR)"
+                            type="number"
+                            required
+                            placeholder="e.g. 10000"
+                            value={advanceForm.amount}
+                            onChange={(e) => setAdvanceForm((f) => ({ ...f, amount: e.target.value }))}
+                        />
+                    ) : (
+                        <div className="space-y-2">
+                            <Input
+                                label="Percentage of Basic Salary (%)"
+                                type="number"
+                                required
+                                min="1"
+                                max="100"
+                                placeholder="e.g. 50"
+                                value={advanceForm.requestedPercentage}
+                                onChange={(e) => setAdvanceForm((f) => ({ ...f, requestedPercentage: e.target.value }))}
+                            />
+                            <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex justify-between items-center text-xs">
+                                <span className="text-blue-700 font-medium">Estimated Calculated Advance:</span>
+                                <span className="font-extrabold text-blue-900 font-mono text-sm">{fmt(calcPreview)}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    <Textarea
+                        label="Reason for Advance (ඉල්ලුම් කිරීමට හේතුව)"
+                        required
+                        rows={3}
+                        placeholder="State reason for taking this salary advance..."
+                        value={advanceForm.reason}
+                        onChange={(e) => setAdvanceForm((f) => ({ ...f, reason: e.target.value }))}
+                    />
+                </div>
+                <div className="flex justify-end gap-2 px-6 py-4 border-t bg-gray-50">
+                    <Button variant="outline" onClick={() => setIsAdvanceModalOpen(false)}>Cancel</Button>
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={submitAdvance} loading={createAdvanceM.isPending}>
+                        Submit Advance Request
+                    </Button>
                 </div>
             </Modal>
         </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, FileText, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Save, FileText, CheckCircle, Clock, ShieldCheck, UserCheck, Key, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import PageHeader from '../components/ui/PageHeader';
@@ -18,6 +18,7 @@ const tabs = [
     { id: 'basic', label: 'Basic Info' },
     { id: 'contact', label: 'Contact Details (සම්බන්ධ කරගන්නා අංක 2)' },
     { id: 'employment', label: 'Employment' },
+    { id: 'user_login', label: 'System Login (ලොගින් ගිණුම)' },
     { id: 'documents', label: 'Documents (අවශ්‍ය ලේඛන)' },
     { id: 'statutory', label: 'Statutory & Bank' },
     { id: 'compensation', label: 'Compensation & Labour Rate' },
@@ -63,6 +64,10 @@ export default function EmployeeFormPage() {
         gsCertificate: { status: 'pending', certificateNo: '', issueDate: '', url: '', notes: '' },
         educationCertificates: { status: 'pending', summary: '', url: '', notes: '' },
         policeReport: { status: 'pending', reportNo: '', issueDate: '', expiryDate: '', url: '', notes: '' },
+        createLogin: false,
+        loginEmail: '',
+        loginPassword: '',
+        loginRole: 'employee',
     });
 
     useEffect(() => {
@@ -121,6 +126,9 @@ export default function EmployeeFormPage() {
                     url: e.policeReport?.url || '',
                     notes: e.policeReport?.notes || '',
                 },
+                createLogin: !!e.userId,
+                loginEmail: e.userId?.email || e.email || '',
+                loginRole: e.userId?.role || 'employee',
             });
         }
     }, [isEdit, existingData]);
@@ -152,6 +160,19 @@ export default function EmployeeFormPage() {
             toast.error('සෑම සේවකයෙකුගෙන්ම දුරකථන අංක 2ක් (Contact 1 & Contact 2) ඇතුළත් කිරීම අනිවාර්ය වේ!');
             setTab('contact');
             return;
+        }
+        if (form.createLogin && (!isEdit || !existingData?.data?.userId)) {
+            const emailToUse = form.loginEmail || form.email;
+            if (!emailToUse) {
+                toast.error('User login email address is required!');
+                setTab('user_login');
+                return;
+            }
+            if (!form.loginPassword || form.loginPassword.length < 6) {
+                toast.error('Password for system user login must be at least 6 characters!');
+                setTab('user_login');
+                return;
+            }
         }
         try {
             const payload = {
@@ -305,6 +326,95 @@ export default function EmployeeFormPage() {
                                     value={form.status} onChange={(e) => update('status', e.target.value)} />
                             </div>
                         </>
+                    )}
+
+                    {tab === 'user_login' && (
+                        <div className="space-y-4">
+                            {isEdit && existingData?.data?.userId ? (
+                                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 space-y-3">
+                                    <div className="flex items-center gap-2 text-emerald-900">
+                                        <ShieldCheck size={20} className="text-emerald-600 flex-shrink-0" />
+                                        <h4 className="font-bold text-sm">System Login Linked (ලොගින් ගිණුම සක්‍රීයයි)</h4>
+                                    </div>
+                                    <p className="text-xs text-emerald-800">
+                                        This employee is linked to an active system user login account.
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-emerald-200/60 text-xs">
+                                        <div>
+                                            <span className="text-emerald-700 font-medium block">Login Email:</span>
+                                            <span className="font-bold text-emerald-950">{existingData.data.userId.email}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-emerald-700 font-medium block">User Role:</span>
+                                            <span className="font-bold text-emerald-950 capitalize font-mono">{existingData.data.userId.role}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-emerald-700 font-medium block">Account Status:</span>
+                                            <span className="font-bold text-emerald-950">{existingData.data.userId.isActive ? 'Active (සක්‍රීයයි)' : 'Inactive'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-900">
+                                        🔐 <strong>System User Account (ලොගින් ගිණුම):</strong> සේවකයාට System එකට සහ Employee Portal එකට Login වීම සඳහා පරිශීලක ගිණුමක් සෑදීමට මෙතැනින් එකඟ වන්න.
+                                    </div>
+
+                                    <div className="border rounded-xl p-5 bg-gray-50/50 space-y-4">
+                                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 cursor-pointer"
+                                                checked={form.createLogin}
+                                                onChange={(e) => update('createLogin', e.target.checked)}
+                                            />
+                                            <div>
+                                                <span className="font-bold text-sm text-gray-900 block">
+                                                    Create System User Login for this Employee (මෙම සේවකයාට System Login එකක් සාදන්න)
+                                                </span>
+                                                <span className="text-xs text-gray-500">
+                                                    Check this to create credentials so the employee can login to the Employee Portal.
+                                                </span>
+                                            </div>
+                                        </label>
+
+                                        {form.createLogin && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-3 border-t border-gray-200">
+                                                <Input
+                                                    label="Login Email Address (ලොගින් ඉමේල් ලිපිනය)"
+                                                    type="email"
+                                                    required
+                                                    placeholder={form.email || "employee@company.com"}
+                                                    value={form.loginEmail || form.email}
+                                                    onChange={(e) => update('loginEmail', e.target.value)}
+                                                />
+                                                <Input
+                                                    label="Login Password (ලොගින් මුරපදය)"
+                                                    type="password"
+                                                    required
+                                                    placeholder="Set password (min 6 chars)"
+                                                    value={form.loginPassword}
+                                                    onChange={(e) => update('loginPassword', e.target.value)}
+                                                />
+                                                <Select
+                                                    label="System User Role (ලොගින් පදවිය/Role)"
+                                                    required
+                                                    options={[
+                                                        { value: 'employee', label: 'Employee (සේවක Portal අනුමතිය)' },
+                                                        { value: 'staff', label: 'Staff (සාමාන්‍ය පරිශීලක)' },
+                                                        { value: 'hr_manager', label: 'HR Manager' },
+                                                        { value: 'accountant', label: 'Accountant' },
+                                                        { value: 'admin', label: 'Administrator' },
+                                                    ]}
+                                                    value={form.loginRole}
+                                                    onChange={(e) => update('loginRole', e.target.value)}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     )}
 
                     {tab === 'documents' && (
