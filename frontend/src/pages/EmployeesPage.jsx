@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Eye, Users, Mail, Phone } from 'lucide-react';
+import { Plus, Search, Eye, Users, Mail, Phone, Receipt, Edit } from 'lucide-react';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -48,8 +48,30 @@ export default function EmployeesPage() {
         { key: 'dateOfJoining', label: 'Joined', render: (r) => r.dateOfJoining ? new Date(r.dateOfJoining).toLocaleDateString('en-LK') : '—' },
         { key: 'status', label: 'Status', render: (r) => <Badge variant={statusVariant[r.status]}>{r.status?.replace(/_/g, ' ')}</Badge> },
         {
-            key: 'actions', label: '', width: '50px', render: (r) => (
-                <button onClick={() => navigate(`/employees/${r._id}`)} className="p-1.5 hover:bg-gray-100 rounded"><Eye size={16} /></button>
+            key: 'actions', label: 'Actions', width: '170px', render: (r) => (
+                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <button
+                        onClick={() => navigate(`/employees/${r._id}/payment-sheet`)}
+                        className="px-2 py-1 text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition flex items-center gap-1 border border-emerald-200"
+                        title="View Payment Sheet & Salary History"
+                    >
+                        <Receipt size={12} /> Pay Sheet
+                    </button>
+                    <button
+                        onClick={() => navigate(`/employees/${r._id}/edit`)}
+                        className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded"
+                        title="Edit Employee"
+                    >
+                        <Edit size={14} />
+                    </button>
+                    <button
+                        onClick={() => navigate(`/employees/${r._id}`)}
+                        className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded"
+                        title="View Employee Profile"
+                    >
+                        <Eye size={16} />
+                    </button>
+                </div>
             )
         },
     ];

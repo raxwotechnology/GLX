@@ -3,7 +3,7 @@ import api from '../api/axios';
 import { format } from 'date-fns';
 import {
     Plus, FileText, Trash2, Send,
-    MapPin, Clock, X, ShoppingCart, Edit, Eye, Download, Search, Image as ImageIcon, Printer, CheckCircle
+    MapPin, Clock, X, ShoppingCart, Edit, Eye, Download, Search, Image as ImageIcon, Printer, CheckCircle, RotateCcw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -77,12 +77,21 @@ const QuotationsPage = () => {
         status: 'draft',
         items: [{ product: '', productName: '', productTranslation: '', quantity: 1, unitPrice: 0, subtotal: 0 }],
         totalAmount: 0, 
+        laborCost: 0,
+        advanceAmount: 0,
+        balanceAmount: 0,
         discount: 0,
         tax: 0,
         grandTotal: 0,
         expiryDate: '', 
         notes: ''
     });
+
+    // Revert Conversion State
+    const [isRevertModalOpen, setIsRevertModalOpen] = useState(false);
+    const [revertQuote, setRevertQuote] = useState(null);
+    const [revertAdminPassword, setRevertAdminPassword] = useState('');
+    const [reverting, setReverting] = useState(false);
 
     // Autocomplete UI state
     const [customerSearch, setCustomerSearch] = useState('');
@@ -99,6 +108,15 @@ const QuotationsPage = () => {
     const [projectAdvanceBankAccountId, setProjectAdvanceBankAccountId] = useState('');
     const [projectAdvanceReference, setProjectAdvanceReference] = useState('');
     const [bankAccounts, setBankAccounts] = useState([]);
+
+    // Convert to Invoice Dialog State
+    const [isConvertToInvoiceOpen, setIsConvertToInvoiceOpen] = useState(false);
+    const [selectedConvertQuoteForInvoice, setSelectedConvertQuoteForInvoice] = useState(null);
+    const [convertInvoiceType, setConvertInvoiceType] = useState('commercial');
+    const [convertInvoiceAdvanceAmount, setConvertInvoiceAdvanceAmount] = useState(0);
+    const [convertInvoicePaymentMethod, setConvertInvoicePaymentMethod] = useState('cash');
+    const [convertInvoiceBankAccountId, setConvertInvoiceBankAccountId] = useState('');
+    const [convertInvoiceReference, setConvertInvoiceReference] = useState('');
 
     const fetchQuotations = async () => {
         try {
@@ -145,10 +163,11 @@ const QuotationsPage = () => {
         fetchData();
     }, []);
 
-    const calculateTotals = (items, discount = 0, tax = 0) => {
+    const calculateTotals = (items, discount = 0, tax = 0, laborCost = 0, advanceAmount = 0) => {
         const subtotal = items.reduce((acc, item) => acc + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0);
-        const grandTotal = subtotal + Number(tax || 0) - Number(discount || 0);
-        return { subtotal, grandTotal };
+        const grandTotal = subtotal + Number(laborCost || 0) + Number(tax || 0) - Number(discount || 0);
+        const balanceAmount = Math.max(0, grandTotal - Number(advanceAmount || 0));
+        return { subtotal, grandTotal, balanceAmount };
     };
 
     const handleItemChange = (index, field, value) => {
@@ -157,14 +176,14 @@ const QuotationsPage = () => {
         if (field === 'quantity' || field === 'unitPrice') {
             newItems[index].subtotal = Number(newItems[index].quantity || 0) * Number(newItems[index].unitPrice || 0);
         }
-        const { subtotal, grandTotal } = calculateTotals(newItems, formData.discount, formData.tax);
-        setFormData({ ...formData, items: newItems, totalAmount: subtotal, grandTotal });
+        const { subtotal, grandTotal, balanceAmount } = calculateTotals(newItems, formData.discount, formData.tax, formData.laborCost, formData.advanceAmount);
+        setFormData({ ...formData, items: newItems, totalAmount: subtotal, grandTotal, balanceAmount });
     };
 
     const handleFormChange = (name, value) => {
         const updated = { ...formData, [name]: value };
-        const { subtotal, grandTotal } = calculateTotals(updated.items, updated.discount, updated.tax);
-        setFormData({ ...updated, totalAmount: subtotal, grandTotal });
+        const { subtotal, grandTotal, balanceAmount } = calculateTotals(updated.items, updated.discount, updated.tax, updated.laborCost, updated.advanceAmount);
+        setFormData({ ...updated, totalAmount: subtotal, grandTotal, balanceAmount });
     };
 
     const handleImageUpload = (field, file) => {
@@ -177,13 +196,13 @@ const QuotationsPage = () => {
     };
 
     const addItem = () => {
-        setFormData({ ...formData, items: [...formData.items, { product: '', productName: '', quantity: 1, unitPrice: 0, subtotal: 0 }] });
+        setFormData({ ...formData, items: [...formData.items, { product: '', productName: '', productTranslation: '', description: '', quantity: 1, unitPrice: 0, subtotal: 0 }] });
     };
 
     const removeItem = (index) => {
         const newItems = formData.items.filter((_, i) => i !== index);
-        const { subtotal, grandTotal } = calculateTotals(newItems, formData.discount, formData.tax);
-        setFormData({ ...formData, items: newItems, totalAmount: subtotal, grandTotal });
+        const { subtotal, grandTotal, balanceAmount } = calculateTotals(newItems, formData.discount, formData.tax, formData.laborCost, formData.advanceAmount);
+        setFormData({ ...formData, items: newItems, totalAmount: subtotal, grandTotal, balanceAmount });
     };
 
     
@@ -240,11 +259,16 @@ const QuotationsPage = () => {
                 items: quote.items?.length > 0 ? quote.items.map(item => ({
                     product: item.product?._id || item.product || '',
                     productName: item.productName || item.product?.name || '',
+                    productTranslation: item.productTranslation || '',
+                    description: item.description || '',
                     quantity: item.quantity || 1,
                     unitPrice: item.unitPrice || 0,
                     subtotal: item.subtotal || (item.quantity * item.unitPrice) || 0
-                })) : [{ product: '', productName: '', quantity: 1, unitPrice: 0, subtotal: 0 }],
+                })) : [{ product: '', productName: '', productTranslation: '', description: '', quantity: 1, unitPrice: 0, subtotal: 0 }],
                 totalAmount: quote.totalAmount || 0,
+                laborCost: quote.laborCost || 0,
+                advanceAmount: quote.advanceAmount || 0,
+                balanceAmount: quote.balanceAmount || Math.max(0, (quote.grandTotal || 0) - (quote.advanceAmount || 0)),
                 discount: quote.discount || 0,
                 tax: quote.tax || 0,
                 grandTotal: quote.grandTotal || quote.totalAmount || 0,
@@ -279,8 +303,11 @@ const QuotationsPage = () => {
                 specifications: ['Non Rivet White Color Body', 'Japan Model Original Corner Set Bar', 'Rear 2 Doors (Waterproof Board)', 'Rear Gutter & Footboard'],
                 warrantyInfo: '10 Years For Body Structure, 10 Years Full Body Waterproofing, 03 Years For All Doors.',
                 status: 'draft',
-                items: [{ product: '', productName: '', quantity: 1, unitPrice: 0, subtotal: 0 }],
+                items: [{ product: '', productName: '', productTranslation: '', description: '', quantity: 1, unitPrice: 0, subtotal: 0 }],
                 totalAmount: 0, 
+                laborCost: 0,
+                advanceAmount: 0,
+                balanceAmount: 0,
                 discount: 0,
                 tax: 0,
                 grandTotal: 0,
@@ -331,10 +358,34 @@ const QuotationsPage = () => {
         }
     };
 
-    const handleConvertToInvoice = async (id) => {
+    const handleOpenConvertToInvoiceModal = (quote, defaultType = 'commercial') => {
+        setSelectedConvertQuoteForInvoice(quote);
+        setConvertInvoiceType(defaultType);
+        setConvertInvoiceAdvanceAmount(quote?.advanceAmount || 0);
+        setConvertInvoicePaymentMethod('cash');
+        setConvertInvoiceBankAccountId('');
+        setConvertInvoiceReference('');
+        setIsConvertToInvoiceOpen(true);
+    };
+
+    const handleConvertToInvoiceSubmit = async (e) => {
+        e.preventDefault();
+        const targetQuote = selectedConvertQuoteForInvoice || previewQuote;
+        if (!targetQuote) return;
+        setSaving(true);
         try {
-            const { data } = await api.post(`/crm/quotations/${id}/convert-to-invoice`);
-            toast.success('Successfully converted to Invoice!');
+            const payload = {
+                invoiceType: convertInvoiceType,
+                advanceAmount: Number(convertInvoiceAdvanceAmount) || 0,
+                paymentMethod: convertInvoicePaymentMethod,
+                bankAccountId: convertInvoicePaymentMethod !== 'cash' ? (convertInvoiceBankAccountId || undefined) : undefined,
+                paymentReference: convertInvoiceReference || undefined
+            };
+
+            const { data } = await api.post(`/crm/quotations/${targetQuote._id}/convert-to-invoice`, payload);
+            toast.success(`Successfully converted to ${convertInvoiceType === 'proforma' ? 'Proforma' : 'Commercial'} Invoice!`);
+            setIsConvertToInvoiceOpen(false);
+            setSelectedConvertQuoteForInvoice(null);
             setIsPreviewOpen(false);
             fetchQuotations();
             if (data.data?._id) {
@@ -342,20 +393,8 @@ const QuotationsPage = () => {
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to convert to invoice');
-        }
-    };
-
-    const handleConvertToProformaInvoice = async (id) => {
-        try {
-            const { data } = await api.post(`/crm/quotations/${id}/convert-to-invoice`, { invoiceType: 'proforma' });
-            toast.success('Successfully converted to Proforma Invoice!');
-            setIsPreviewOpen(false);
-            fetchQuotations();
-            if (data.data?._id) {
-                navigate(`/invoices/${data.data._id}`);
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to convert to proforma invoice');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -396,6 +435,29 @@ const QuotationsPage = () => {
             setDeleting(null);
             fetchQuotations();
         } catch { toast.error('Failed to delete'); }
+    };
+
+    const handleRevertConversionSubmit = async (e) => {
+        e.preventDefault();
+        if (!revertAdminPassword) {
+            toast.error('Please enter Admin Password');
+            return;
+        }
+        setReverting(true);
+        try {
+            await api.post(`/crm/quotations/${revertQuote._id}/revert-conversion`, {
+                adminPassword: revertAdminPassword
+            });
+            toast.success('Successfully reverted conversion back to Draft!');
+            setIsRevertModalOpen(false);
+            setRevertQuote(null);
+            setRevertAdminPassword('');
+            fetchQuotations();
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to revert conversion');
+        } finally {
+            setReverting(false);
+        }
     };
 
     const handlePrintDocument = () => {
@@ -630,7 +692,11 @@ const QuotationsPage = () => {
                                     <Button variant="outline" size="sm" onClick={() => exportDocumentToPDF(quote, quote.documentType || 'quotation')} title="Download PDF">
                                         <Download size={14} />
                                     </Button>
-                                    {quote.status !== 'converted' && (
+                                    {quote.status === 'converted' ? (
+                                        <Button variant="outline" size="sm" className="text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100 font-bold" onClick={() => { setRevertQuote(quote); setRevertAdminPassword(''); setIsRevertModalOpen(true); }} title="Revert Conversion (Admin Password required)">
+                                            <RotateCcw size={14} className="mr-1" /> Revert
+                                        </Button>
+                                    ) : (
                                         <Button variant="primary" size="sm" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={() => { setPreviewQuote(quote); setIsPreviewOpen(true); }}>
                                             <ShoppingCart size={14} className="mr-1" /> Convert
                                         </Button>
@@ -941,6 +1007,13 @@ const QuotationsPage = () => {
                                         value={item.productTranslation || ''}
                                         onChange={(e) => handleItemChange(index, 'productTranslation', e.target.value)}
                                     />
+                                    <input 
+                                        type="text" 
+                                        className="w-full px-3 py-1 border border-gray-300 rounded-lg text-xs bg-white text-gray-800 mt-1 font-calibri"
+                                        placeholder="Detailed Item Description / Work Specifications"
+                                        value={item.description || ''}
+                                        onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                    />
                                 </div>
 
                                 <div className="col-span-4 md:col-span-2 space-y-1">
@@ -966,7 +1039,7 @@ const QuotationsPage = () => {
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Notes / Terms</label>
                             <textarea 
-                                rows={3}
+                                rows={4}
                                 className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white"
                                 placeholder="Special notes, cash deposit requirements, validity details..."
                                 value={formData.notes}
@@ -976,8 +1049,17 @@ const QuotationsPage = () => {
 
                         <div className="bg-slate-100 p-4 rounded-xl space-y-2 border border-gray-200 text-xs">
                             <div className="flex justify-between items-center font-semibold text-gray-700">
-                                <span>Subtotal</span>
+                                <span>Items Subtotal</span>
                                 <span className="font-mono text-gray-900">LKR {formData.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between items-center font-semibold text-gray-700">
+                                <span>Labor Cost / Workmanship</span>
+                                <input 
+                                    type="number" 
+                                    className="w-28 px-2 py-1 border rounded text-right font-mono text-xs bg-white text-emerald-700 font-bold"
+                                    value={formData.laborCost} 
+                                    onChange={(e) => handleFormChange('laborCost', Number(e.target.value))}
+                                />
                             </div>
                             <div className="flex justify-between items-center font-semibold text-gray-700">
                                 <span>Discount</span>
@@ -991,6 +1073,19 @@ const QuotationsPage = () => {
                             <div className="flex justify-between items-center pt-2 border-t font-black text-gray-900 text-sm">
                                 <span>Grand Total</span>
                                 <span className="font-mono text-blue-800">LKR {formData.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between items-center font-semibold text-gray-700 pt-2 border-t">
+                                <span>Advance Payment</span>
+                                <input 
+                                    type="number" 
+                                    className="w-28 px-2 py-1 border rounded text-right font-mono text-xs bg-emerald-50 text-emerald-800 font-bold border-emerald-300"
+                                    value={formData.advanceAmount} 
+                                    onChange={(e) => handleFormChange('advanceAmount', Number(e.target.value))}
+                                />
+                            </div>
+                            <div className="flex justify-between items-center font-bold text-amber-900 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                                <span>Balance Due</span>
+                                <span className="font-mono text-sm font-black">LKR {(formData.balanceAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         </div>
                     </div>
@@ -1031,12 +1126,16 @@ const QuotationsPage = () => {
                                 <Button variant="outline" onClick={() => exportElementToPDF(printRef.current, `${previewQuote.documentType || 'quotation'}_${(previewQuote.quoteNumber || previewQuote.quotationCode || 'document').replace(/[\/\\:]/g, '_')}.pdf`)}>
                                     <Download size={16} className="mr-1.5" /> Download PDF
                                 </Button>
-                                {previewQuote.status !== 'converted' && (
+                                {previewQuote.status === 'converted' ? (
+                                    <Button variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100 font-bold text-xs px-3 py-1.5" onClick={() => { setRevertQuote(previewQuote); setRevertAdminPassword(''); setIsRevertModalOpen(true); }}>
+                                        <RotateCcw size={14} className="mr-1.5" /> Revert Conversion (Admin)
+                                    </Button>
+                                ) : (
                                     <div className="flex gap-2">
-                                        <Button variant="primary" className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-2.5 py-1.5" onClick={() => handleConvertToInvoice(previewQuote._id)}>
+                                        <Button variant="primary" className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-2.5 py-1.5" onClick={() => handleOpenConvertToInvoiceModal(previewQuote, 'commercial')}>
                                             Convert to Invoice (Commercial)
                                         </Button>
-                                        <Button variant="outline" className="text-purple-600 border-purple-200 hover:bg-purple-50 text-xs px-2.5 py-1.5" onClick={() => handleConvertToProformaInvoice(previewQuote._id)}>
+                                        <Button variant="outline" className="text-purple-600 border-purple-200 hover:bg-purple-50 text-xs px-2.5 py-1.5" onClick={() => handleOpenConvertToInvoiceModal(previewQuote, 'proforma')}>
                                             Convert to Proforma
                                         </Button>
                                         <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-2.5 py-1.5" onClick={() => {
@@ -1184,6 +1283,146 @@ const QuotationsPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Revert Conversion Modal */}
+            {isRevertModalOpen && revertQuote && (
+                <div className="fixed inset-0 bg-black/45 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl relative space-y-4">
+                        <div className="flex justify-between items-center pb-2 border-b">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <RotateCcw className="w-5 h-5 text-amber-600" />
+                                Revert Conversion
+                            </h3>
+                            <button onClick={() => setIsRevertModalOpen(false)} className="text-gray-400 hover:text-slate-600 text-lg font-bold">×</button>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-normal">
+                            Reverting <strong>{revertQuote.quoteNumber || revertQuote.quotationCode}</strong> will change its status back to <strong>Draft</strong> and soft-delete/cancel any linked Invoice or Project.
+                        </p>
+                        <form onSubmit={handleRevertConversionSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">
+                                    Admin Password Required:
+                                </label>
+                                <input
+                                    type="password"
+                                    value={revertAdminPassword}
+                                    onChange={(e) => setRevertAdminPassword(e.target.value)}
+                                    placeholder="Enter Admin Password to confirm"
+                                    required
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-2 pt-2 border-t">
+                                <Button variant="outline" type="button" onClick={() => setIsRevertModalOpen(false)}>Cancel</Button>
+                                <Button variant="primary" type="submit" loading={reverting} className="bg-amber-600 hover:bg-amber-700 text-white font-bold">
+                                    Confirm Revert
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Convert to Invoice Modal */}
+            {isConvertToInvoiceOpen && (selectedConvertQuoteForInvoice || previewQuote) && (() => {
+                const targetQuote = selectedConvertQuoteForInvoice || previewQuote;
+                return (
+                    <div className="fixed inset-0 bg-black/45 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-[slideUp_0.2s_ease-out]">
+                            <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 className="text-lg font-bold text-slate-800">Convert to Invoice</h3>
+                                <button onClick={() => { setIsConvertToInvoiceOpen(false); setSelectedConvertQuoteForInvoice(null); }} className="text-gray-400 hover:text-slate-600 text-lg font-bold">×</button>
+                            </div>
+                            <form onSubmit={handleConvertToInvoiceSubmit} className="space-y-4">
+                                <div className="p-3 bg-purple-50 rounded-xl border border-purple-200">
+                                    <p className="text-xs font-bold text-purple-900 uppercase">Document: {targetQuote.quoteNumber || targetQuote.quotationCode}</p>
+                                    <p className="text-sm font-bold text-purple-950 mt-0.5">Grand Total: LKR {(targetQuote.grandTotal || targetQuote.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Invoice Type</label>
+                                <select
+                                    value={convertInvoiceType}
+                                    onChange={(e) => setConvertInvoiceType(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                >
+                                    <option value="commercial">Commercial / Standard Tax Invoice</option>
+                                    <option value="proforma">Proforma Invoice (PI)</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Advance Payment Amount (LKR)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={convertInvoiceAdvanceAmount}
+                                    onChange={(e) => setConvertInvoiceAdvanceAmount(e.target.value)}
+                                    placeholder="e.g. 50000"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold font-mono bg-white"
+                                />
+                                <p className="text-[11px] text-gray-500">Entering an advance amount will deduct it from the total invoice amount and show balance due.</p>
+                            </div>
+
+                            {Number(convertInvoiceAdvanceAmount) > 0 && (
+                                <>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-700 uppercase">Payment Method</label>
+                                        <select
+                                            value={convertInvoicePaymentMethod}
+                                            onChange={(e) => setConvertInvoicePaymentMethod(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                        >
+                                            <option value="cash">Cash</option>
+                                            <option value="bank_transfer">Bank Transfer</option>
+                                            <option value="card">Card</option>
+                                            <option value="cheque">Cheque</option>
+                                        </select>
+                                    </div>
+
+                                    {(convertInvoicePaymentMethod === 'bank_transfer' || convertInvoicePaymentMethod === 'cheque') && (
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-gray-700 uppercase">Company Bank Account</label>
+                                            <select
+                                                value={convertInvoiceBankAccountId}
+                                                onChange={(e) => setConvertInvoiceBankAccountId(e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                            >
+                                                <option value="">-- Select Bank Account --</option>
+                                                {bankAccounts.map((acc) => (
+                                                    <option key={acc._id} value={acc._id}>
+                                                        {acc.bankName} ({acc.accountNumber}) - Bal: LKR {acc.balance?.toLocaleString()}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-700 uppercase">Payment Reference / Notes</label>
+                                        <input
+                                            type="text"
+                                            value={convertInvoiceReference}
+                                            onChange={(e) => setConvertInvoiceReference(e.target.value)}
+                                            placeholder="Txn ID, cheque #, or reference"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            <div className="flex justify-end gap-2 pt-3 border-t">
+                                <Button variant="outline" type="button" onClick={() => { setIsConvertToInvoiceOpen(false); setSelectedConvertQuoteForInvoice(null); }}>Cancel</Button>
+                                <Button variant="primary" type="submit" loading={saving} className="bg-purple-600 hover:bg-purple-700 text-white font-bold">
+                                    Confirm Conversion
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                );
+            })()}
 
             <ConfirmDialog isOpen={!!deleting} onClose={() => setDeleting(null)} onConfirm={handleDelete}
                 title="Delete Document" message={`Permanently remove ${deleting?.quoteNumber || deleting?.quotationCode}?`} />

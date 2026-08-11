@@ -4,7 +4,7 @@ import api from '../api/axios';
 import toast from 'react-hot-toast';
 import {
     Calendar, Clock, DollarSign, CheckCircle2, AlertCircle,
-    Building2, ChevronLeft, ChevronRight, Check, Search, Download, Filter
+    Building2, ChevronLeft, ChevronRight, Check, Search, Download, Filter, Sparkles
 } from 'lucide-react';
 
 import PageHeader from '../components/ui/PageHeader';
@@ -33,6 +33,52 @@ export default function DailyPayrollPage() {
 
     // History filter
     const [historySearch, setHistorySearch] = useState('');
+
+    // Bi-Monthly Date Cycle Payout State
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonthStr = String(now.getMonth() + 1).padStart(2, '0');
+    const [periodStartDate, setPeriodStartDate] = useState(`${currentYear}-${currentMonthStr}-01`);
+    const [periodEndDate, setPeriodEndDate] = useState(`${currentYear}-${currentMonthStr}-15`);
+    const [bimonthlyPaymentMethod, setBimonthlyPaymentMethod] = useState('cash');
+    const [bimonthlyBankAccountId, setBimonthlyBankAccountId] = useState('');
+
+    const { data: periodSummaryData, isLoading: isPeriodLoading, refetch: refetchPeriodSummary } = useQuery({
+        queryKey: ['periodPayrollSummary', periodStartDate, periodEndDate],
+        queryFn: async () => {
+            const { data } = await api.get(`/payroll/period-summary?startDate=${periodStartDate}&endDate=${periodEndDate}`);
+            return data;
+        },
+        enabled: activeTab === 'bimonthly'
+    });
+
+    const handleProcessPeriodBatchSubmit = () => {
+        const periodDataList = periodSummaryData?.data || [];
+        if (!periodDataList.length) {
+            toast.error('No employee work records found for this period');
+            return;
+        }
+
+        const payload = {
+            date: periodEndDate,
+            payouts: periodDataList.map(p => ({
+                employeeId: p.employeeId,
+                employeeCode: p.employeeCode,
+                employeeName: p.employeeName,
+                payType: 'hourly',
+                rate: p.hourlyRate,
+                units: p.workedHours,
+                overtimeHours: p.overtimeHours,
+                allowances: 0,
+                deductions: p.totalAdvanceDeduction,
+                netPaid: p.netPayable,
+                paymentMethod: bimonthlyPaymentMethod,
+                bankAccountId: bimonthlyPaymentMethod !== 'cash' ? (bimonthlyBankAccountId || undefined) : undefined,
+                notes: `Bi-Monthly Payout (${periodStartDate} to ${periodEndDate}) - Advance Deducted: Rs.${p.totalAdvanceDeduction}`
+            }))
+        };
+        payoutMutation.mutate(payload);
+    };
 
     // ─── FETCH DAILY SUMMARY ───
     const { data: summaryData, isLoading: isSummaryLoading, refetch: refetchSummary } = useQuery({
@@ -77,6 +123,7 @@ export default function DailyPayrollPage() {
             setSelectedWorkerIds([]);
             setSinglePayoutWorker(null);
             queryClient.invalidateQueries({ queryKey: ['dailyPayrollSummary'] });
+            queryClient.invalidateQueries({ queryKey: ['periodPayrollSummary'] });
             queryClient.invalidateQueries({ queryKey: ['dailyPayrollHistory'] });
             queryClient.invalidateQueries({ queryKey: ['expenses'] });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -249,6 +296,16 @@ export default function DailyPayrollPage() {
                     }`}
                 >
                     <Calendar size={15} /> Daily Payouts ({selectedDate})
+                </button>
+                <button
+                    onClick={() => setActiveTab('bimonthly')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                        activeTab === 'bimonthly'
+                            ? 'bg-purple-900 text-white shadow-md font-black'
+                            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    }`}
+                >
+                    <Clock size={15} /> Bi-Monthly / Period Payout (මාසික පඩි දවස් 2ක එකතුව)
                 </button>
                 <button
                     onClick={() => setActiveTab('history')}
@@ -513,6 +570,228 @@ export default function DailyPayrollPage() {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+                </Card>
+            )}
+
+            {/* TAB 3: BI-MONTHLY / PERIOD PAYOUT SUMMARY */}
+            {activeTab === 'bimonthly' && (
+                <Card className="p-3 sm:p-5 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b">
+                        <div>
+                            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                                <Clock className="w-5 h-5 text-purple-600" />
+                                Bi-Monthly & Period Payroll Processing (මාසික පඩි දවස් 2ක එකතුව)
+                            </h2>
+                            <p className="text-xs text-gray-500">
+                                Aggregates employee daily worked hours and wages for 1st-15th or 16th-End payout cycles, and auto-deducts pending employee advances.
+                            </p>
+                        </div>
+
+                        {/* Date Range Controls */}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1 bg-gray-50 p-1.5 rounded-xl border border-gray-200 text-xs">
+                                <span className="font-bold text-gray-500 pl-1">From:</span>
+                                <input
+                                    type="date"
+                                    value={periodStartDate}
+                                    onChange={(e) => setPeriodStartDate(e.target.value)}
+                                    className="px-2 py-1 bg-white border border-gray-300 rounded-lg text-xs font-mono font-bold"
+                                />
+                                <span className="font-bold text-gray-500">To:</span>
+                                <input
+                                    type="date"
+                                    value={periodEndDate}
+                                    onChange={(e) => setPeriodEndDate(e.target.value)}
+                                    className="px-2 py-1 bg-white border border-gray-300 rounded-lg text-xs font-mono font-bold"
+                                />
+                            </div>
+
+                            {/* Preset Buttons */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (periodSummaryData?.systemAttendanceRange?.minDate) {
+                                        setPeriodStartDate(periodSummaryData.systemAttendanceRange.minDate);
+                                        setPeriodEndDate(periodSummaryData.systemAttendanceRange.maxDate || new Date().toISOString().split('T')[0]);
+                                    } else {
+                                        setPeriodStartDate('2024-01-01');
+                                        setPeriodEndDate(new Date().toISOString().split('T')[0]);
+                                    }
+                                }}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1"
+                            >
+                                <Sparkles size={13} /> ⚡ Auto-Detect All Unpaid Work
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPeriodStartDate(`${currentYear}-${currentMonthStr}-01`);
+                                    setPeriodEndDate(`${currentYear}-${currentMonthStr}-15`);
+                                }}
+                                className="px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                            >
+                                1st–15th (1st Half)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const lastDay = new Date(currentYear, now.getMonth() + 1, 0).getDate();
+                                    setPeriodStartDate(`${currentYear}-${currentMonthStr}-16`);
+                                    setPeriodEndDate(`${currentYear}-${currentMonthStr}-${lastDay}`);
+                                }}
+                                className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                            >
+                                16th–End (2nd Half)
+                            </button>
+                        </div>
+                    </div>
+
+                    {periodSummaryData?.systemAttendanceRange && (
+                        <div className="bg-purple-50 border border-purple-200 p-2.5 rounded-xl text-xs text-purple-900 flex items-center justify-between">
+                            <span>📍 <strong>Attendance Records Found in System:</strong> {periodSummaryData.systemAttendanceRange.minDate} to {periodSummaryData.systemAttendanceRange.maxDate}</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPeriodStartDate(periodSummaryData.systemAttendanceRange.minDate);
+                                    setPeriodEndDate(periodSummaryData.systemAttendanceRange.maxDate);
+                                }}
+                                className="font-bold underline text-purple-700 hover:text-purple-950"
+                            >
+                                Select Entire Range
+                            </button>
+                        </div>
+                    )}
+
+                    {isPeriodLoading ? (
+                        <div className="text-center py-12 text-gray-400">Loading bi-monthly attendance & advance summary...</div>
+                    ) : !periodSummaryData?.data?.length ? (
+                        <div className="text-center py-12 text-gray-500 text-sm space-y-3">
+                            <p className="font-medium">No attendance records or worked hours found for period <strong>{periodStartDate}</strong> to <strong>{periodEndDate}</strong>.</p>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
+                                onClick={() => {
+                                    if (periodSummaryData?.systemAttendanceRange?.minDate) {
+                                        setPeriodStartDate(periodSummaryData.systemAttendanceRange.minDate);
+                                        setPeriodEndDate(periodSummaryData.systemAttendanceRange.maxDate);
+                                    } else {
+                                        setPeriodStartDate('2024-01-01');
+                                        setPeriodEndDate(new Date().toISOString().split('T')[0]);
+                                    }
+                                }}
+                            >
+                                <Sparkles size={14} className="mr-1.5" /> Auto-Detect Available Work Dates & Load
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                                <div className="bg-purple-50/70 p-3 rounded-xl border border-purple-100">
+                                    <p className="text-[10px] font-bold text-purple-600 uppercase">Active Employees</p>
+                                    <p className="text-xl font-black text-purple-900">{periodSummaryData.data.length}</p>
+                                </div>
+                                <div className="bg-blue-50/70 p-3 rounded-xl border border-blue-100">
+                                    <p className="text-[10px] font-bold text-blue-600 uppercase">Gross Wages Earned</p>
+                                    <p className="text-xl font-black text-blue-900 font-mono">
+                                        {fmt(periodSummaryData.data.reduce((acc, p) => acc + (p.grossWage || 0), 0))}
+                                    </p>
+                                </div>
+                                <div className="bg-rose-50/70 p-3 rounded-xl border border-rose-100">
+                                    <p className="text-[10px] font-bold text-rose-600 uppercase">Advance Deductions</p>
+                                    <p className="text-xl font-black text-rose-900 font-mono">
+                                        -{fmt(periodSummaryData.data.reduce((acc, p) => acc + (p.totalAdvanceDeduction || 0), 0))}
+                                    </p>
+                                </div>
+                                <div className="bg-emerald-50/70 p-3 rounded-xl border border-emerald-100">
+                                    <p className="text-[10px] font-bold text-emerald-600 uppercase">Net Period Payable</p>
+                                    <p className="text-xl font-black text-emerald-900 font-mono">
+                                        {fmt(periodSummaryData.data.reduce((acc, p) => acc + (p.netPayable || 0), 0))}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Batch Disbursement Controls */}
+                            <div className="bg-slate-900 text-white p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xl">
+                                <div>
+                                    <p className="font-bold text-sm">Disburse Bi-Monthly Period Salary Batch</p>
+                                    <p className="text-xs text-slate-400">Process payouts for all {periodSummaryData.data.length} workers & auto-deduct pending advances</p>
+                                </div>
+
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <select
+                                        value={bimonthlyPaymentMethod}
+                                        onChange={(e) => setBimonthlyPaymentMethod(e.target.value)}
+                                        className="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-white"
+                                    >
+                                        <option value="cash">Cash</option>
+                                        <option value="bank_transfer">Bank Transfer</option>
+                                        <option value="cheque">Cheque</option>
+                                    </select>
+
+                                    {bimonthlyPaymentMethod !== 'cash' && (
+                                        <select
+                                            value={bimonthlyBankAccountId}
+                                            onChange={(e) => setBimonthlyBankAccountId(e.target.value)}
+                                            className="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-white"
+                                        >
+                                            <option value="">Select Bank Account</option>
+                                            {bankAccounts.map(b => (
+                                                <option key={b._id} value={b._id}>{b.bankName} - {b.accountNumber}</option>
+                                            ))}
+                                        </select>
+                                    )}
+
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        loading={payoutMutation.isPending}
+                                        onClick={handleProcessPeriodBatchSubmit}
+                                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs px-4 py-2"
+                                    >
+                                        Process Batch Payout ({fmt(periodSummaryData.data.reduce((acc, p) => acc + (p.netPayable || 0), 0))})
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Period Summary Table */}
+                            <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                                <table className="w-full text-xs text-left">
+                                    <thead className="bg-gray-50 text-gray-500 uppercase text-[10px] tracking-wider border-b">
+                                        <tr>
+                                            <th className="p-3">Employee</th>
+                                            <th className="p-3">Department</th>
+                                            <th className="p-3 text-center">Days Worked</th>
+                                            <th className="p-3 text-right">Worked Hours</th>
+                                            <th className="p-3 text-right">Hourly Rate</th>
+                                            <th className="p-3 text-right">Gross Wage</th>
+                                            <th className="p-3 text-right">Advance Deducted</th>
+                                            <th className="p-3 text-right">Net Payable</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {periodSummaryData.data.map(p => (
+                                            <tr key={p.employeeId} className="hover:bg-slate-50 transition">
+                                                <td className="p-3 font-bold text-gray-900">{p.employeeName} ({p.employeeCode})</td>
+                                                <td className="p-3 text-gray-500">{p.department}</td>
+                                                <td className="p-3 text-center font-semibold">{p.daysWorked} days</td>
+                                                <td className="p-3 text-right font-mono font-bold text-blue-700">{p.workedHours} hrs</td>
+                                                <td className="p-3 text-right font-mono text-gray-600">Rs. {p.hourlyRate}/hr</td>
+                                                <td className="p-3 text-right font-mono font-semibold text-gray-900">{fmt(p.grossWage)}</td>
+                                                <td className="p-3 text-right font-mono font-bold text-rose-600">
+                                                    {p.totalAdvanceDeduction > 0 ? `-${fmt(p.totalAdvanceDeduction)}` : 'Rs. 0.00'}
+                                                </td>
+                                                <td className="p-3 text-right font-mono font-black text-emerald-700 bg-emerald-50/50">
+                                                    {fmt(p.netPayable)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
                 </Card>

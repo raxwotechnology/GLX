@@ -256,6 +256,33 @@ export const convertQuotationToInvoice = asyncHandler(async (req, res) => {
         lineTotal: item.subtotal || ((item.quantity || 1) * (item.unitPrice || 0))
     }));
 
+    if (quotation.laborCost && Number(quotation.laborCost) > 0) {
+        invoiceItems.push({
+            lineNumber: invoiceItems.length + 1,
+            productName: 'Labor Charge / Workmanship',
+            description: 'Engineering Labor Cost',
+            quantity: 1,
+            unitOfMeasure: 'job',
+            unitPrice: Number(quotation.laborCost),
+            discountPercent: 0,
+            discountAmount: 0,
+            taxRate: 0,
+            taxAmount: 0,
+            taxable: false,
+            lineSubtotal: Number(quotation.laborCost),
+            lineTotal: Number(quotation.laborCost)
+        });
+    }
+
+    const advancePaid = req.body.advanceAmount !== undefined 
+        ? Number(req.body.advanceAmount || 0) 
+        : Number(quotation.advanceAmount || 0);
+    const grandTotal = Number(quotation.grandTotal || 0);
+    let initialPaymentStatus = 'unpaid';
+    if (advancePaid > 0) {
+        initialPaymentStatus = advancePaid >= grandTotal ? 'paid' : 'partially_paid';
+    }
+
     const invoice = new Invoice({
         invoiceType: req.body.invoiceType || 'commercial',
         sourceDocumentType: quotation.documentType || 'quotation',
@@ -296,21 +323,57 @@ export const convertQuotationToInvoice = asyncHandler(async (req, res) => {
         dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days default
         items: invoiceItems,
         subtotal: quotation.totalAmount || quotation.grandTotal || 0,
+        otherCharges: 0, // Labor cost is already included in invoiceItems
         totalDiscount: quotation.discount || 0,
         totalTax: quotation.tax || 0,
-        grandTotal: quotation.grandTotal || 0,
+        grandTotal: grandTotal,
+        amountPaid: advancePaid,
+        balanceDue: Math.max(0, grandTotal - advancePaid),
+        paymentStatus: initialPaymentStatus,
         notes: quotation.notes || `Converted from ${quotation.documentType || 'quotation'} ${quotation.quoteNumber}`,
 
         status: 'approved',
-        paymentStatus: 'unpaid',
         createdBy: req.user._id
     });
 
     await invoice.save();
 
+    if (advancePaid > 0) {
+        const { default: Payment } = await import('../models/Payment.js');
+        const { default: BankAccount } = await import('../models/BankAccount.js');
+        const payment = new Payment({
+            direction: 'received',
+            customerId: quotation.customerId || undefined,
+            bankAccountId: req.body.bankAccountId || undefined,
+            amount: advancePaid,
+            method: req.body.paymentMethod || 'cash',
+            paymentDate: new Date(),
+            partyName: quotation.customerName || 'Walk-in Customer',
+            allocations: [{
+                documentType: 'invoice',
+                documentId: invoice._id,
+                documentNumber: invoice.invoiceNumber,
+                amount: advancePaid
+            }],
+            transactionReference: req.body.paymentReference || undefined,
+            receivedBy: req.user._id,
+            createdBy: req.user._id,
+            notes: `Advance payment for Invoice ${invoice.invoiceNumber}`
+        });
+        await payment.save();
+
+        if (req.body.bankAccountId) {
+            const bankAccount = await BankAccount.findById(req.body.bankAccountId);
+            if (bankAccount) {
+                bankAccount.balance = +(bankAccount.balance + advancePaid).toFixed(2);
+                await bankAccount.save();
+            }
+        }
+    }
+
     await Quotation.updateOne(
         { _id: quotation._id },
-        { $set: { status: 'converted', convertedInvoiceId: invoice._id } }
+        { $set: { status: 'converted', convertedInvoiceId: invoice._id, advanceAmount: advancePaid } }
     );
 
     createAuditLog({
@@ -460,4 +523,97 @@ export const convertQuotationToProject = asyncHandler(async (req, res) => {
     });
 
     res.status(201).json({ success: true, message: 'Converted to Project successfully', data: project });
+});
+
+/**
+ * @desc    Revert converted quotation/estimate back to draft status with Admin password
+ * @route   POST /api/crm/quotations/:id/revert-conversion
+ * @access  Private (Requires Admin Password)
+ */
+export const revertQuotationConversion = asyncHandler(async (req, res) => {
+    const { adminPassword } = req.body;
+    if (!adminPassword) {
+        res.status(400);
+        throw new Error('Admin password is required to revert conversion');
+    }
+
+    const { default: User } = await import('../models/User.js');
+    let authorized = false;
+
+    // First check if current user is admin and password matches
+    if (req.user) {
+        const currentUser = await User.findById(req.user._id).select('+password');
+        if (currentUser && currentUser.password) {
+            const isMatch = await currentUser.matchPassword(adminPassword);
+            if (isMatch && ['admin', 'superadmin', 'manager'].includes(currentUser.role)) {
+                authorized = true;
+            }
+        }
+    }
+
+    // If current user is not admin or password didn't match, check if password matches ANY active admin user
+    if (!authorized) {
+        const adminUsers = await User.find({ role: { $in: ['admin', 'superadmin'] }, isActive: true }).select('+password');
+        for (const admin of adminUsers) {
+            if (admin.password && (await admin.matchPassword(adminPassword))) {
+                authorized = true;
+                break;
+            }
+        }
+    }
+
+    if (!authorized) {
+        res.status(401);
+        throw new Error('Invalid Admin Password. Action unauthorized.');
+    }
+
+    const quotation = await Quotation.findById(req.params.id);
+    if (!quotation) {
+        res.status(404);
+        throw new Error('Quotation not found');
+    }
+
+    if (quotation.status !== 'converted') {
+        res.status(400);
+        throw new Error('Document is not in converted status');
+    }
+
+    // Soft delete or cancel converted invoice if exists
+    if (quotation.convertedInvoiceId) {
+        const { default: Invoice } = await import('../models/Invoice.js');
+        const invoice = await Invoice.findById(quotation.convertedInvoiceId);
+        if (invoice) {
+            invoice.deletedAt = new Date();
+            invoice.status = 'cancelled';
+            invoice.cancellationReason = `Reverted conversion by Admin (${req.user?.firstName || 'Admin'})`;
+            await invoice.save();
+        }
+    }
+
+    // Soft delete or cancel converted project if exists
+    if (quotation.convertedProjectId) {
+        const Project = mongoose.model('Project');
+        const project = await Project.findById(quotation.convertedProjectId);
+        if (project) {
+            project.deletedAt = new Date();
+            project.status = 'cancelled';
+            await project.save();
+        }
+    }
+
+    quotation.status = 'draft';
+    quotation.convertedInvoiceId = undefined;
+    quotation.convertedProjectId = undefined;
+    await quotation.save();
+
+    createAuditLog({
+        action: 'update',
+        module: 'crm',
+        documentId: quotation._id,
+        documentCode: quotation.quoteNumber,
+        description: `Reverted conversion of quotation ${quotation.quoteNumber} back to draft with Admin Password`,
+        req
+    });
+
+    res.json({ success: true, message: 'Quotation conversion reverted back to Draft successfully', data: quotation });
 });

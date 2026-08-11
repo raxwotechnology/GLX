@@ -44,6 +44,62 @@ export default function AttendancePage() {
 
     const [bulkRecords, setBulkRecords] = useState([]);
 
+    // Manual Clock State
+    const [manualModalRecord, setManualModalRecord] = useState(null);
+    const [manualCheckIn, setManualCheckIn] = useState('08:00');
+    const [manualCheckOut, setManualCheckOut] = useState('17:00');
+    const [manualStatus, setManualStatus] = useState('present');
+    const [manualSaving, setManualSaving] = useState(false);
+
+    const openManualClock = (record) => {
+        setManualModalRecord(record);
+        setManualStatus(record.status === 'not_marked' ? 'present' : record.status);
+        if (record.checkInTime) {
+            const dateObj = new Date(record.checkInTime);
+            setManualCheckIn(`${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`);
+        } else {
+            setManualCheckIn('08:00');
+        }
+
+        if (record.checkOutTime) {
+            const dateObj = new Date(record.checkOutTime);
+            setManualCheckOut(`${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`);
+        } else {
+            setManualCheckOut('17:00');
+        }
+    };
+
+    const handleSaveManualClock = async (e) => {
+        e.preventDefault();
+        if (!manualModalRecord) return;
+        setManualSaving(true);
+        try {
+            const checkInStr = manualCheckIn ? `${selectedDate}T${manualCheckIn}` : undefined;
+            const checkOutStr = manualCheckOut ? `${selectedDate}T${manualCheckOut}` : undefined;
+
+            const res = await api.post('/hr/attendance', {
+                employeeId: manualModalRecord.employeeId,
+                date: selectedDate,
+                checkInTime: checkInStr,
+                checkOutTime: checkOutStr,
+                status: manualStatus
+            });
+
+            const saved = res.data?.data;
+            const workedMinutes = saved?.totalWorkedMinutes || 0;
+            const workedHours = (workedMinutes / 60).toFixed(2);
+            const calculatedSalary = saved?.earnedSalary || (workedMinutes / 60 * manualModalRecord.hourlyRate).toFixed(2);
+
+            toast.success(`Saved attendance for ${manualModalRecord.employeeName}! (${workedHours} hrs - Rs. ${Number(calculatedSalary).toLocaleString()})`);
+            setManualModalRecord(null);
+            refetchAttendance();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to save attendance');
+        } finally {
+            setManualSaving(false);
+        }
+    };
+
     const formatDateTimeLocal = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -79,7 +135,7 @@ export default function AttendancePage() {
             checkInTime: existingAtt?.checkInTime || null,
             checkOutTime: existingAtt?.checkOutTime || null,
             totalWorkedMinutes: existingAtt?.totalWorkedMinutes || 0,
-            earnedSalary: existingAtt?.earnedSalary || (existingAtt?.totalWorkedMinutes ? Number(((existingAtt.totalWorkedMinutes / 60) * (emp.hourlyRate || 260)).toFixed(2)) : 0),
+            earnedSalary: existingAtt?.earnedSalary || (existingAtt?.totalWorkedMinutes ? Number(((existingAtt.totalWorkedMinutes / 60) * (emp.hourlyRate || emp.labourRate || 260)).toFixed(2)) : (existingAtt?.checkInTime && !existingAtt?.checkOutTime ? Number(((Math.max(0, Math.floor((new Date() - new Date(existingAtt.checkInTime)) / (1000 * 60))) / 60) * (emp.hourlyRate || emp.labourRate || 260)).toFixed(2)) : 0)),
             lateMinutes: existingAtt?.lateMinutes || 0,
             overtimeMinutes: existingAtt?.overtimeMinutes || 0,
             overtimeAmount: existingAtt?.overtimeAmount || 0,
@@ -300,45 +356,40 @@ export default function AttendancePage() {
                 const isClockedOut = Boolean(r.checkOutTime);
                 const isLoading = actionLoadingId === r.employeeId;
 
-                if (!isClockedIn) {
-                    return (
-                        <Button
-                            variant="primary"
-                            size="sm"
-                            loading={isLoading}
-                            onClick={() => handleClockIn(r)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
-                        >
-                            <LogIn size={14} /> Clock In
-                        </Button>
-                    );
-                }
-
-                if (isClockedIn && !isClockedOut) {
-                    return (
-                        <Button
-                            variant="primary"
-                            size="sm"
-                            loading={isLoading}
-                            onClick={() => handleClockOut(r)}
-                            className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm animate-pulse"
-                        >
-                            <LogOut size={14} /> Clock Out (End Shift)
-                        </Button>
-                    );
-                }
-
                 return (
                     <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1">
-                            <CheckCircle2 size={13} className="text-emerald-500" /> Shift Completed
-                        </span>
+                        {!isClockedIn ? (
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                loading={isLoading}
+                                onClick={() => handleClockIn(r)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                            >
+                                <LogIn size={14} /> Quick In
+                            </Button>
+                        ) : !isClockedOut ? (
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                loading={isLoading}
+                                onClick={() => handleClockOut(r)}
+                                className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm animate-pulse"
+                            >
+                                <LogOut size={14} /> Quick Out
+                            </Button>
+                        ) : (
+                            <span className="px-2 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1">
+                                <CheckCircle2 size={13} className="text-emerald-500" /> Completed
+                            </span>
+                        )}
+
                         <button
-                            onClick={() => handleClockIn(r)}
-                            className="p-1 text-gray-400 hover:text-slate-700 rounded transition"
-                            title="Re-clock / Update check-in"
+                            onClick={() => openManualClock(r)}
+                            className="px-2 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition flex items-center gap-1 cursor-pointer"
+                            title="Set Manual Clock-In / Clock-Out Time"
                         >
-                            <Edit size={13} />
+                            <Clock size={13} /> Manual
                         </button>
                     </div>
                 );
@@ -561,6 +612,102 @@ export default function AttendancePage() {
                     </Button>
                 </div>
             </Modal>
+
+            {/* Manual Time Clock Modal */}
+            {manualModalRecord && (
+                <Modal isOpen={!!manualModalRecord} onClose={() => setManualModalRecord(null)} title={`Manual Clock-In / Clock-Out — ${manualModalRecord.employeeName}`} size="md">
+                    <form onSubmit={handleSaveManualClock} className="p-6 space-y-4">
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
+                            <div>
+                                <p className="font-bold text-slate-800">{manualModalRecord.employeeName}</p>
+                                <p className="text-slate-500 font-mono">{manualModalRecord.employeeCode} · {manualModalRecord.department}</p>
+                            </div>
+                            <div className="text-right font-mono">
+                                <p className="text-slate-500">Hourly Rate</p>
+                                <p className="font-bold text-emerald-600 text-sm">Rs. {manualModalRecord.hourlyRate}/hr</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Attendance Status</label>
+                                <select
+                                    value={manualStatus}
+                                    onChange={(e) => setManualStatus(e.target.value)}
+                                    className="w-full px-3 py-2 border rounded-xl text-sm font-semibold bg-white"
+                                >
+                                    <option value="present">Present</option>
+                                    <option value="late">Late</option>
+                                    <option value="half_day">Half Day</option>
+                                    <option value="absent">Absent</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Selected Date</label>
+                                <input
+                                    type="date"
+                                    value={selectedDate}
+                                    disabled
+                                    className="w-full px-3 py-2 border rounded-xl text-sm font-mono bg-slate-100 font-bold"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-emerald-800 mb-1">Manual Clock-In Time</label>
+                                <input
+                                    type="time"
+                                    value={manualCheckIn}
+                                    onChange={(e) => setManualCheckIn(e.target.value)}
+                                    className="w-full px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-xl text-sm font-mono font-bold text-emerald-900"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-amber-800 mb-1">Manual Clock-Out Time</label>
+                                <input
+                                    type="time"
+                                    value={manualCheckOut}
+                                    onChange={(e) => setManualCheckOut(e.target.value)}
+                                    className="w-full px-3 py-2 border border-amber-300 bg-amber-50 rounded-xl text-sm font-mono font-bold text-amber-900"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Real-time working hours calculation preview */}
+                        {manualCheckIn && manualCheckOut && (
+                            <div className="bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 text-xs flex justify-between items-center font-mono">
+                                <span className="text-indigo-700 font-semibold">
+                                    Worked Time:
+                                    {(() => {
+                                        const [inH, inM] = manualCheckIn.split(':').map(Number);
+                                        const [outH, outM] = manualCheckOut.split(':').map(Number);
+                                        const diffM = (outH * 60 + outM) - (inH * 60 + inM);
+                                        return diffM > 0 ? ` ${(diffM / 60).toFixed(1)} hrs` : ' 0 hrs';
+                                    })()}
+                                </span>
+                                <span className="font-bold text-indigo-900">
+                                    Earned Salary:
+                                    {(() => {
+                                        const [inH, inM] = manualCheckIn.split(':').map(Number);
+                                        const [outH, outM] = manualCheckOut.split(':').map(Number);
+                                        const diffM = Math.max(0, (outH * 60 + outM) - (inH * 60 + inM));
+                                        const sal = (diffM / 60) * manualModalRecord.hourlyRate;
+                                        return ` Rs. ${sal.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                    })()}
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end gap-2 pt-2 border-t">
+                            <Button variant="outline" type="button" onClick={() => setManualModalRecord(null)}>Cancel</Button>
+                            <Button variant="primary" type="submit" loading={manualSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                                Save Attendance
+                            </Button>
+                        </div>
+                    </form>
+                </Modal>
+            )}
         </div>
     );
 }

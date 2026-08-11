@@ -824,3 +824,113 @@ export const getPublicPayslipByToken = asyncHandler(async (req, res) => {
         }
     });
 });
+
+/**
+ * @desc    Get Bi-Monthly / Period Payroll Summary (e.g. 1st-15th or 16th-end)
+ * @route   GET /api/payroll/period-summary
+ * @access  Private (hr.payroll.view)
+ */
+export const getPeriodPayrollSummary = asyncHandler(async (req, res) => {
+    let { startDate, endDate } = req.query;
+
+    const earliestAtt = await Attendance.findOne().sort({ date: 1 });
+    const latestAtt = await Attendance.findOne().sort({ date: -1 });
+
+    const minDateStr = earliestAtt?.date ? new Date(earliestAtt.date).toISOString().split('T')[0] : '2024-01-01';
+    const maxDateStr = latestAtt?.date ? new Date(latestAtt.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+
+    if (!startDate) {
+        startDate = minDateStr;
+    }
+    if (!endDate) {
+        endDate = maxDateStr;
+    }
+
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    const employees = await Employee.find({ status: { $in: ['active', 'on_leave', 'probation'] } })
+        .populate('departmentId', 'name')
+        .sort({ firstName: 1 });
+
+    const periodData = [];
+
+    for (const emp of employees) {
+        const attendance = await Attendance.find({
+            employeeId: emp._id,
+            date: { $gte: start, $lte: end }
+        });
+
+        let daysPresent = 0;
+        let totalWorkedMinutes = 0;
+        let overtimeMinutes = 0;
+        let totalEarnedSalary = 0;
+
+        const hourlyRate = emp.hourlyRate || emp.basicWageRate || (emp.basicSalary ? emp.basicSalary / 200 : 250);
+
+        attendance.forEach(att => {
+            if (['present', 'late', 'half_day'].includes(att.status)) {
+                daysPresent += att.status === 'half_day' ? 0.5 : 1;
+            }
+            totalWorkedMinutes += att.totalWorkedMinutes || 0;
+            overtimeMinutes += att.overtimeMinutes || 0;
+
+            if (att.earnedSalary && att.earnedSalary > 0) {
+                totalEarnedSalary += att.earnedSalary;
+            } else if (att.totalWorkedMinutes > 0) {
+                totalEarnedSalary += (att.totalWorkedMinutes / 60) * hourlyRate;
+            }
+        });
+
+        // Fetch pending salary advances for this employee up to end date
+        const advances = await SalaryAdvance.find({
+            employeeId: emp._id,
+            status: 'approved',
+            isDeducted: false,
+            date: { $lte: end }
+        });
+
+        const totalAdvanceDeduction = advances.reduce((sum, adv) => sum + (adv.amount || 0), 0);
+        const workedHours = +(totalWorkedMinutes / 60).toFixed(2);
+        const grossWage = +totalEarnedSalary.toFixed(2);
+        const netPayable = Math.max(0, +(grossWage - totalAdvanceDeduction).toFixed(2));
+
+        if (workedHours > 0 || grossWage > 0 || totalAdvanceDeduction > 0) {
+            periodData.push({
+                employeeId: emp._id,
+                employeeCode: emp.employeeCode,
+                employeeName: emp.fullName || `${emp.firstName} ${emp.lastName}`,
+                department: emp.departmentId?.name || '',
+                daysPresent,
+                workedHours,
+                overtimeHours: +(overtimeMinutes / 60).toFixed(2),
+                hourlyRate,
+                grossWage,
+                advancesCount: advances.length,
+                totalAdvanceDeduction: +totalAdvanceDeduction.toFixed(2),
+                netPayable,
+                advanceIds: advances.map(a => a._id)
+            });
+        }
+    }
+
+    const { default: BankAccount } = await import('../models/BankAccount.js');
+    const bankAccounts = await BankAccount.find({ isActive: true });
+
+    res.json({
+        success: true,
+        startDate,
+        endDate,
+        systemAttendanceRange: { minDate: minDateStr, maxDate: maxDateStr },
+        count: periodData.length,
+        summary: {
+            totalGrossWage: periodData.reduce((s, p) => s + p.grossWage, 0),
+            totalAdvancesDeducted: periodData.reduce((s, p) => s + p.totalAdvanceDeduction, 0),
+            totalNetPayable: periodData.reduce((s, p) => s + p.netPayable, 0)
+        },
+        bankAccounts,
+        data: periodData
+    });
+});

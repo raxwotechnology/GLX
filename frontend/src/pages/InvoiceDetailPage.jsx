@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Ban, Printer, Receipt, Download, CheckCircle, RefreshCw, Briefcase, FileCheck, FileText } from 'lucide-react';
+import { ArrowLeft, Send, Ban, Printer, Receipt, Download, CheckCircle, RefreshCw, Briefcase, FileCheck, FileText, RotateCcw } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
@@ -51,11 +51,17 @@ export default function InvoiceDetailPage() {
 
     // Quick Payment States
     const [isQuickPayOpen, setIsQuickPayOpen] = useState(false);
+    const [quickPayAmount, setQuickPayAmount] = useState('');
     const [quickPayMethod, setQuickPayMethod] = useState('cash');
     const [quickPayBankAccountId, setQuickPayBankAccountId] = useState('');
     const [quickPayReference, setQuickPayReference] = useState('');
     const [quickPayNotes, setQuickPayNotes] = useState('');
     const [isSavingPayment, setIsSavingPayment] = useState(false);
+
+    // Revert Modal State
+    const [isRevertOpen, setIsRevertOpen] = useState(false);
+    const [revertAdminPassword, setRevertAdminPassword] = useState('');
+    const [isReverting, setIsReverting] = useState(false);
 
     const { data: bankAccountsData } = useQuery({
         queryKey: ['bankAccounts'],
@@ -120,32 +126,60 @@ export default function InvoiceDetailPage() {
 
     const handleQuickPaymentSubmit = async (e) => {
         e.preventDefault();
+        const payVal = Number(quickPayAmount) > 0 ? Number(quickPayAmount) : inv.balanceDue;
+        if (payVal <= 0) {
+            toast.error('Payment amount must be greater than 0');
+            return;
+        }
         setIsSavingPayment(true);
         try {
             const payload = {
                 direction: 'received',
                 customerId: inv.customerId?._id || inv.customerId,
-                amount: inv.balanceDue,
+                amount: payVal,
                 method: quickPayMethod,
                 bankAccountId: (quickPayMethod === 'cheque' || quickPayMethod === 'bank_transfer') ? quickPayBankAccountId : undefined,
                 paymentDate: new Date().toISOString().split('T')[0],
                 allocations: [{
                     documentType: 'invoice',
                     documentId: inv._id,
-                    amount: inv.balanceDue
+                    amount: payVal
                 }],
-                notes: quickPayNotes || `Full payment for Invoice ${inv.invoiceNumber}`,
+                notes: quickPayNotes || `Payment for Invoice ${inv.invoiceNumber}`,
                 transactionReference: quickPayReference || undefined
             };
 
             await api.post('/payments', payload);
-            toast.success('Payment recorded and Invoice marked as Paid!');
+            toast.success(payVal >= inv.balanceDue ? 'Payment recorded and Invoice marked as Paid!' : `Partial Payment of LKR ${payVal.toLocaleString()} recorded!`);
             setIsQuickPayOpen(false);
             window.location.reload();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to record payment');
         } finally {
             setIsSavingPayment(false);
+        }
+    };
+
+    const handleRevertInvoiceSubmit = async (e) => {
+        e.preventDefault();
+        if (!revertAdminPassword) {
+            toast.error('Please enter Admin Password');
+            return;
+        }
+        setIsReverting(true);
+        try {
+            const { data: res } = await api.post(`/invoices/${inv._id}/revert-conversion`, {
+                adminPassword: revertAdminPassword
+            });
+            toast.success('Successfully reverted Invoice back to Quotation Draft!');
+            setIsRevertOpen(false);
+            if (res.data?._id) {
+                navigate(`/crm/quotations`);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to revert invoice');
+        } finally {
+            setIsReverting(false);
         }
     };
 
@@ -205,37 +239,34 @@ export default function InvoiceDetailPage() {
                 </span>}
                 description={`Issued ${fmtDate(inv.invoiceDate)} · Due ${fmtDate(inv.dueDate)}`}
                 actions={
-                    <div className="flex gap-2 flex-wrap">
-                        <Button variant="outline" onClick={() => navigate('/invoices')}>
-                            <ArrowLeft size={16} className="mr-1.5" /> Back
+                    <div className="flex flex-wrap items-center gap-2 max-w-full">
+                        <Button variant="outline" size="sm" onClick={() => navigate('/invoices')}>
+                            <ArrowLeft size={14} className="mr-1" /> Back
                         </Button>
-                        <Button variant="outline" onClick={handlePrint}>
-                            <Printer size={16} className="mr-1.5" /> Print
+                        <Button variant="outline" size="sm" onClick={handlePrint}>
+                            <Printer size={14} className="mr-1" /> Print
                         </Button>
-                        <Button variant="outline" onClick={() => setShareModalOpen(true)}>
-                            <Send size={16} className="mr-1.5" /> Share SMS
+                        <Button variant="outline" size="sm" onClick={() => setShareModalOpen(true)}>
+                            <Send size={14} className="mr-1" /> SMS
                         </Button>
-                        <Button variant="outline" onClick={() => exportElementToPDF(printRef.current, `invoice_${(inv.invoiceNumber || 'document').replace(/[\/\\:]/g, '_')}.pdf`)}>
-                            <Download size={16} className="mr-1.5" /> Download PDF
+                        <Button variant="outline" size="sm" onClick={() => exportElementToPDF(printRef.current, `invoice_${(inv.invoiceNumber || 'document').replace(/[\/\\:]/g, '_')}.pdf`)}>
+                            <Download size={14} className="mr-1" /> PDF
                         </Button>
                         {inv.balanceDue > 0 && inv.paymentStatus !== 'cancelled' && (
-                            <>
-                                <Button variant="outline" onClick={() => navigate(`/payments/new?invoiceId=${inv._id}`)}>
-                                    <Receipt size={16} className="mr-1.5" /> Record Payment
-                                </Button>
-                                <Button variant="primary" className="bg-green-600 hover:bg-green-700 text-white border-green-600" onClick={() => {
-                                    setQuickPayMethod('cash');
-                                    setQuickPayBankAccountId('');
-                                    setQuickPayReference('');
-                                    setQuickPayNotes('');
-                                    setIsQuickPayOpen(true);
-                                }}>
-                                    <CheckCircle size={16} className="mr-1.5" /> Mark as Paid
-                                </Button>
-                            </>
+                            <Button variant="primary" size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold" onClick={() => {
+                                setQuickPayAmount(inv.balanceDue || '');
+                                setQuickPayMethod('cash');
+                                setQuickPayBankAccountId('');
+                                setQuickPayReference('');
+                                setQuickPayNotes('');
+                                setIsQuickPayOpen(true);
+                            }}>
+                                <CheckCircle size={14} className="mr-1" /> Pay / Record Payment
+                            </Button>
                         )}
                         <Button
                             variant="outline"
+                            size="sm"
                             className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-bold"
                             onClick={() => {
                                 setConvertStep('choose');
@@ -245,11 +276,23 @@ export default function InvoiceDetailPage() {
                                 setIsConvertOpen(true);
                             }}
                         >
-                            <RefreshCw size={16} className="mr-1.5" /> Convert Document
+                            <RefreshCw size={14} className="mr-1" /> Convert
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 font-bold"
+                            onClick={() => {
+                                setRevertAdminPassword('');
+                                setIsRevertOpen(true);
+                            }}
+                            title="Revert Invoice back to Quotation Draft format (Admin Password Required)"
+                        >
+                            <RotateCcw size={14} className="mr-1" /> Revert (Admin)
                         </Button>
                         {actions.map((a) => (
-                            <Button key={a.label} variant={a.variant} onClick={() => setAction(a)}>
-                                <a.icon size={16} className="mr-1.5" /> {a.label}
+                            <Button key={a.label} variant={a.variant} size="sm" onClick={() => setAction(a)}>
+                                <a.icon size={14} className="mr-1" /> {a.label}
                             </Button>
                         ))}
                     </div>
@@ -474,13 +517,35 @@ export default function InvoiceDetailPage() {
                 <div className="fixed inset-0 bg-black/45 backdrop-blur-xs z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-[slideUp_0.2s_ease-out]">
                         <div className="flex justify-between items-center mb-4 border-b pb-2">
-                            <h3 className="text-lg font-bold text-slate-800">Quick Mark as Paid</h3>
-                            <button onClick={() => setIsQuickPayOpen(false)} className="text-gray-400 hover:text-slate-600 text-lg">×</button>
+                            <h3 className="text-lg font-bold text-slate-800">Record Payment</h3>
+                            <button onClick={() => setIsQuickPayOpen(false)} className="text-gray-400 hover:text-slate-600 text-lg">✕</button>
                         </div>
                         <form onSubmit={handleQuickPaymentSubmit} className="space-y-4">
-                            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 space-y-1">
-                                <span className="text-[10px] uppercase font-bold text-gray-500">Amount Due</span>
-                                <p className="text-xl font-bold text-blue-900">LKR {inv.balanceDue?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 flex items-center justify-between">
+                                <div>
+                                    <span className="text-[10px] uppercase font-bold text-gray-500">Current Balance Due</span>
+                                    <p className="text-xl font-bold text-blue-900">LKR {inv.balanceDue?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[10px] uppercase font-bold text-gray-500">Grand Total</span>
+                                    <p className="text-xs font-mono text-gray-700">LKR {inv.grandTotal?.toLocaleString()}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Payment Amount (LKR) *</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={inv.balanceDue}
+                                    step="0.01"
+                                    required
+                                    value={quickPayAmount}
+                                    onChange={(e) => setQuickPayAmount(e.target.value)}
+                                    placeholder={`Max LKR ${inv.balanceDue?.toLocaleString()}`}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold font-mono bg-white"
+                                />
+                                <p className="text-[11px] text-gray-500">Enter full amount (LKR {inv.balanceDue?.toLocaleString()}) or a partial payment amount.</p>
                             </div>
 
                             <div className="space-y-1">
@@ -530,6 +595,45 @@ export default function InvoiceDetailPage() {
                             <div className="flex justify-end gap-2 pt-4 border-t">
                                 <Button variant="outline" type="button" onClick={() => setIsQuickPayOpen(false)}>Cancel</Button>
                                 <Button variant="primary" type="submit" loading={isSavingPayment}>Confirm Payment</Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Revert Modal */}
+            {isRevertOpen && (
+                <div className="fixed inset-0 bg-black/45 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-[slideUp_0.2s_ease-out]">
+                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 className="text-lg font-bold text-amber-900 flex items-center gap-2">
+                                <RotateCcw size={18} /> Revert Invoice to Quotation
+                            </h3>
+                            <button onClick={() => setIsRevertOpen(false)} className="text-gray-400 hover:text-slate-600 text-lg">✕</button>
+                        </div>
+                        <form onSubmit={handleRevertInvoiceSubmit} className="space-y-4">
+                            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">
+                                <p className="font-bold uppercase">⚠️ Admin Authorization Required</p>
+                                <p>Reverting <strong>{inv.invoiceNumber}</strong> will cancel this invoice and restore/create a Quotation document in <strong>Draft</strong> status.</p>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Admin Password *</label>
+                                <input
+                                    type="password"
+                                    required
+                                    value={revertAdminPassword}
+                                    onChange={(e) => setRevertAdminPassword(e.target.value)}
+                                    placeholder="Enter Admin Password to verify"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white font-mono"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-4 border-t">
+                                <Button variant="outline" type="button" onClick={() => setIsRevertOpen(false)}>Cancel</Button>
+                                <Button variant="primary" type="submit" loading={isReverting} className="bg-amber-600 hover:bg-amber-700 text-white font-bold">
+                                    Confirm Revert
+                                </Button>
                             </div>
                         </form>
                     </div>

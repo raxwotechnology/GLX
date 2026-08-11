@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Mail, Phone, MapPin, CreditCard, User, Briefcase, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, Mail, Phone, MapPin, CreditCard, User, Briefcase, FileText, Receipt } from 'lucide-react';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -32,6 +32,9 @@ export default function EmployeeDetailPage() {
                     <div className="flex flex-wrap gap-2">
                         <Button variant="outline" onClick={() => navigate('/employees')}>
                             <ArrowLeft size={16} className="mr-1.5" /> Back
+                        </Button>
+                        <Button variant="outline" className="text-emerald-700 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 font-bold" onClick={() => navigate(`/employees/${id}/payment-sheet`)}>
+                            <Receipt size={16} className="mr-1.5" /> Pay Sheet / Salary Ledger
                         </Button>
                         <Button variant="outline" onClick={() => navigate(`/employees/${id}/edit`)}>
                             <Edit size={16} className="mr-1.5" /> Edit

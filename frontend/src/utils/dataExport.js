@@ -163,7 +163,7 @@ export const exportDocumentToPDF = async (docData, documentType = 'invoice') => 
     // 1. Header Details (GLS / GLX Grid Layout matching print layout)
     doc.setFont('times', 'bold');
     doc.setFontSize(13);
-    doc.text("GLS INDUSTRIES (PVT) LTD", 32, 13);
+    doc.text("GLX INDUSTRIES (PVT) LTD", 32, 13);
     
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);

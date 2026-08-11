@@ -326,6 +326,37 @@ export default function ProductFormModal({ isOpen, onClose, product = null, forc
                         />
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                            label="SKU / Internal Code"
+                            placeholder="e.g. SKU-1002"
+                            error={errors.sku?.message}
+                            {...register('sku')}
+                        />
+                        <div className="space-y-1">
+                            <div className="flex justify-between items-center">
+                                <label className="text-xs font-bold text-gray-700">Barcode Number</label>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const generatedBarcode = 'BC' + Math.floor(100000000000 + Math.random() * 900000000000);
+                                        setValue('barcode', generatedBarcode);
+                                    }}
+                                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+                                >
+                                    ⚡ Auto-Generate Barcode
+                                </button>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Scan or enter barcode"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none"
+                                {...register('barcode')}
+                            />
+                            {errors.barcode?.message && <p className="text-xs text-red-500">{errors.barcode.message}</p>}
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <Input
                             label="Cost (LKR) *"

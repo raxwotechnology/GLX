@@ -50,6 +50,9 @@ const quotationSchema = new mongoose.Schema({
         subtotal: { type: Number, default: 0 }
     }],
     totalAmount: { type: Number, default: 0 },
+    laborCost: { type: Number, default: 0 },
+    advanceAmount: { type: Number, default: 0 },
+    balanceAmount: { type: Number, default: 0 },
     tax: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
     grandTotal: { type: Number, default: 0 },
@@ -86,11 +89,10 @@ quotationSchema.pre('validate', async function () {
         this.quotationCode = `${docPrefix}-${year}-${seq}`;
         this.quoteNumber = this.quotationCode;
     }
-    // Auto-calculate grand total
-    if (this.isModified('items') || this.isNew) {
-        this.totalAmount = (this.items || []).reduce((sum, i) => sum + (i.subtotal || (i.quantity * i.unitPrice) || 0), 0);
-        this.grandTotal = this.totalAmount + (this.tax || 0) - (this.discount || 0);
-    }
+    // Auto-calculate grand total & balance
+    this.totalAmount = (this.items || []).reduce((sum, i) => sum + (i.subtotal || (i.quantity * i.unitPrice) || 0), 0);
+    this.grandTotal = (this.totalAmount || 0) + (this.laborCost || 0) + (this.tax || 0) - (this.discount || 0);
+    this.balanceAmount = Math.max(0, (this.grandTotal || 0) - (this.advanceAmount || 0));
 });
 
 export default mongoose.model('Quotation', quotationSchema);

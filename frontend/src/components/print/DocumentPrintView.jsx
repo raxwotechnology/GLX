@@ -125,7 +125,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                 <div className="grid grid-cols-3 gap-6 w-full text-xs text-gray-900">
                     {/* Left Column: Head Office */}
                     <div>
-                        <p className="font-bold text-sm uppercase tracking-wide">GLS Industries (Pvt) Ltd</p>
+                        <p className="font-bold text-sm uppercase tracking-wide">GLX Industries (Pvt) Ltd</p>
                         <p className="mt-1 text-[11px] leading-tight text-gray-600 font-calibri">
                             No.14, Negambo Road,<br />
                             Thudella, Ja-Ela,<br />
@@ -325,11 +325,17 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                         <div className="text-xs text-gray-600 leading-relaxed max-w-sm pt-2">
                             <span className="font-bold text-gray-800">Remarks :</span> {doc.remarks || 'Please process payments directly to the designated Nations Trust Bank account.'}
                         </div>
-                        <div className="w-72 bg-gray-50 border border-gray-300 rounded p-3 text-xs space-y-1.5 font-calibri">
+                        <div className="w-80 bg-gray-50 border border-gray-300 rounded p-3 text-xs space-y-1.5 font-calibri">
                             <div className="flex justify-between text-gray-700">
-                                <span>SUB TOTAL:</span>
+                                <span>ITEMS SUB TOTAL:</span>
                                 <span className="font-mono">{formatCurrency(doc.subtotal || doc.totalAmount)}</span>
                             </div>
+                            {doc.laborCost > 0 && (
+                                <div className="flex justify-between text-emerald-800 font-semibold">
+                                    <span>LABOR COST:</span>
+                                    <span className="font-mono">+{formatCurrency(doc.laborCost)}</span>
+                                </div>
+                            )}
                             {(doc.discount > 0 || doc.specialDiscount > 0) && (
                                 <div className="flex justify-between text-red-600 font-bold">
                                     <span>DISCOUNT:</span>
@@ -340,6 +346,18 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                                 <span>GRAND TOTAL:</span>
                                 <span className="font-mono text-blue-900 border-b-4 border-double border-gray-900 pb-0.5">{formatCurrency(doc.grandTotal || doc.finalSellingPrice)}</span>
                             </div>
+                            {(doc.advanceAmount > 0 || doc.amountPaid > 0) && (
+                                <div className="flex justify-between text-emerald-700 font-bold pt-1 border-t border-dashed">
+                                    <span>ADVANCE PAID:</span>
+                                    <span className="font-mono">-{formatCurrency(doc.advanceAmount || doc.amountPaid)}</span>
+                                </div>
+                            )}
+                            {(doc.balanceAmount !== undefined || doc.balanceDue !== undefined) && (
+                                <div className="flex justify-between text-amber-900 font-black pt-1 bg-amber-50 p-1 rounded border border-amber-200">
+                                    <span>BALANCE DUE:</span>
+                                    <span className="font-mono text-sm">{formatCurrency(doc.balanceAmount ?? doc.balanceDue ?? ((doc.grandTotal || 0) - (doc.advanceAmount || doc.amountPaid || 0)))}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -450,6 +468,12 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                                     <td className="py-2.5 px-3 text-center font-medium text-gray-500">{idx + 1}</td>
                                     <td className="py-2.5 px-3 font-semibold text-gray-800">
                                         <div>{desc}</div>
+                                        {item.description && item.description !== desc && (
+                                            <div className="text-[11px] text-gray-600 font-normal mt-0.5 whitespace-pre-wrap">{item.description}</div>
+                                        )}
+                                        {item.productTranslation && (
+                                            <div className="text-[11px] text-gray-500 font-normal italic mt-0.5">{item.productTranslation}</div>
+                                        )}
                                         {item.notes && <div className="text-[10px] text-gray-400 italic mt-0.5">{item.notes}</div>}
                                     </td>
                                     <td className="py-2.5 px-3 text-right font-mono text-gray-700">{formatCurrency(unitPrice)}</td>

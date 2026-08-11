@@ -2,7 +2,8 @@ import express from 'express';
 import {
     createInvoice, createFromSalesOrder, getInvoices, getInvoiceById,
     getAgingSummary, changeInvoiceStatus, deleteInvoice,
-    convertProformaToCommercial, convertInvoiceToProforma, convertInvoiceToProject
+    convertProformaToCommercial, convertInvoiceToProforma, convertInvoiceToProject,
+    revertInvoiceConversion
 } from '../controllers/invoiceController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
@@ -56,10 +57,16 @@ router.post(
     convertInvoiceToProject
 );
 
+router.post(
+    '/:id/revert-conversion',
+    requirePermission('invoices.edit'),
+    revertInvoiceConversion
+);
+
 router
     .route('/:id')
     .get(requirePermission('invoices.view'), getInvoiceById)
-    .delete(requirePermission('invoices.view'), deleteInvoice); // Assuming delete requires view at least, or separate code if needed
+    .delete(requirePermission('invoices.view'), deleteInvoice);
 
 router.patch(
     '/:id/status',

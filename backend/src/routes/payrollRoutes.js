@@ -5,7 +5,7 @@ import {
     getEmployeePayslip, previewPayslip, getMyPayslips,
     downloadPayrollSheet,
     getDailyPayrollSummary, processDailyPayout, getDailyPayrollHistory,
-    getPublicPayslipByToken
+    getPublicPayslipByToken, getPeriodPayrollSummary
 } from '../controllers/payrollController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
@@ -20,6 +20,7 @@ router.use(protect);
 router.get('/daily-summary', requirePermission('hr.payroll.view'), getDailyPayrollSummary);
 router.post('/daily-payout', requirePermission('hr.payroll.manage'), processDailyPayout);
 router.get('/daily-history', requirePermission('hr.payroll.view'), getDailyPayrollHistory);
+router.get('/period-summary', requirePermission('hr.payroll.view'), getPeriodPayrollSummary);
 
 router.post('/process', requirePermission('hr.payroll.manage'), processPayroll);
 router.post('/preview', requirePermission('hr.payroll.manage'), previewPayslip);

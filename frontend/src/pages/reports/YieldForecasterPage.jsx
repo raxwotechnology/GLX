@@ -171,7 +171,7 @@ export default function YieldForecasterPage() {
                 </div>
             )}
 
-            {!isLoading && forecastingData && forecastingData.history.length === 0 && (
+            {!isLoading && forecastingData && (!forecastingData.history || forecastingData.history.length === 0) && (
                 <div className="py-20 text-center text-gray-500 border-2 border-dashed border-gray-200 rounded-xl bg-white">
                     <BarChart2 size={48} className="mx-auto text-gray-300 mb-3" />
                     <p className="font-medium">No Historical Data Found</p>
@@ -179,7 +179,7 @@ export default function YieldForecasterPage() {
                 </div>
             )}
 
-            {!isLoading && forecastingData && forecastingData.history.length > 0 && (
+            {!isLoading && forecastingData && forecastingData.history?.length > 0 && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Charts Panel */}
                     <div className="col-span-2 space-y-6">
@@ -188,32 +188,15 @@ export default function YieldForecasterPage() {
                                 <TrendingUp size={16} className="text-indigo-600" />
                                 Historical Yield Efficiency Trend
                             </h3>
-                            <div className="h-80 w-full">
+                            <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                                        <YAxis unit="%" domain={[0, 100]} tick={{ fontSize: 10 }} />
-                                        <Tooltip />
-                                        <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
-                                        <Area
-                                            type="monotone"
-                                            dataKey="Actual Efficiency"
-                                            fill="#e0e7ff"
-                                            stroke="#6366f1"
-                                            strokeWidth={2}
-                                            name="Actual Yield %"
-                                        />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="Trend Projections"
-                                            stroke="#ec4899"
-                                            strokeWidth={2}
-                                            strokeDasharray="5 5"
-                                            dot={false}
-                                            name="Linear Trend Forecast"
-                                        />
-                                    </ComposedChart>
+                                    <AreaChart data={chartData}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                        <XAxis dataKey="name" stroke="#64748B" fontSize={12} />
+                                        <YAxis domain={[0, 100]} stroke="#64748B" fontSize={12} />
+                                        <Tooltip formatter={(val) => [`${val}%`, 'Efficiency']} />
+                                        <Area type="monotone" dataKey="efficiency" stroke="#4F46E5" fill="#EEF2FF" strokeWidth={2} />
+                                    </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </Card>
@@ -222,15 +205,15 @@ export default function YieldForecasterPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <Card className="p-4 bg-slate-50 border border-slate-100">
                                 <span className="text-gray-500 text-xs block font-medium">Batches Tracked</span>
-                                <span className="text-2xl font-bold text-slate-800">{forecastingData.statistics.count} Runs</span>
+                                <span className="text-2xl font-bold text-slate-800">{forecastingData.statistics?.count || 0} Runs</span>
                             </Card>
                             <Card className="p-4 bg-indigo-50 border border-indigo-100">
                                 <span className="text-indigo-600 text-xs block font-medium">Avg Yield Efficiency</span>
-                                <span className="text-2xl font-bold text-indigo-900">{forecastingData.statistics.averageEfficiency}%</span>
+                                <span className="text-2xl font-bold text-indigo-900">{forecastingData.statistics?.averageEfficiency || 0}%</span>
                             </Card>
                             <Card className="p-4 bg-pink-50 border border-pink-100">
                                 <span className="text-pink-600 text-xs block font-medium">Recent Moving Avg</span>
-                                <span className="text-2xl font-bold text-pink-900">{forecastingData.statistics.movingAverageRatio}%</span>
+                                <span className="text-2xl font-bold text-pink-900">{forecastingData.statistics?.movingAverageRatio || 0}%</span>
                             </Card>
                         </div>
                     </div>

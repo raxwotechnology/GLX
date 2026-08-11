@@ -10,6 +10,7 @@ import Holiday from '../models/Holiday.js';
 import SalaryStructure from '../models/SalaryStructure.js';
 import LeaveStructure from '../models/LeaveStructure.js';
 import AttendancePolicy from '../models/AttendancePolicy.js';
+import SalaryAdvance from '../models/SalaryAdvance.js';
 
 // ============================================================
 // DEPARTMENTS
@@ -1243,7 +1244,8 @@ export const getEmployeePaymentSheet = asyncHandler(async (req, res) => {
         }).sort({ date: 1 })
     ]);
 
-    const hourlyRate = employee.hourlyRate || 260;
+    const hourlyRate = employee.hourlyRate || employee.labourRate || 260;
+    const empName = employee.fullName || `${employee.firstName || ''} ${employee.lastName || ''}`.trim() || employee.displayName || 'Employee';
 
     // Create a date-wise mapping
     const rows = [];
@@ -1326,7 +1328,7 @@ export const getEmployeePaymentSheet = asyncHandler(async (req, res) => {
             employee: {
                 id: employee._id,
                 code: employee.employeeCode,
-                name: employee.fullName,
+                name: empName,
                 hourlyRate: hourlyRate
             },
             startDate: start.toLocaleDateString('en-GB'),

@@ -21,21 +21,21 @@ export default function InvoiceFormPage() {
     const navigate = useNavigate();
     const createMutation = useCreateInvoice();
 
-     const [customerId, setCustomerId] = useState('');
-     const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
-     const [dueDate, setDueDate] = useState('');
-     const [invoiceType, setInvoiceType] = useState('standard');
-     const [notes, setNotes] = useState('');
-     const [paymentInstructions, setPaymentInstructions] = useState('');
-     const [shippingCost, setShippingCost] = useState(0);
-     const [items, setItems] = useState([{ productName: '', quantity: 1, unitPrice: 0, taxRate: 18, taxable: true }]);
- 
-     const [introducer, setIntroducer] = useState('');
-     const [introducerName, setIntroducerName] = useState('');
-     const [biller, setBiller] = useState('');
-     const [billerName, setBillerName] = useState('');
-     const [numberPlateImage, setNumberPlateImage] = useState('');
-     const [lorryBodyImage, setLorryBodyImage] = useState('');
+    const [customerId, setCustomerId] = useState('');
+    const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
+    const [dueDate, setDueDate] = useState('');
+    const [invoiceType, setInvoiceType] = useState('standard');
+    const [notes, setNotes] = useState('');
+    const [paymentInstructions, setPaymentInstructions] = useState('');
+    const [shippingCost, setShippingCost] = useState(0);
+    const [items, setItems] = useState([{ productName: '', quantity: 1, unitPrice: 0, taxRate: 18, taxable: true }]);
+
+    const [introducer, setIntroducer] = useState('');
+    const [introducerName, setIntroducerName] = useState('');
+    const [biller, setBiller] = useState('');
+    const [billerName, setBillerName] = useState('');
+    const [numberPlateImage, setNumberPlateImage] = useState('');
+    const [lorryBodyImage, setLorryBodyImage] = useState('');
 
     const { data: customersData } = useQuery({
         queryKey: ['customers', 'active'],
@@ -70,7 +70,7 @@ export default function InvoiceFormPage() {
             value: p._id, label: `${p.name} — ${p.productCode}`,
         }));
 
-    const addItem = () => setItems([...items, { productName: '', quantity: 1, unitPrice: 0, taxRate: 18, taxable: true }]);
+    const addItem = () => setItems([...items, { productName: '', description: '', quantity: 1, unitPrice: 0, taxRate: 18, taxable: true }]);
     const removeItem = (idx) => setItems(items.filter((_, i) => i !== idx));
     const updateItem = (idx, field, value) => {
         const newItems = [...items];
@@ -80,6 +80,7 @@ export default function InvoiceFormPage() {
             if (p) {
                 newItems[idx].productName = p.name;
                 newItems[idx].productCode = p.productCode;
+                newItems[idx].description = p.description || '';
                 newItems[idx].unitPrice = p.basePrice || p.costs?.lastPurchaseCost || p.costs?.averageCost || 0;
                 newItems[idx].taxRate = p.tax?.taxRate || 0;
                 newItems[idx].taxable = p.tax?.taxable ?? true;
@@ -128,6 +129,7 @@ export default function InvoiceFormPage() {
                     productCode: i.productCode || undefined,
                     productName: i.productName,
                     productTranslation: i.productTranslation || undefined,
+                    description: i.description || undefined,
                     quantity: +i.quantity,
                     unitOfMeasure: i.unitOfMeasure || undefined,
                     unitPrice: +i.unitPrice,
@@ -158,7 +160,6 @@ export default function InvoiceFormPage() {
                         <div className="space-y-4">
                             <Select label="Customer" required placeholder="Select customer..."
                                 options={customerOptions} value={customerId} onChange={(e) => {
-                                    const custId = e.target.value;
                                     setCustomerId(custId);
                                     const cust = (customersData?.data || []).find((c) => c._id === custId);
                                     if (cust && cust.introducer) {
@@ -253,7 +254,29 @@ export default function InvoiceFormPage() {
                                 )}
                             </div>
 
-                            {/* Lorry Body Photo */}
+                            <div className="bg-slate-50 p-3 rounded-lg border border-gray-200 space-y-2">
+                                <label className="block text-xs font-bold text-gray-700 uppercase">Lorry Body Photo</label>
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    className="text-xs text-gray-500 w-full file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            const r = new FileReader();
+                                            r.onloadend = () => setLorryBodyImage(r.result);
+                                            r.readAsDataURL(file);
+                                        }
+                                    }}
+                                />
+                                {numberPlateImage && (
+                                    <div className="relative border rounded p-1 bg-white">
+                                        <img src={numberPlateImage} alt="Plate Preview" className="h-24 object-contain mx-auto" />
+                                        <button type="button" onClick={() => setNumberPlateImage('')} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5"><X size={12} /></button>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="bg-slate-50 p-3 rounded-lg border border-gray-200 space-y-2">
                                 <label className="block text-xs font-bold text-gray-700 uppercase">Lorry Body Photo</label>
                                 <input 
@@ -292,8 +315,8 @@ export default function InvoiceFormPage() {
                                 const lTax = item.taxable ? lSub * (+item.taxRate || 0) / 100 : 0;
                                 const lTot = lSub + lTax;
                                 return (
-                                    <div key={idx} className="border rounded-lg p-3">
-                                        <div className="flex gap-2 mb-2">
+                                    <div key={idx} className="border rounded-lg p-3 space-y-2">
+                                        <div className="flex gap-2">
                                             <span className="text-xs text-gray-500 mt-2 w-6">{idx + 1}</span>
                                             <div className="flex-1">
                                                 <Select placeholder="Product (or type below for service)..." options={productOptions}
@@ -303,9 +326,13 @@ export default function InvoiceFormPage() {
                                                 <Trash2 size={14} />
                                             </button>
                                         </div>
-                                        <Input label="Description / Name" required
-                                            value={item.productName} onChange={(e) => updateItem(idx, 'productName', e.target.value)} />
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <Input label="Item Name / Title *" required
+                                                value={item.productName} onChange={(e) => updateItem(idx, 'productName', e.target.value)} />
+                                            <Input label="Detailed Description / Work Specs" placeholder="Custom work specs, alloy welding details..."
+                                                value={item.description || ''} onChange={(e) => updateItem(idx, 'description', e.target.value)} />
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                             <Input label="Qty" type="number" step="0.01" min="0.01"
                                                 value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} />
                                             <Input label="Unit Price" type="number" step="0.01" min="0"

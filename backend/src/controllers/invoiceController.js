@@ -548,7 +548,7 @@ export const convertInvoiceToProject = asyncHandler(async (req, res) => {
             }],
             subtotal: advanceAmount,
             grandTotal: advanceAmount,
-            paidAmount: advanceAmount,
+            amountPaid: advanceAmount,
             balanceDue: 0,
             status: 'approved',
             paymentStatus: 'paid',
@@ -573,6 +573,103 @@ export const convertInvoiceToProject = asyncHandler(async (req, res) => {
     );
 
     res.status(201).json({ success: true, message: 'Converted Invoice to Project successfully', data: project });
+});
+
+/**
+ * POST /api/invoices/:id/revert-conversion
+ * Revert an invoice back to Quotation/Draft format requiring Admin Password
+ */
+export const revertInvoiceConversion = asyncHandler(async (req, res) => {
+    const { adminPassword } = req.body;
+    if (!adminPassword) {
+        res.status(400);
+        throw new Error('Admin password is required to revert conversion');
+    }
+
+    const { default: User } = await import('../models/User.js');
+    let authorized = false;
+
+    if (req.user) {
+        const currentUser = await User.findById(req.user._id).select('+password');
+        if (currentUser && currentUser.password) {
+            const isMatch = await currentUser.matchPassword(adminPassword);
+            if (isMatch && ['admin', 'superadmin', 'manager'].includes(currentUser.role)) {
+                authorized = true;
+            }
+        }
+    }
+
+    if (!authorized) {
+        const adminUsers = await User.find({ role: { $in: ['admin', 'superadmin'] }, isActive: true }).select('+password');
+        for (const admin of adminUsers) {
+            if (admin.password && (await admin.matchPassword(adminPassword))) {
+                authorized = true;
+                break;
+            }
+        }
+    }
+
+    if (!authorized) {
+        res.status(401);
+        throw new Error('Invalid Admin Password. Action unauthorized.');
+    }
+
+    const invoice = await Invoice.findById(req.params.id);
+    if (!invoice) {
+        res.status(404);
+        throw new Error('Invoice not found');
+    }
+
+    const { default: Quotation } = await import('../models/Quotation.js');
+
+    let quotation = null;
+
+    if (invoice.sourceDocumentId && invoice.sourceDocumentType === 'quotation') {
+        quotation = await Quotation.findById(invoice.sourceDocumentId);
+        if (quotation) {
+            quotation.status = 'draft';
+            quotation.convertedInvoiceId = undefined;
+            await quotation.save();
+        }
+    }
+
+    if (!quotation) {
+        quotation = new Quotation({
+            quoteNumber: `QUT-REV-${Date.now().toString().slice(-6)}`,
+            documentType: 'quotation',
+            status: 'draft',
+            customerName: invoice.customerSnapshot?.name || invoice.vehicleOwner || 'Customer',
+            customerPhone: invoice.customerSnapshot?.contactName || '',
+            customerEmail: invoice.customerSnapshot?.code || '',
+            vehicleNo: invoice.vehicleNo || '',
+            vehicleModel: invoice.vehicleModel || '',
+            insuranceCompany: invoice.insuranceCompany || '',
+            jobCaption: invoice.jobCaption || '',
+            items: (invoice.items || []).map(i => ({
+                productName: i.productName,
+                description: i.description,
+                quantity: i.quantity,
+                unitPrice: i.unitPrice,
+                subtotal: i.lineTotal
+            })),
+            totalAmount: invoice.subtotal || invoice.grandTotal,
+            grandTotal: invoice.grandTotal,
+            notes: invoice.notes,
+            createdBy: req.user._id
+        });
+        await quotation.save();
+    }
+
+    invoice.deletedAt = new Date();
+    invoice.status = 'cancelled';
+    invoice.cancellationReason = `Reverted to Quotation Draft by Admin (${req.user?.firstName || 'Admin'})`;
+    await invoice.save();
+
+    res.json({
+        success: true,
+        message: 'Successfully reverted Invoice back to Quotation Draft format!',
+        data: quotation
+    });
 });
 
 export { updateCustomerBalance };

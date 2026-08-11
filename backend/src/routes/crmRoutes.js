@@ -6,7 +6,8 @@ import {
     updateQuotation,
     deleteQuotation,
     convertQuotationToInvoice,
-    convertQuotationToProject
+    convertQuotationToProject,
+    revertQuotationConversion
 } from '../controllers/quotationController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -22,5 +23,6 @@ router.put('/quotations/:id',   updateQuotation);
 router.delete('/quotations/:id', deleteQuotation);
 router.post('/quotations/:id/convert-to-invoice', convertQuotationToInvoice);
 router.post('/quotations/:id/convert-to-project', convertQuotationToProject);
+router.post('/quotations/:id/revert-conversion', revertQuotationConversion);
 
 export default router;

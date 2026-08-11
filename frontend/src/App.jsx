@@ -124,6 +124,7 @@ import FuturePredictionsPage from './pages/reports/FuturePredictionsPage';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (
@@ -136,7 +137,9 @@ function App() {
       <Route
         element={
           <ProtectedRoute>
-            <AppLayout />
+            <ErrorBoundary>
+              <AppLayout />
+            </ErrorBoundary>
           </ProtectedRoute>
         }
       >

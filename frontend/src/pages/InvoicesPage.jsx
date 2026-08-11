@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Eye, FileText, AlertTriangle, CheckCircle, RefreshCw, Briefcase, FileCheck, Layers } from 'lucide-react';
+import { Plus, Search, Eye, FileText, AlertTriangle, CheckCircle, RefreshCw, Briefcase, FileCheck, Layers, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -33,10 +33,16 @@ export default function InvoicesPage() {
 
     // Quick Payment State
     const [selectedPayInvoice, setSelectedPayInvoice] = useState(null);
+    const [payAmount, setPayAmount] = useState('');
     const [payMethod, setPayMethod] = useState('cash');
     const [payBankAccountId, setPayBankAccountId] = useState('');
     const [payReference, setPayReference] = useState('');
     const [isSubmittingPay, setIsSubmittingPay] = useState(false);
+
+    // Revert Modal State
+    const [revertInvoiceModal, setRevertInvoiceModal] = useState(null);
+    const [revertAdminPassword, setRevertAdminPassword] = useState('');
+    const [isReverting, setIsReverting] = useState(false);
 
     // Conversion Modal State
     const [selectedConvertInvoice, setSelectedConvertInvoice] = useState(null);
@@ -75,26 +81,31 @@ export default function InvoicesPage() {
     const handleQuickPaySubmit = async (e) => {
         e.preventDefault();
         if (!selectedPayInvoice) return;
+        const pVal = Number(payAmount) > 0 ? Number(payAmount) : selectedPayInvoice.balanceDue;
+        if (pVal <= 0) {
+            toast.error('Enter a valid payment amount');
+            return;
+        }
         setIsSubmittingPay(true);
         try {
             const payload = {
                 direction: 'received',
                 customerId: selectedPayInvoice.customerId?._id || selectedPayInvoice.customerId,
-                amount: selectedPayInvoice.balanceDue,
+                amount: pVal,
                 method: payMethod,
                 bankAccountId: payMethod !== 'cash' ? (payBankAccountId || undefined) : undefined,
                 paymentDate: new Date().toISOString().split('T')[0],
                 allocations: [{
                     documentType: 'invoice',
                     documentId: selectedPayInvoice._id,
-                    amount: selectedPayInvoice.balanceDue
+                    amount: pVal
                 }],
-                notes: `Quick Payment for Invoice ${selectedPayInvoice.invoiceNumber}`,
+                notes: `Payment for Invoice ${selectedPayInvoice.invoiceNumber}`,
                 transactionReference: payReference || undefined
             };
 
             await api.post('/payments', payload);
-            toast.success(`Invoice ${selectedPayInvoice.invoiceNumber} marked as Paid!`);
+            toast.success(pVal >= selectedPayInvoice.balanceDue ? `Invoice ${selectedPayInvoice.invoiceNumber} marked as Paid!` : `Partial Payment of LKR ${pVal.toLocaleString()} recorded!`);
             setSelectedPayInvoice(null);
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['invoice'] });
@@ -103,6 +114,29 @@ export default function InvoicesPage() {
             toast.error(err.response?.data?.message || 'Failed to record payment');
         } finally {
             setIsSubmittingPay(false);
+        }
+    };
+
+    const handleRevertSubmit = async (e) => {
+        e.preventDefault();
+        if (!revertAdminPassword) {
+            toast.error('Please enter Admin Password');
+            return;
+        }
+        setIsReverting(true);
+        try {
+            await api.post(`/invoices/${revertInvoiceModal._id}/revert-conversion`, {
+                adminPassword: revertAdminPassword
+            });
+            toast.success(`Invoice ${revertInvoiceModal.invoiceNumber} reverted back to Quotation Draft!`);
+            setRevertInvoiceModal(null);
+            setRevertAdminPassword('');
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            navigate('/crm/quotations');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to revert invoice');
+        } finally {
+            setIsReverting(false);
         }
     };
 
@@ -204,19 +238,20 @@ export default function InvoicesPage() {
             render: (r) => <Badge variant={paymentStatusVariant[r.paymentStatus]}>{r.paymentStatus.replace('_', ' ')}</Badge>,
         },
         {
-            key: 'actions', label: 'Actions', width: '140px',
+            key: 'actions', label: 'Actions', width: '180px',
             render: (r) => (
                 <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     {r.paymentStatus !== 'paid' && r.balanceDue > 0 && (
                         <button
                             onClick={() => {
                                 setSelectedPayInvoice(r);
+                                setPayAmount(r.balanceDue || '');
                                 setPayMethod('cash');
                                 setPayBankAccountId('');
                                 setPayReference('');
                             }}
                             className="px-2 py-1 text-xs font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-1 shadow-xs"
-                            title="Mark as Paid / Record Payment"
+                            title="Record Payment / Mark Paid"
                         >
                             <CheckCircle size={12} /> Pay
                         </button>
@@ -233,6 +268,16 @@ export default function InvoicesPage() {
                         title="Convert Invoice"
                     >
                         <RefreshCw size={12} /> Convert
+                    </button>
+                    <button
+                        onClick={() => {
+                            setRevertInvoiceModal(r);
+                            setRevertAdminPassword('');
+                        }}
+                        className="px-2 py-1 text-xs font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg transition flex items-center gap-1 border border-amber-200"
+                        title="Revert to Quotation Draft (Admin Password required)"
+                    >
+                        <RotateCcw size={12} /> Revert
                     </button>
                     <button onClick={() => navigate(`/invoices/${r._id}`)}
                         className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded">
@@ -499,6 +544,138 @@ export default function InvoicesPage() {
                                 </div>
                             </form>
                         )}
+                    </div>
+                </div>
+            )}
+            {/* QUICK PAY MODAL */}
+            {selectedPayInvoice && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-scaleUp">
+                        <div className="flex justify-between items-center border-b pb-3">
+                            <div>
+                                <h3 className="font-bold text-gray-900 text-lg">Record Payment</h3>
+                                <p className="text-xs text-gray-500 font-mono">{selectedPayInvoice.invoiceNumber}</p>
+                            </div>
+                            <button onClick={() => setSelectedPayInvoice(null)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+                        </div>
+                        <form onSubmit={handleQuickPaySubmit} className="space-y-4">
+                            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between">
+                                <div>
+                                    <span className="text-[10px] uppercase font-bold text-emerald-700">Balance Due</span>
+                                    <p className="text-xl font-bold text-emerald-950">{fmt(selectedPayInvoice.balanceDue)}</p>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[10px] uppercase font-bold text-emerald-700">Total Invoice</span>
+                                    <p className="text-xs font-mono text-emerald-900">{fmt(selectedPayInvoice.grandTotal)}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Payment Amount (LKR) *</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={selectedPayInvoice.balanceDue}
+                                    step="0.01"
+                                    required
+                                    value={payAmount}
+                                    onChange={(e) => setPayAmount(e.target.value)}
+                                    placeholder={`Max ${selectedPayInvoice.balanceDue}`}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold font-mono bg-white"
+                                />
+                                <p className="text-[11px] text-gray-500">Enter full payment amount or partial payment amount.</p>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Payment Method</label>
+                                <select
+                                    value={payMethod}
+                                    onChange={(e) => setPayMethod(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                >
+                                    <option value="cash">Cash</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="card">Card</option>
+                                    <option value="cheque">Cheque</option>
+                                </select>
+                            </div>
+
+                            {(payMethod === 'cheque' || payMethod === 'bank_transfer') && (
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-700 uppercase">Company Bank Account</label>
+                                    <select
+                                        required
+                                        value={payBankAccountId}
+                                        onChange={(e) => setPayBankAccountId(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                    >
+                                        <option value="">-- Select Account --</option>
+                                        {bankAccounts.map(acc => (
+                                            <option key={acc._id} value={acc._id}>
+                                                {acc.bankName} - {acc.accountNumber} (LKR {acc.balance?.toLocaleString()})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Reference / Notes</label>
+                                <input
+                                    type="text"
+                                    value={payReference}
+                                    onChange={(e) => setPayReference(e.target.value)}
+                                    placeholder="Txn ID, Cheque No, or Notes"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-4 border-t">
+                                <Button variant="outline" type="button" onClick={() => setSelectedPayInvoice(null)}>Cancel</Button>
+                                <Button variant="primary" type="submit" loading={isSubmittingPay} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                                    Confirm Payment
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* REVERT INVOICE MODAL */}
+            {revertInvoiceModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-scaleUp">
+                        <div className="flex justify-between items-center border-b pb-3">
+                            <h3 className="font-bold text-amber-900 text-lg flex items-center gap-2">
+                                <RotateCcw size={18} /> Revert Invoice to Quotation
+                            </h3>
+                            <button onClick={() => setRevertInvoiceModal(null)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+                        </div>
+                        <form onSubmit={handleRevertSubmit} className="space-y-4">
+                            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">
+                                <p className="font-bold uppercase">⚠️ Admin Authorization Required</p>
+                                <p>Reverting <strong>{revertInvoiceModal.invoiceNumber}</strong> will cancel this invoice and restore/create a Quotation document in <strong>Draft</strong> status.</p>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Admin Password *</label>
+                                <input
+                                    type="password"
+                                    required
+                                    value={revertAdminPassword}
+                                    onChange={(e) => setRevertAdminPassword(e.target.value)}
+                                    placeholder="Enter Admin Password to verify"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white font-mono"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-4 border-t">
+                                <Button variant="outline" type="button" onClick={() => setRevertInvoiceModal(null)}>Cancel</Button>
+                                <Button variant="primary" type="submit" loading={isReverting} className="bg-amber-600 hover:bg-amber-700 text-white font-bold">
+                                    Confirm Revert
+                                </Button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
