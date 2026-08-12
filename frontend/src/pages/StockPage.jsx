@@ -230,7 +230,7 @@ export default function StockPage() {
                         <input
                             type="text"
                             placeholder="Search product..."
-                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-[16px] min-h-[44px]"
                             value={filters.search}
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
                         />

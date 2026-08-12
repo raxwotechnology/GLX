@@ -357,7 +357,7 @@ export default function AttendancePage() {
                 const isLoading = actionLoadingId === r.employeeId;
 
                 return (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1">
                         {!isClockedIn ? (
                             <Button
                                 variant="primary"
@@ -478,8 +478,8 @@ export default function AttendancePage() {
             </div>
 
             <Card>
-                <div className="p-4 border-b flex flex-wrap justify-between items-center gap-3">
-                    <div className="flex flex-wrap items-center gap-3">
+                <div className="p-3 sm:p-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                         <div className="w-full sm:w-48">
                             <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
                         </div>

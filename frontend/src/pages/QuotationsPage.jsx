@@ -589,20 +589,20 @@ const QuotationsPage = () => {
                         }}
                     />
                 </div>
-                <div className="w-full md:w-40">
+                <div className="w-full sm:w-44">
                     <select 
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[16px] sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                         value={documentTypeFilter}
                         onChange={(e) => setDocumentTypeFilter(e.target.value)}
                     >
-                        <option value="">All Types</option>
+                        <option value="">All Document Types</option>
                         <option value="quotation">Quotations (QUT)</option>
                         <option value="estimate">Estimates (EST)</option>
                     </select>
                 </div>
-                <div className="w-full md:w-40">
+                <div className="w-full sm:w-40">
                     <select 
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[16px] sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >

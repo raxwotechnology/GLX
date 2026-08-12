@@ -216,13 +216,13 @@ export default function ProductsPage() {
 
             <Card>
                 {/* Filters */}
-                <div className="p-4 border-b border-gray-200 flex flex-wrap gap-3">
-                    <div className="relative flex-1 min-w-[200px]">
+                <div className="p-3 sm:p-4 border-b border-gray-200 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                    <div className="relative flex-1 min-w-0">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Search by name, SKU, code..."
-                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 text-sm"
+                            className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 text-[16px] min-h-[44px]"
                             value={filters.search}
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
                         />

@@ -10,24 +10,24 @@ export default function KpiCard({
 
     return (
         <Card
-            className={`p-5 ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+            className={`p-3 sm:p-4 lg:p-5 ${onClick ? 'cursor-pointer hover:shadow-md active:scale-[0.98] transition-all' : ''}`}
             onClick={onClick}
         >
-            <div className="flex items-start justify-between">
-                <div className="flex-1">
-                    <p className="text-sm text-gray-600 mb-1">{label}</p>
-                    <p className="text-xl sm:text-2xl font-semibold text-gray-900">{value}</p>
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500 mb-1 truncate">{label}</p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight truncate">{value}</p>
                     {hasTrend && (
                         <p className={`text-xs mt-1 flex items-center gap-1 ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
-                            {trendUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                            {Math.abs(trend)}% {trendUp ? 'up' : 'down'} vs last period
+                            {trendUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                            {Math.abs(trend)}% {trendUp ? 'up' : 'down'}
                         </p>
                     )}
-                    {subtext && <p className="text-xs text-gray-500 mt-1">{subtext}</p>}
+                    {subtext && <p className="text-xs text-gray-400 mt-0.5 truncate">{subtext}</p>}
                 </div>
                 {Icon && (
                     <div className={`${iconBg} ${iconColor} w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
-                        <Icon size={18} />
+                        <Icon size={16} />
                     </div>
                 )}
             </div>

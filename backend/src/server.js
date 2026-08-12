@@ -184,6 +184,15 @@ app.use((req, res, next) => {
     next();
 });
 
+// Prevent browser caching on sensitive API routes (ERR-005 fix)
+app.use('/api', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    next();
+});
+
 
 // Logging in dev
 if (process.env.NODE_ENV === 'development') {

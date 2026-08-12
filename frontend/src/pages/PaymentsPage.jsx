@@ -147,7 +147,7 @@ export default function PaymentsPage() {
             label: '',
             width: '90px',
             render: (r) => (
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-1">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -176,7 +176,7 @@ export default function PaymentsPage() {
                 title="Receipts & Vouchers Module"
                 description="Manage customer cash in receipts and cash out payment vouchers"
                 actions={
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-2">
                         <Button
                             variant="success"
                             onClick={() => setIsReceiptModalOpen(true)}
@@ -231,21 +231,21 @@ export default function PaymentsPage() {
 
             <Card>
                 {/* Search & Filters */}
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-wrap gap-3 items-center justify-between">
-                    <div className="flex flex-wrap gap-3 items-center flex-1">
-                        <div className="relative min-w-[240px]">
-                            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row flex-wrap gap-2 items-start sm:items-center justify-between">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-2 items-stretch sm:items-center flex-1 w-full">
+                        <div className="relative w-full sm:min-w-[240px] sm:flex-1">
+                            <Search className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
                             <input
                                 type="text"
                                 placeholder="Search by ref #, name, vehicle, hire #..."
                                 value={filters.search}
                                 onChange={(e) => setFilters(f => ({ ...f, search: e.target.value, page: 1 }))}
-                                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
+                                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-[16px] sm:text-sm min-h-[44px]"
                             />
                         </div>
 
                         {activeTab === 'vouchers' && (
-                            <div className="w-64">
+                            <div className="w-full sm:w-64">
                                 <Select
                                     placeholder="All Voucher Types"
                                     options={[
@@ -261,7 +261,7 @@ export default function PaymentsPage() {
                             </div>
                         )}
 
-                        <div className="w-48">
+                        <div className="w-full sm:w-48">
                             <Select
                                 placeholder="All Payment Methods"
                                 options={[
@@ -345,7 +345,7 @@ export default function PaymentsPage() {
                                 </span>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 text-xs">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                                 <div>
                                     <span className="text-slate-500 font-semibold block">Date:</span>
                                     <p className="font-bold">{fmtDate(selectedPrintDoc.paymentDate)}</p>
@@ -391,7 +391,7 @@ export default function PaymentsPage() {
                             )}
 
                             {/* Signatures */}
-                            <div className="grid grid-cols-2 gap-8 pt-8 border-t border-dashed border-slate-300 text-center text-xs">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-8 border-t border-dashed border-slate-300 text-center text-xs">
                                 <div>
                                     <div className="border-b border-slate-400 mb-1 h-8"></div>
                                     <p className="font-bold text-slate-700 dark:text-slate-300">Received By Signature</p>

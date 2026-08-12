@@ -277,15 +277,15 @@ export default function ExpensesPage() {
       )}
 
       {/* Filters Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-2 sm:gap-3">
-        <div className="relative flex-1">
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row flex-wrap gap-2">
+        <div className="relative flex-1 min-w-0 w-full sm:w-auto">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
             type="text"
             placeholder="Search by title, number, payee, reference..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-[16px] min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 
@@ -371,7 +371,7 @@ export default function ExpensesPage() {
                       {expense.amount?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex flex-wrap items-center justify-center gap-1">
                         <button
                           onClick={() => handleOpenModal(expense)}
                           className="p-1.5 hover:bg-slate-100 text-slate-600 rounded transition-colors"
@@ -399,7 +399,7 @@ export default function ExpensesPage() {
       {/* Modal Form */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-800">
               {editingExpense ? 'Edit Expense Record' : 'Record New Expense'}
             </h3>
@@ -486,7 +486,7 @@ export default function ExpensesPage() {
                   
                   {formData.items?.map((item, idx) => (
                     <div key={idx} className="space-y-2 border-b pb-2 last:border-b-0 last:pb-0">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <label className="block text-[10px] text-gray-500 font-bold uppercase">Material *</label>
                           <select
@@ -517,7 +517,7 @@ export default function ExpensesPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-4 gap-2 items-center">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-center">
                         <div>
                           <label className="block text-[10px] text-gray-500 font-bold uppercase">Cost per Unit</label>
                           <input

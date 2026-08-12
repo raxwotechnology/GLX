@@ -240,7 +240,7 @@ export default function InvoicesPage() {
         {
             key: 'actions', label: 'Actions', width: '180px',
             render: (r) => (
-                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     {r.paymentStatus !== 'paid' && r.balanceDue > 0 && (
                         <button
                             onClick={() => {
@@ -326,7 +326,7 @@ export default function InvoicesPage() {
 
             <Card>
                 {/* Invoice Type & Status Filter Pills */}
-                <div className="flex border-b border-gray-200 bg-white rounded-t-xl overflow-hidden">
+                <div className="flex overflow-x-auto flex-nowrap border-b border-gray-200 bg-white rounded-t-xl">
                     <button
                         onClick={() => setFilters((f) => ({ ...f, invoiceType: 'commercial', paymentStatus: '', page: 1 }))}
                         className={`flex-1 py-3 px-4 text-xs md:text-sm font-semibold border-b-2 text-center transition-all ${
@@ -359,11 +359,11 @@ export default function InvoicesPage() {
                     </button>
                 </div>
 
-                <div className="p-4 border-b border-gray-200 flex flex-wrap gap-3">
+                <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row flex-wrap gap-2">
                     <div className="relative flex-1 min-w-[200px]">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input type="text" placeholder="Search by invoice # or customer..."
-                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm text-[16px] min-h-[44px]"
                             value={filters.search}
                             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
                             onKeyDown={async (e) => {

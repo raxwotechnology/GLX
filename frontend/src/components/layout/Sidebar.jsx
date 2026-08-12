@@ -479,10 +479,10 @@ export default function Sidebar({ isOpen, onClose }) {
 
     return (
         <>
-            {/* Backdrop overlay (mobile) */}
+            {/* Backdrop overlay (mobile <1024px) */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 lg:hidden"
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-30 lg:hidden"
                     onClick={onClose}
                 />
             )}
@@ -490,14 +490,9 @@ export default function Sidebar({ isOpen, onClose }) {
             {/* Sidebar panel */}
             <aside
                 ref={sidebarRef}
-                style={{
-                    width: isOpen ? '256px' : '0px',
-                    minWidth: isOpen ? '256px' : '0px',
-                    overflow: 'hidden',
-                    transition: 'width 0.25s ease, min-width 0.25s ease',
-                    flexShrink: 0,
-                }}
-                className="h-screen bg-[#0B192C] border-r border-slate-900 flex flex-col z-40 relative text-slate-100"
+                className={`fixed lg:static inset-y-0 left-0 h-screen bg-[#0B192C] border-r border-slate-900 flex flex-col z-40 text-slate-100 transition-all duration-300 ease-in-out ${
+                    isOpen ? 'translate-x-0 w-64 min-w-[256px]' : '-translate-x-full lg:translate-x-0 lg:w-64 lg:min-w-[256px] w-0 min-w-0 overflow-hidden'
+                }`}
             >
                 <div className="w-64 flex flex-col h-full">
 

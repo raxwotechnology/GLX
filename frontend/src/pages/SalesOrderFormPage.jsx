@@ -270,7 +270,7 @@ export default function SalesOrderFormPage() {
                         <div className="space-y-4">
 
                             {/* Customer with quick-create button */}
-                            <div className="flex gap-2 items-end">
+                            <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
                                 <div className="flex-1">
                                     <Select
                                         label="Customer" required
@@ -362,7 +362,7 @@ export default function SalesOrderFormPage() {
 
                     {/* Line Items */}
                     <Card className="p-3 sm:p-6">
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 mb-4">
                             <h3 className="text-sm font-semibold text-gray-700">Line Items</h3>
                             <Button type="button" variant="outline" size="sm" onClick={addItem}>
                                 <Plus size={14} className="mr-1" /> Add Item
@@ -416,7 +416,7 @@ export default function SalesOrderFormPage() {
                                                     </div>
 
                                                     {item.productId && stock && (
-                                                        <div className="mt-1 flex gap-2 items-center text-xs">
+                                                        <div className="mt-1 flex flex-wrap gap-2 items-center text-xs">
                                                             <span className="text-gray-500">Stock:</span>
                                                             <Badge variant={available > 0 ? 'success' : 'danger'}>
                                                                 {available} available
@@ -437,7 +437,7 @@ export default function SalesOrderFormPage() {
                                                 </button>
                                             </div>
 
-                                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                                                 <div>
                                                     <Input
                                                         label="Qty" type="number" step="0.01" min="0.01"
@@ -495,7 +495,7 @@ export default function SalesOrderFormPage() {
 
                 {/* Order Summary sidebar */}
                 <div className="space-y-6">
-                    <Card className="p-3 sm:p-6 sticky top-6">
+                    <Card className="p-3 sm:p-6 lg:sticky lg:top-6">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Order Summary</h3>
                         <div className="space-y-3">
                             <div className="flex justify-between text-sm">
@@ -507,13 +507,13 @@ export default function SalesOrderFormPage() {
                                 <span className="text-red-600">-{fmt(totals.totalDiscount)}</span>
                             </div>
 
-                            <div className="flex items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                                 <label className="text-sm text-gray-600">Order Discount %</label>
                                 <input
                                     type="number" step="0.01" min="0" max="100"
                                     value={orderDiscountPercent}
                                     onChange={(e) => setOrderDiscountPercent(e.target.value)}
-                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                    className="w-20 min-w-0 px-2 py-1 border border-gray-300 rounded text-sm text-right"
                                 />
                             </div>
 
@@ -529,13 +529,13 @@ export default function SalesOrderFormPage() {
                                 <span>{fmt(totals.totalTax)}</span>
                             </div>
 
-                            <div className="flex items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                                 <label className="text-sm text-gray-600">Shipping Cost</label>
                                 <input
                                     type="number" step="0.01" min="0"
                                     value={shippingCost}
                                     onChange={(e) => setShippingCost(e.target.value)}
-                                    className="w-28 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                    className="w-28 min-w-0 px-2 py-1 border border-gray-300 rounded text-sm text-right"
                                 />
                             </div>
 

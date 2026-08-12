@@ -274,6 +274,7 @@ export default function DashboardPage() {
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                     <Card className="lg:col-span-2 p-6">
                                         <h3 className="text-sm font-bold text-gray-700 mb-4">Revenue Trend (Last 6 Months)</h3>
+                                        <div className="min-h-[200px] sm:min-h-[280px]">
                                         <ResponsiveContainer width="100%" height={280}>
                                             <LineChart data={revenueData?.data || []}>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -283,6 +284,7 @@ export default function DashboardPage() {
                                                 <Line type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2.5} dot={{ fill: '#6366f1', r: 4 }} activeDot={{ r: 6 }} />
                                             </LineChart>
                                         </ResponsiveContainer>
+                                        </div>
                                     </Card>
                                     
                                     <Card className="p-6">
@@ -744,7 +746,7 @@ function EmployeeDashboard() {
             </div>
 
             {/* Advance Ledger KPI Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-200/80 p-4 rounded-2xl">
                     <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block">Outstanding Balance (ශේෂය)</span>
                     <span className="text-xl sm:text-2xl font-extrabold text-amber-900 mt-1 block font-mono">
@@ -781,7 +783,7 @@ function EmployeeDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="p-5 md:col-span-2">
                     <h3 className="text-sm font-semibold mb-4 text-gray-700">My Leave Balances (Remaining)</h3>
-                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                         <div className="bg-blue-50 border border-blue-100 p-3.5 rounded-xl text-center">
                             <span className="text-xl sm:text-2xl font-bold text-blue-700 block">{profile.leaveBalances?.annual || 0}</span>
                             <span className="text-[10px] text-blue-600 font-medium uppercase tracking-wider">Annual</span>

@@ -9,7 +9,24 @@ import Customer from '../models/Customer.js';
 import { reportService } from '../services/reportService.js';
 
 export const exportPettyCash = asyncHandler(async (req, res) => {
-    const data = await PettyCash.find().sort({ date: -1 });
+    const { startDate, endDate, category, search, status } = req.query;
+    const filter = {};
+    if (category) filter.category = category;
+    if (status) filter.status = status;
+    if (search) {
+        filter.$or = [
+            { voucherCode: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } },
+            { paidTo: { $regex: search, $options: 'i' } }
+        ];
+    }
+    if (startDate || endDate) {
+        filter.date = {};
+        if (startDate) filter.date.$gte = new Date(startDate);
+        if (endDate) filter.date.$lte = new Date(endDate);
+    }
+
+    const data = await PettyCash.find(filter).sort({ date: -1 });
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Petty Cash');
 
@@ -27,7 +44,7 @@ export const exportPettyCash = asyncHandler(async (req, res) => {
     data.forEach(item => {
         sheet.addRow({
             ...item.toObject(),
-            date: item.date.toISOString().split('T')[0]
+            date: item.date ? item.date.toISOString().split('T')[0] : ''
         });
     });
 
@@ -38,7 +55,22 @@ export const exportPettyCash = asyncHandler(async (req, res) => {
 });
 
 export const exportProduction = asyncHandler(async (req, res) => {
-    const data = await ProductionBatch.find().populate('productId').sort({ createdAt: -1 });
+    const { startDate, endDate, status, search } = req.query;
+    const filter = {};
+    if (status) filter.status = status;
+    if (search) {
+        filter.$or = [
+            { batchNumber: { $regex: search, $options: 'i' } },
+            { product: { $regex: search, $options: 'i' } }
+        ];
+    }
+    if (startDate || endDate) {
+        filter.createdAt = {};
+        if (startDate) filter.createdAt.$gte = new Date(startDate);
+        if (endDate) filter.createdAt.$lte = new Date(endDate);
+    }
+
+    const data = await ProductionBatch.find(filter).populate('productId').sort({ createdAt: -1 });
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Production');
 
@@ -71,7 +103,15 @@ export const exportProduction = asyncHandler(async (req, res) => {
 });
 
 export const exportPnL = asyncHandler(async (req, res) => {
-    const data = await DailyPnL.find().sort({ date: -1 });
+    const { startDate, endDate } = req.query;
+    const filter = {};
+    if (startDate || endDate) {
+        filter.date = {};
+        if (startDate) filter.date.$gte = new Date(startDate);
+        if (endDate) filter.date.$lte = new Date(endDate);
+    }
+
+    const data = await DailyPnL.find(filter).sort({ date: -1 });
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Daily P&L');
 
@@ -89,7 +129,7 @@ export const exportPnL = asyncHandler(async (req, res) => {
     data.forEach(item => {
         sheet.addRow({
             ...item.toObject(),
-            date: item.date.toISOString().split('T')[0]
+            date: item.date ? item.date.toISOString().split('T')[0] : ''
         });
     });
 

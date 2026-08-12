@@ -53,15 +53,28 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Handle 401 (token expired/invalid) globally
+// Handle API error responses globally
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        const status = error.response?.status;
+        const message = error.response?.data?.message || error.message || 'An unexpected error occurred';
+
+        if (status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('auth-storage'); // Reset Zustand persisted auth state
-            window.location.href = '/login';
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        } else if (status === 403) {
+            import('react-hot-toast').then(({ default: toast }) => {
+                toast.error(message || 'You do not have permission to perform this action.');
+            }).catch(() => {});
+        } else if (status >= 500) {
+            import('react-hot-toast').then(({ default: toast }) => {
+                toast.error(message || 'Server error. Please try again or contact support.');
+            }).catch(() => {});
         }
         return Promise.reject(error);
     }
