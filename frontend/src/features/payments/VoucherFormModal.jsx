@@ -21,6 +21,12 @@ const VOUCHER_REASON_TYPES = [
         description: 'Payment made to suppliers or vendors for goods/materials supplied.',
     },
     {
+        id: 'labor_advance',
+        label: 'Labor / Salary Advance',
+        icon: UserCheck,
+        description: 'Cash advance given to workers/staff. Automatically deducted during monthly payroll.',
+    },
+    {
         id: 'transport_hire',
         label: 'Transport & Hire Expense',
         icon: Truck,
@@ -38,6 +44,7 @@ export default function VoucherFormModal({ isOpen, onClose, onSuccess }) {
     const [voucherType, setVoucherType] = useState('customer_advance_refund');
     const [customerId, setCustomerId] = useState('');
     const [supplierId, setSupplierId] = useState('');
+    const [employeeId, setEmployeeId] = useState('');
     const [partyName, setPartyName] = useState('');
     const [amount, setAmount] = useState('');
     const [method, setMethod] = useState('cash');
@@ -56,15 +63,20 @@ export default function VoucherFormModal({ isOpen, onClose, onSuccess }) {
     const [selectedDocId, setSelectedDocId] = useState('');
     const [isSearchingDocs, setIsSearchingDocs] = useState(false);
     const [suppliers, setSuppliers] = useState([]);
+    const [employees, setEmployees] = useState([]);
     const [bankAccounts, setBankAccounts] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Fetch suppliers and bank accounts
+    // Fetch suppliers, employees and bank accounts
     useEffect(() => {
         if (!isOpen) return;
         api.get('/suppliers?limit=300')
             .then(res => setSuppliers(res.data?.data || []))
             .catch(() => setSuppliers([]));
+
+        api.get('/hr/employees?limit=300')
+            .then(res => setEmployees(res.data?.data || []))
+            .catch(() => setEmployees([]));
 
         api.get('/finance/bank-accounts')
             .then(res => {
@@ -120,6 +132,10 @@ export default function VoucherFormModal({ isOpen, onClose, onSuccess }) {
             toast.error('Please select a supplier for Supplier Payment');
             return;
         }
+        if ((voucherType === 'labor_advance' || voucherType === 'salary_advance') && !employeeId) {
+            toast.error('Please select an employee for Labor Advance');
+            return;
+        }
 
         // Selected document allocation
         const allocations = [];
@@ -141,6 +157,7 @@ export default function VoucherFormModal({ isOpen, onClose, onSuccess }) {
                 voucherType,
                 customerId: voucherType === 'customer_advance_refund' ? customerId : undefined,
                 supplierId: voucherType === 'supplier_payment' ? supplierId : undefined,
+                employeeId: (voucherType === 'labor_advance' || voucherType === 'salary_advance') ? employeeId : undefined,
                 partyName: partyName || (voucherType === 'transport_hire' ? transportDriver : 'Operational Cash'),
                 amount: numAmt,
                 method,
@@ -262,6 +279,32 @@ export default function VoucherFormModal({ isOpen, onClose, onSuccess }) {
                                         ...suppliers.map((s) => ({
                                             value: s._id,
                                             label: `${s.displayName || s.companyName} (${s.supplierCode || ''})`,
+                                        })),
+                                    ]}
+                                />
+                            </div>
+                        )}
+
+                        {(voucherType === 'labor_advance' || voucherType === 'salary_advance') && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    Employee / Worker <span className="text-rose-500">*</span>
+                                </label>
+                                <Select
+                                    value={employeeId}
+                                    onChange={(e) => {
+                                        const empId = e.target.value;
+                                        setEmployeeId(empId);
+                                        const found = employees.find(emp => emp._id === empId);
+                                        if (found) {
+                                            setPartyName(`${found.firstName || ''} ${found.lastName || ''}`.trim() || found.employeeCode);
+                                        }
+                                    }}
+                                    options={[
+                                        { value: '', label: '-- Select Employee --' },
+                                        ...employees.map((emp) => ({
+                                            value: emp._id,
+                                            label: `${emp.firstName || ''} ${emp.lastName || ''} (${emp.employeeCode || ''})`,
                                         })),
                                     ]}
                                 />

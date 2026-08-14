@@ -22,19 +22,25 @@ const settingsSchema = z.object({
     defaultTaxRate: z.coerce.number().min(0),
     lowStockThreshold: z.coerce.number().min(0),
     managerSmsPhone: z.string().optional(),
+    invoiceCustomTemplateUrl: z.string().optional(),
+    quotationCustomTemplateUrl: z.string().optional(),
+    activeInvoiceTemplate: z.string().optional(),
+    activeQuotationTemplate: z.string().optional(),
 });
 
 const TABS = [
     { id: 'company',   label: 'Company Profile',    icon: Building2,  color: 'text-blue-500' },
     { id: 'finance',   label: 'Financial Defaults', icon: DollarSign, color: 'text-emerald-500' },
     { id: 'inventory', label: 'Inventory Settings', icon: Package,    color: 'text-amber-500' },
+    { id: 'templates', label: 'Print Templates',    icon: BadgeCheck, color: 'text-purple-500' },
 ];
 
 function SectionBadge({ icon: Icon, label, accent = 'blue' }) {
     const map = {
-        blue:    'bg-blue-50 border-blue-200 text-blue-600',
-        emerald: 'bg-emerald-50 border-emerald-200 text-emerald-600',
-        amber:   'bg-amber-50 border-amber-200 text-amber-600',
+        blue:     'bg-blue-50 border-blue-200 text-blue-600',
+        emerald:  'bg-emerald-50 border-emerald-200 text-emerald-600',
+        amber:    'bg-amber-50 border-amber-200 text-amber-600',
+        purple:   'bg-purple-50 border-purple-200 text-purple-600',
     };
     return (
         <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border mb-5 ${map[accent]}`}>
@@ -330,6 +336,72 @@ export default function SettingsPage() {
                                             <p className="text-sm font-semibold text-amber-700">Low Stock Notifications</p>
                                             <p className="text-xs text-amber-600/70 mt-0.5">
                                                 When any product's stock drops at or below this threshold, the system triggers a real-time alert and highlights it on the dashboard.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── PRINT TEMPLATES ───────────────────────── */}
+                            {activeTab === 'templates' && (
+                                <div>
+                                    <SectionBadge icon={BadgeCheck} label="Custom Quotation & Invoice Templates" accent="purple" />
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                                        {/* Quotation Template */}
+                                        <div className="border border-gray-200 rounded-xl p-4 space-y-4">
+                                            <h4 className="font-bold text-sm text-gray-800">Quotation Print Template</h4>
+                                            <StyledInput
+                                                label="Custom Quotation Header/Background Image URL"
+                                                icon={Globe}
+                                                placeholder="https://example.com/quotation-header.png"
+                                                error={errors.quotationCustomTemplateUrl?.message}
+                                                registration={register('quotationCustomTemplateUrl')}
+                                            />
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+                                                    Default Quotation Print Mode
+                                                </label>
+                                                <select
+                                                    {...register('activeQuotationTemplate')}
+                                                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium outline-none focus:border-purple-500"
+                                                >
+                                                    <option value="default">System Default Template</option>
+                                                    <option value="custom">Custom Uploaded Template</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Invoice Template */}
+                                        <div className="border border-gray-200 rounded-xl p-4 space-y-4">
+                                            <h4 className="font-bold text-sm text-gray-800">Invoice Print Template</h4>
+                                            <StyledInput
+                                                label="Custom Invoice Header/Background Image URL"
+                                                icon={Globe}
+                                                placeholder="https://example.com/invoice-header.png"
+                                                error={errors.invoiceCustomTemplateUrl?.message}
+                                                registration={register('invoiceCustomTemplateUrl')}
+                                            />
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+                                                    Default Invoice Print Mode
+                                                </label>
+                                                <select
+                                                    {...register('activeInvoiceTemplate')}
+                                                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium outline-none focus:border-purple-500"
+                                                >
+                                                    <option value="default">System Default Template</option>
+                                                    <option value="custom">Custom Uploaded Template</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl bg-purple-50 border border-purple-100 p-4 flex gap-3">
+                                        <CheckCircle2 size={18} className="text-purple-500 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-purple-700">Dynamic Template Selection</p>
+                                            <p className="text-xs text-purple-600/70 mt-0.5">
+                                                When printing or generating Invoices or Quotations, you can choose on-the-fly whether to use the system default template or your uploaded custom template.
                                             </p>
                                         </div>
                                     </div>

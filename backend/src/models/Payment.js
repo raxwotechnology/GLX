@@ -22,7 +22,8 @@ const paymentSchema = new mongoose.Schema({
 
     // Voucher details
     voucherType: {
-        type: String, // customer_advance_refund | supplier_payment | transport_hire | operational_expense
+        type: String,
+        enum: ['customer_advance_refund', 'supplier_payment', 'transport_hire', 'operational_expense', 'labor_advance', 'salary_advance'],
         required: false,
     },
     voucherCategory: { type: String, trim: true },
@@ -32,9 +33,10 @@ const paymentSchema = new mongoose.Schema({
     vehicleNo: { type: String, trim: true },
     transportDriver: { type: String, trim: true },
 
-    // Customer (if received / advance refund) OR supplier (if paid)
+    // Customer (if received / advance refund) OR supplier (if paid) OR employee (if labor advance)
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
     supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
+    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
     bankAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'BankAccount' },
     partyName: String,
 

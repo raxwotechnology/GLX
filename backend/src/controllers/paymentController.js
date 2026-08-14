@@ -360,6 +360,7 @@ export const getPayments = asyncHandler(async (req, res) => {
         Payment.find(filter)
             .populate('customerId', 'displayName customerCode companyName')
             .populate('supplierId', 'displayName supplierCode companyName')
+            .populate('employeeId', 'firstName lastName employeeCode')
             .populate('receivedBy', 'firstName lastName')
             .populate('createdBy', 'firstName lastName')
             .sort({ paymentDate: -1, createdAt: -1 }).skip(skip).limit(Number(limit)),
@@ -378,6 +379,7 @@ export const getPaymentById = asyncHandler(async (req, res) => {
     const payment = await Payment.findById(req.params.id)
         .populate('customerId', 'displayName customerCode companyName')
         .populate('supplierId', 'displayName supplierCode companyName')
+        .populate('employeeId', 'firstName lastName employeeCode')
         .populate('receivedBy', 'firstName lastName')
         .populate('createdBy', 'firstName lastName');
     if (!payment) { res.status(404); throw new Error('Payment or Voucher not found'); }
@@ -392,12 +394,14 @@ export const getPaymentById = asyncHandler(async (req, res) => {
  * 2. supplier_payment (Supplier Payment)
  * 3. transport_hire (Transport & Hire Expense)
  * 4. operational_expense (Petty Cash / Daily Yard Expenses)
+ * 5. labor_advance / salary_advance (Labor / Employee Salary Advance)
  */
 export const createVoucher = asyncHandler(async (req, res) => {
     const {
         voucherType,
         customerId,
         supplierId,
+        employeeId,
         partyName,
         bankAccountId,
         amount,
@@ -442,6 +446,12 @@ export const createVoucher = asyncHandler(async (req, res) => {
                 const s = await Supplier.findById(supplierId).session(session);
                 if (!s) throw new Error('Supplier not found');
                 resolvedPartyName = s.displayName || s.companyName;
+            } else if (voucherType === 'labor_advance' || voucherType === 'salary_advance') {
+                if (!employeeId) throw new Error('Employee selection is required for Labor Advance Voucher');
+                const Employee = (await import('../models/Employee.js')).default;
+                const emp = await Employee.findById(employeeId).session(session);
+                if (!emp) throw new Error('Employee not found');
+                resolvedPartyName = `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.employeeCode || 'Employee';
             }
 
             // Update bank account if provided
@@ -459,6 +469,7 @@ export const createVoucher = asyncHandler(async (req, res) => {
                 voucherCategory: voucherType,
                 customerId: voucherType === 'customer_advance_refund' ? customerId : undefined,
                 supplierId: voucherType === 'supplier_payment' ? supplierId : undefined,
+                employeeId: (voucherType === 'labor_advance' || voucherType === 'salary_advance') ? employeeId : undefined,
                 partyName: resolvedPartyName,
                 bankAccountId,
                 amount: numAmount,
@@ -478,6 +489,22 @@ export const createVoucher = asyncHandler(async (req, res) => {
             });
 
             await voucher.save({ session });
+
+            // If voucher is labor_advance or salary_advance, auto-create SalaryAdvance record for payroll deduction
+            if ((voucherType === 'labor_advance' || voucherType === 'salary_advance') && employeeId) {
+                const SalaryAdvance = (await import('../models/SalaryAdvance.js')).default;
+                await SalaryAdvance.create([{
+                    employeeId,
+                    date: voucher.paymentDate || new Date(),
+                    advanceType: 'amount',
+                    amount: numAmount,
+                    reason: notes || `Payment Voucher Advance: ${voucher.paymentNumber}`,
+                    status: 'approved',
+                    approvedBy: req.user._id,
+                    approvedAt: new Date(),
+                    createdBy: req.user._id,
+                }], { session });
+            }
 
             // Apply allocations or update document amounts
             for (const alloc of allocations) {
@@ -518,6 +545,7 @@ export const createVoucher = asyncHandler(async (req, res) => {
         const populated = await Payment.findById(voucher._id)
             .populate('customerId', 'displayName customerCode companyName')
             .populate('supplierId', 'displayName supplierCode companyName')
+            .populate('employeeId', 'firstName lastName employeeCode')
             .populate('bankAccountId', 'bankName accountNumber accountName')
             .populate('receivedBy', 'firstName lastName');
 

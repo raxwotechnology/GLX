@@ -100,6 +100,25 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
     const contactPhone = doc.customerPhone || doc.customerSnapshot?.contactName || '';
     const dateDisplay = formatDate(doc.date || doc.invoiceDate || doc.createdAt);
 
+    // Custom Template settings
+    const customTemplateUrl = isInvoice
+        ? companyInfo?.invoiceCustomTemplateUrl
+        : companyInfo?.quotationCustomTemplateUrl;
+
+    const defaultActiveTemplate = isInvoice
+        ? (companyInfo?.activeInvoiceTemplate || 'default')
+        : (companyInfo?.activeQuotationTemplate || 'default');
+
+    const [selectedTemplate, setSelectedTemplate] = React.useState(defaultActiveTemplate);
+
+    React.useEffect(() => {
+        if (defaultActiveTemplate) {
+            setSelectedTemplate(defaultActiveTemplate);
+        }
+    }, [defaultActiveTemplate]);
+
+    const isUsingCustom = selectedTemplate === 'custom' && !!customTemplateUrl;
+
     const qrDataObj = {
         type: docTitle,
         number: docNumber,
@@ -112,61 +131,118 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
     };
     const qrString = JSON.stringify(qrDataObj);
 
+    // Template Switcher Header (hidden during actual paper printing)
+    const TemplateToolbar = () => (
+        <div className="no-print mb-4 p-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Print Template:</span>
+                <button
+                    type="button"
+                    onClick={() => setSelectedTemplate('default')}
+                    className={`px-3 py-1.5 rounded-lg font-medium transition ${
+                        selectedTemplate === 'default'
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+                    }`}
+                >
+                    System Default Template
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (!customTemplateUrl) {
+                            alert('No custom template uploaded yet. Please upload one in Settings.');
+                            return;
+                        }
+                        setSelectedTemplate('custom');
+                    }}
+                    className={`px-3 py-1.5 rounded-lg font-medium transition ${
+                        selectedTemplate === 'custom'
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+                    }`}
+                >
+                    Custom Uploaded Template {customTemplateUrl ? '' : '(Not Uploaded)'}
+                </button>
+            </div>
+            {isUsingCustom && (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                    ✓ Rendering Custom Template Background
+                </span>
+            )}
+        </div>
+    );
+
     // Standard Header component
-    const Header = () => (
-        <div className="flex justify-between items-start pb-4 border-b border-gray-400 mb-4 font-calibri" style={{ fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif" }}>
-            <div className="flex gap-4 items-start w-full">
-                {/* Black & White Logo */}
-                <div className="w-16 h-16 flex-shrink-0">
-                    <img src="/logo.jpg" alt="GLX Logo" className="w-full h-full object-contain filter grayscale" />
+    const Header = () => {
+        if (isUsingCustom) {
+            return (
+                <div className="w-full mb-4">
+                    <img
+                        src={customTemplateUrl}
+                        alt="Custom Template Header"
+                        className="w-full max-h-36 object-contain rounded mb-2"
+                    />
                 </div>
-                
-                {/* Addresses & Info Columns */}
-                <div className="grid grid-cols-3 gap-6 w-full text-xs text-gray-900">
-                    {/* Left Column: Head Office */}
-                    <div>
-                        <p className="font-bold text-sm uppercase tracking-wide">GLX Industries (Pvt) Ltd</p>
-                        <p className="mt-1 text-[11px] leading-tight text-gray-600 font-calibri">
-                            No.14, Negambo Road,<br />
-                            Thudella, Ja-Ela,<br />
-                            Sri Lanka.<br />
-                            (11350)
-                        </p>
-                    </div>
+            );
+        }
 
-                    {/* Middle Column: GLX Truck Body Engineers */}
-                    <div>
-                        <p className="font-bold text-sm uppercase tracking-wide">GLX TRUCK BODY ENGINEERS</p>
-                        <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-tighter leading-none mt-0.5">
-                            ALUMINIUM, STEEL & FREEZER BOX MANUFACTURE
-                        </p>
-                        <p className="mt-1.5 text-[11px] leading-tight text-gray-600 font-calibri">
-                            No.2020/3L, 2, Seeduwa Road,<br />
-                            Kotugoda, Ja-Ela.<br />
-                            Sri Lanka.<br />
-                            (11390)
-                        </p>
+        return (
+            <div className="flex justify-between items-start pb-4 border-b border-gray-400 mb-4 font-calibri" style={{ fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif" }}>
+                <div className="flex gap-4 items-start w-full">
+                    {/* Black & White Logo */}
+                    <div className="w-16 h-16 flex-shrink-0">
+                        <img src="/logo.jpg" alt="GLX Logo" className="w-full h-full object-contain filter grayscale" />
                     </div>
+                    
+                    {/* Addresses & Info Columns */}
+                    <div className="grid grid-cols-3 gap-6 w-full text-xs text-gray-900">
+                        {/* Left Column: Head Office */}
+                        <div>
+                            <p className="font-bold text-sm uppercase tracking-wide">GLX Industries (Pvt) Ltd</p>
+                            <p className="mt-1 text-[11px] leading-tight text-gray-600 font-calibri">
+                                No.14, Negambo Road,<br />
+                                Thudella, Ja-Ela,<br />
+                                Sri Lanka.<br />
+                                (11350)
+                            </p>
+                        </div>
 
-                    {/* Right Column: Contact Details */}
-                    <div className="text-[11px] leading-snug font-mono text-left flex flex-col items-end">
-                        <div className="text-left font-mono">
-                            <p><span className="font-semibold">Mobile :</span> 071 6666 888</p>
-                            <p><span className="font-semibold">Tel &nbsp;&nbsp;&nbsp;&nbsp;:</span> 011 740 4446</p>
-                            <p><span className="font-semibold">Email &nbsp;:</span> glx.engi@gmail.com</p>
-                            <p><span className="font-semibold">Web &nbsp;&nbsp;&nbsp;:</span> www.glx.lk</p>
+                        {/* Middle Column: GLX Truck Body Engineers */}
+                        <div>
+                            <p className="font-bold text-sm uppercase tracking-wide">GLX TRUCK BODY ENGINEERS</p>
+                            <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-tighter leading-none mt-0.5">
+                                ALUMINIUM, STEEL & FREEZER BOX MANUFACTURE
+                            </p>
+                            <p className="mt-1.5 text-[11px] leading-tight text-gray-600 font-calibri">
+                                No.2020/3L, 2, Seeduwa Road,<br />
+                                Kotugoda, Ja-Ela.<br />
+                                Sri Lanka.<br />
+                                (11390)
+                            </p>
+                        </div>
+
+                        {/* Right Column: Contact Details */}
+                        <div className="text-[11px] leading-snug font-mono text-left flex flex-col items-end">
+                            <div className="text-left font-mono">
+                                <p><span className="font-semibold">Mobile :</span> 071 6666 888</p>
+                                <p><span className="font-semibold">Tel &nbsp;&nbsp;&nbsp;&nbsp;:</span> 011 740 4446</p>
+                                <p><span className="font-semibold">Email &nbsp;:</span> glx.engi@gmail.com</p>
+                                <p><span className="font-semibold">Web &nbsp;&nbsp;&nbsp;:</span> www.glx.lk</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     // Split Quotation into two distinct pages
     if (isQuotation) {
         return (
             <div ref={ref} className="font-calibri text-gray-900 bg-white max-w-[850px] mx-auto text-sm leading-relaxed p-6" style={{ fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif" }}>
-                
+                <TemplateToolbar />
+
                 {/* ================= PAGE 1 ================= */}
                 <div className="print-page border border-gray-200 rounded-lg p-6 shadow-sm mb-8 bg-white" style={{ pageBreakAfter: 'always' }}>
                     <Header />
@@ -416,6 +492,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
     // Default clean A4 print view for Invoice or Estimate
     return (
         <div ref={ref} className="print-container font-calibri text-gray-900 bg-white p-8 max-w-[850px] mx-auto text-sm leading-relaxed border border-gray-200 rounded-lg shadow-sm" style={{ fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif" }}>
+            <TemplateToolbar />
             <Header />
 
             {/* Document Metadata Grid */}

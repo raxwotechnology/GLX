@@ -6,7 +6,7 @@ async function run() {
     const workbook = xlsx.readFile(filePath);
     const sheet = workbook.Sheets['Stock in hand'];
     const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: null });
-    
+      
     console.log('Stock in Hand - Column headers:', rows[1]);
     
     // Find rows for end of March 2026 and end of April 2026

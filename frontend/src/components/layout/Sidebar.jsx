@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, BarChart3, Package, ShoppingCart, Users, Settings, Navigation, Briefcase,
     FolderTree, Award, UserCircle, Tags, Warehouse, Boxes, Truck,
@@ -9,8 +9,11 @@ import {
     ChevronDown, ChevronRight, CheckSquare, ClipboardCheck, BadgeCheck,
     PackageCheck, CreditCard, Tag, Mail, Sparkles, Home, Search, Scale,
     Plus, ArrowLeftRight, Sliders, LineChart, PieChart, TrendingUp, UserCheck,
-    MapPin, Download, Barcode
+    MapPin, Download, Barcode, LogOut
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
+import { authApi } from '../../features/auth/authApi';
 import { usePermission } from '../../hooks/usePermission';
 import { useSettings } from '../../features/settings/useSettings';
 import logo from '../../assets/logo.jpg';
@@ -381,10 +384,23 @@ function MenuGroup({ group, searchQuery, onNavClick }) {
 
 // ── Main Sidebar component ────────────────────────────────────────────────────
 export default function Sidebar({ isOpen, onClose }) {
+    const navigate = useNavigate();
     const sidebarRef = useRef(null);
     const { hasPermission, hasAnyPermission, isAdmin, user } = usePermission();
+    const { logout } = useAuthStore();
     const { data: settingsData } = useSettings();
     const settings = settingsData?.data;
+
+    const handleLogout = async () => {
+        try {
+            await authApi.logout();
+        } catch (err) {
+            // Even if backend fails, log out locally
+        }
+        logout();
+        toast.success('Logged out successfully');
+        navigate('/login');
+    };
 
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -649,8 +665,35 @@ export default function Sidebar({ isOpen, onClose }) {
                     </nav>
 
                     {/* ── Footer ── */}
-                    <div className="p-4 border-t border-slate-900 flex-shrink-0">
-                        <p className="text-xs text-slate-500">v1.0.0 · MVP</p>
+                    <div className="p-4 border-t border-slate-900 flex-shrink-0 space-y-3">
+                        {user && (
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                    {(user?.fullName || user?.firstName || 'U').charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-semibold text-slate-200 truncate">
+                                        {user?.fullName || user?.firstName || 'User'}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 truncate capitalize">
+                                        {user?.role?.replace('_', ' ') || 'Member'}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/30 rounded-lg text-xs font-semibold transition cursor-pointer"
+                        >
+                            <LogOut size={15} />
+                            <span>Logout</span>
+                        </button>
+
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
+                            <span>GLX ERP</span>
+                            <span>v1.0.0 · MVP</span>
+                        </div>
                     </div>
                 </div>
             </aside>

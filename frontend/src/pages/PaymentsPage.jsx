@@ -252,6 +252,7 @@ export default function PaymentsPage() {
                                         { value: '', label: 'All Voucher Types' },
                                         { value: 'customer_advance_refund', label: 'Customer Advance Refund' },
                                         { value: 'supplier_payment', label: 'Supplier Payment' },
+                                        { value: 'labor_advance', label: 'Labor / Salary Advance' },
                                         { value: 'transport_hire', label: 'Transport & Hire Expense' },
                                         { value: 'operational_expense', label: 'Petty Cash / Operational' },
                                     ]}

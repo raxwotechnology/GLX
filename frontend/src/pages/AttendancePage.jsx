@@ -304,6 +304,25 @@ export default function AttendancePage() {
             )
         },
         {
+            key: 'lateStatus', label: 'Late / Penalty', render: (r) => (
+                r.waivedLatePenalty ? (
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200" title={r.latePenaltyReason}>
+                        Late ({r.lateMinutes || 0}m) — Waived (Shift Covered)
+                    </span>
+                ) : r.latePenaltyHours > 0 ? (
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200" title={r.latePenaltyReason}>
+                        Late ({r.lateMinutes || 0}m) — {r.latePenaltyHours}h Cut (-{fmtCurrency(r.latePenaltyAmount)})
+                    </span>
+                ) : r.lateMinutes > 0 ? (
+                    <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                        Late {r.lateMinutes}m (Grace)
+                    </span>
+                ) : (
+                    <span className="text-gray-400 text-xs">—</span>
+                )
+            )
+        },
+        {
             key: 'checkIn', label: 'Clock In', render: (r) => (
                 r.checkInTime ? (
                     <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 flex items-center gap-1 w-max">

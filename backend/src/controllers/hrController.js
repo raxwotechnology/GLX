@@ -281,9 +281,6 @@ export const deleteEmployee = asyncHandler(async (req, res) => {
     emp.deletedAt = new Date();
     emp.status = 'terminated';
     await emp.save();
-    res.json({ success: true });
-});
-
 export const createShift = asyncHandler(async (req, res) => {
     const shift = await Shift.create(req.body);
     res.status(201).json({ success: true, data: shift });
@@ -363,16 +360,59 @@ export const markAttendance = asyncHandler(async (req, res) => {
         });
     }
 
-    // Calculate worked minutes and earned salary
+    // Calculate worked minutes, earned salary, and late penalty with work-back waiver
     if (att.checkInTime && att.checkOutTime) {
         const diff = (new Date(att.checkOutTime) - new Date(att.checkInTime)) / 60000;
         att.totalWorkedMinutes = Math.max(0, Math.floor(diff));
         const rate = emp.hourlyRate || emp.basicWageRate || 260;
         att.earnedSalary = Number(((att.totalWorkedMinutes / 60) * rate).toFixed(2));
+
+        // Shift start timestamp (default 08:00 AM)
+        const shiftStart = new Date(att.date);
+        shiftStart.setHours(8, 0, 0, 0);
+        const expectedShiftMins = 480; // 8 hours
+
+        const checkInMs = new Date(att.checkInTime).getTime();
+        const shiftStartMs = shiftStart.getTime();
+        let lateMins = 0;
+        if (checkInMs > shiftStartMs) {
+            lateMins = Math.floor((checkInMs - shiftStartMs) / 60000);
+        }
+        att.lateMinutes = lateMins;
+
+        let initialPenaltyHours = 0;
+        if (lateMins > 5 && lateMins <= 30) {
+            initialPenaltyHours = 0.5;
+        } else if (lateMins > 30) {
+            initialPenaltyHours = 1.0;
+        }
+
+        if (initialPenaltyHours > 0) {
+            if (att.totalWorkedMinutes >= expectedShiftMins) {
+                // Shift duration fully covered -> waive late penalty!
+                att.waivedLatePenalty = true;
+                att.latePenaltyHours = 0;
+                att.latePenaltyAmount = 0;
+                att.latePenaltyReason = `Waived: Late ${lateMins}m covered by full shift`;
+            } else {
+                att.waivedLatePenalty = false;
+                att.latePenaltyHours = initialPenaltyHours;
+                att.latePenaltyAmount = Number((initialPenaltyHours * rate).toFixed(2));
+                att.latePenaltyReason = `Late ${lateMins}m (${initialPenaltyHours}h salary cut)`;
+            }
+        } else {
+            att.waivedLatePenalty = false;
+            att.latePenaltyHours = 0;
+            att.latePenaltyAmount = 0;
+            att.latePenaltyReason = 'On Time';
+        }
     } else {
         att.totalWorkedMinutes = 0;
         att.overtimeMinutes = 0;
         att.earnedSalary = 0;
+        att.latePenaltyHours = 0;
+        att.latePenaltyAmount = 0;
+        att.waivedLatePenalty = false;
     }
 
     await att.save();
@@ -432,39 +472,6 @@ export const getAttendance = asyncHandler(async (req, res) => {
     });
 });
 
-/**
- * Bulk mark attendance for a day (for supervisors marking the whole team)
- */
-export const bulkMarkAttendance = asyncHandler(async (req, res) => {
-    const { date, records } = req.body;
-    if (!date || !Array.isArray(records)) {
-        res.status(400); throw new Error('date and records array required');
-    }
-
-    const attendanceDate = new Date(date);
-    attendanceDate.setHours(0, 0, 0, 0);
-
-    const results = [];
-    for (const r of records) {
-        if (!r.employeeId) continue;
-        const emp = await Employee.findById(r.employeeId);
-        if (!emp) continue;
-
-        let att = await Attendance.findOne({ employeeId: r.employeeId, date: attendanceDate });
-        if (!att) {
-            att = new Attendance({
-                employeeId: emp._id,
-                employeeCode: emp.employeeCode,
-                employeeName: emp.fullName,
-                date: attendanceDate,
-                markedBy: req.user._id,
-            });
-        }
-        att.status = r.status || 'present';
-        const checkIn = (r.checkInTime && r.checkInTime !== "") ? new Date(r.checkInTime) : null;
-        const checkOut = (r.checkOutTime && r.checkOutTime !== "") ? new Date(r.checkOutTime) : null;
-        att.checkInTime = (checkIn && !isNaN(checkIn.getTime())) ? checkIn : null;
-        att.checkOutTime = (checkOut && !isNaN(checkOut.getTime())) ? checkOut : null;
         att.lateMinutes = r.lateMinutes || 0;
         att.overtimeMinutes = r.overtimeMinutes || 0;
         att.notes = r.notes;

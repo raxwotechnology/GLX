@@ -55,6 +55,7 @@ const getEmployeeMonthAttendance = async (employeeId, year, month) => {
     let halfDays = 0;
     let overtimeMinutes = 0;
     let totalWorkedMinutes = 0;
+    let totalLatePenalties = 0;
 
     records.forEach((r) => {
         if (r.status === 'present' || r.status === 'late') daysPresent++;
@@ -62,6 +63,9 @@ const getEmployeeMonthAttendance = async (employeeId, year, month) => {
         else if (r.status === 'absent') daysAbsent++;
         overtimeMinutes += r.overtimeMinutes || 0;
         totalWorkedMinutes += r.totalWorkedMinutes || 0;
+        if (!r.waivedLatePenalty && r.latePenaltyAmount > 0) {
+            totalLatePenalties += r.latePenaltyAmount;
+        }
     });
 
     const totalWorkedHours = +(totalWorkedMinutes / 60).toFixed(2);
@@ -92,6 +96,7 @@ const getEmployeeMonthAttendance = async (employeeId, year, month) => {
         unpaidLeaveDays,
         overtimeHours: +(overtimeMinutes / 60).toFixed(2),
         totalWorkedHours,
+        totalLatePenalties: +totalLatePenalties.toFixed(2),
     };
 };
 
@@ -205,6 +210,14 @@ export const processPayroll = asyncHandler(async (req, res) => {
                 type: 'advance',
             });
         });
+
+        if (attendance.totalLatePenalties > 0) {
+            otherDeductions.push({
+                name: `Shift Late Penalties (Uncovered)`,
+                amount: attendance.totalLatePenalties,
+                type: 'penalty',
+            });
+        }
 
         const calc = calculatePayslip({
             basicSalary: basic,

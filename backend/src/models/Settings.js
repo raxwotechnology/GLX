@@ -31,6 +31,19 @@ const settingsSchema = new mongoose.Schema({
         type: Number,
         default: 10
     },
+    // Custom Print Templates
+    invoiceCustomTemplateUrl: String,
+    quotationCustomTemplateUrl: String,
+    activeInvoiceTemplate: {
+        type: String,
+        enum: ['default', 'custom'],
+        default: 'default'
+    },
+    activeQuotationTemplate: {
+        type: String,
+        enum: ['default', 'custom'],
+        default: 'default'
+    },
     updatedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

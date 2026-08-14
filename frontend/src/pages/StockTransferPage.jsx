@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, ArrowLeft, Save, ArrowRightLeft } from 'lucide-react';
@@ -15,33 +15,70 @@ import { useWarehouses } from '../features/warehouses/useWarehouses';
 import { useTransferStock } from '../features/stock/useStock';
 import { stockApi } from '../features/stock/stockApi';
 
-function WarehouseAutocomplete({ label, placeholder, warehouses, value, onChange, disabled }) {
+function WarehouseAutocomplete({ label, placeholder, warehouses = [], value, onChange, disabled }) {
     const [inputValue, setInputValue] = useState('');
     const [isOpen, setIsOpen] = useState(false);
+    const wrapperRef = useRef(null);
+
+    const list = Array.isArray(warehouses) ? warehouses : [];
 
     // Sync input value when value changes externally
     useEffect(() => {
-        const found = warehouses.find(w => w._id === value);
+        const found = list.find(w => w && w._id === value);
         if (found) {
-            setInputValue(found.name);
-        } else {
+            setInputValue(found.name || '');
+        } else if (!value) {
             setInputValue('');
         }
     }, [value, warehouses]);
 
-    const filtered = warehouses.filter(w =>
-        w.name.toLowerCase().includes(inputValue.toLowerCase()) ||
-        w.warehouseCode.toLowerCase().includes(inputValue.toLowerCase())
-    );
+    const filtered = list.filter(w => {
+        if (!w) return false;
+        const name = (w.name || '').toLowerCase();
+        const code = (w.warehouseCode || '').toLowerCase();
+        const query = (inputValue || '').toLowerCase();
+        return name.includes(query) || code.includes(query);
+    });
+
+    // Handle click outside to close dropdown cleanly
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setIsOpen(false);
+                const query = (inputValue || '').trim().toLowerCase();
+                if (query) {
+                    const exactMatch = list.find(
+                        w => w && (
+                            (w.name || '').toLowerCase() === query ||
+                            (w.warehouseCode || '').toLowerCase() === query
+                        )
+                    );
+                    if (exactMatch) {
+                        setInputValue(exactMatch.name || '');
+                        onChange(exactMatch._id);
+                    } else if (filtered.length === 1) {
+                        setInputValue(filtered[0]?.name || '');
+                        onChange(filtered[0]?._id);
+                    }
+                }
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [list, inputValue, filtered, onChange]);
 
     const handleInputChange = (val) => {
-        setInputValue(val);
+        const query = val || '';
+        setInputValue(query);
         setIsOpen(true);
 
-        const matches = warehouses.filter(w =>
-            w.name.toLowerCase().includes(val.toLowerCase()) ||
-            w.warehouseCode.toLowerCase().includes(val.toLowerCase())
-        );
+        const matches = list.filter(w => {
+            if (!w) return false;
+            const name = (w.name || '').toLowerCase();
+            const code = (w.warehouseCode || '').toLowerCase();
+            const q = query.toLowerCase();
+            return name.includes(q) || code.includes(q);
+        });
 
         if (matches.length === 1) {
             onChange(matches[0]._id);
@@ -50,63 +87,43 @@ function WarehouseAutocomplete({ label, placeholder, warehouses, value, onChange
         }
     };
 
-    const handleBlur = () => {
-        setTimeout(() => {
-            setIsOpen(false);
-            if (filtered.length === 1) {
-                setInputValue(filtered[0].name);
-                onChange(filtered[0]._id);
-            } else {
-                const exactMatch = warehouses.find(
-                    w => w.name.toLowerCase() === inputValue.toLowerCase() ||
-                         w.warehouseCode.toLowerCase() === inputValue.toLowerCase()
-                );
-                if (exactMatch) {
-                    setInputValue(exactMatch.name);
-                    onChange(exactMatch._id);
-                } else {
-                    const found = warehouses.find(w => w._id === value);
-                    if (found) {
-                        setInputValue(found.name);
-                    } else {
-                        setInputValue('');
-                        onChange('');
-                    }
-                }
-            }
-        }, 200);
+    const handleSelectOption = (w) => {
+        setInputValue(w.name || '');
+        onChange(w._id);
+        setIsOpen(false);
     };
 
     return (
-        <div className="relative w-full">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <div ref={wrapperRef} className="relative w-full">
+            {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
             <input
                 type="text"
                 placeholder={placeholder}
                 value={inputValue}
                 onChange={(e) => handleInputChange(e.target.value)}
                 onFocus={() => setIsOpen(true)}
-                onBlur={handleBlur}
                 disabled={disabled}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 text-sm disabled:bg-gray-55 disabled:text-gray-400 font-medium"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 text-sm disabled:bg-gray-100 disabled:text-gray-400 font-medium"
             />
-            {isOpen && filtered.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filtered.map(w => (
-                        <button
-                            key={w._id}
-                            type="button"
-                            onMouseDown={() => {
-                                setInputValue(w.name);
-                                onChange(w._id);
-                                setIsOpen(false);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition flex items-center justify-between"
-                        >
-                            <span className="font-medium text-gray-900">{w.name}</span>
-                            <span className="text-gray-400 text-xs font-mono">({w.warehouseCode})</span>
-                        </button>
-                    ))}
+            {isOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                    {filtered.length > 0 ? (
+                        filtered.map(w => (
+                            <button
+                                key={w._id}
+                                type="button"
+                                onClick={() => handleSelectOption(w)}
+                                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition flex items-center justify-between border-b border-gray-50 last:border-0"
+                            >
+                                <span className="font-medium text-gray-900">{w.name}</span>
+                                {w.warehouseCode && <span className="text-gray-400 text-xs font-mono">({w.warehouseCode})</span>}
+                            </button>
+                        ))
+                    ) : (
+                        <div className="px-4 py-3 text-xs text-gray-400 italic text-center">
+                            No matching warehouses found
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -219,7 +236,7 @@ export default function StockTransferPage() {
 
             <div className="grid grid-cols-3 gap-6">
                 <div className="col-span-2 space-y-6">
-                    <Card className="p-6">
+                    <Card className="p-6 !overflow-visible relative z-20">
                         <h3 className="text-sm font-semibold text-gray-700 mb-4">Route</h3>
                         <div className="grid grid-cols-2 gap-6 items-center">
                             <WarehouseAutocomplete
@@ -232,7 +249,7 @@ export default function StockTransferPage() {
                             <WarehouseAutocomplete
                                 label="To Warehouse"
                                 placeholder="Type to search destination..."
-                                warehouses={warehouses.filter((w) => w._id !== fromWarehouseId)}
+                                warehouses={(warehouses || []).filter((w) => w && w._id !== fromWarehouseId)}
                                 value={toWarehouseId}
                                 onChange={setToWarehouseId}
                                 disabled={!fromWarehouseId}
