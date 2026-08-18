@@ -506,7 +506,7 @@ export default function Sidebar({ isOpen, onClose }) {
             {/* Sidebar panel */}
             <aside
                 ref={sidebarRef}
-                className={`fixed lg:static inset-y-0 left-0 h-screen bg-[#0B192C] border-r border-slate-900 flex flex-col z-40 text-slate-100 transition-all duration-300 ease-in-out ${
+                className={`no-print fixed lg:static inset-y-0 left-0 h-screen bg-[#0B192C] border-r border-slate-900 flex flex-col z-40 text-slate-100 transition-all duration-300 ease-in-out ${
                     isOpen ? 'translate-x-0 w-64 min-w-[256px]' : '-translate-x-full lg:translate-x-0 lg:w-64 lg:min-w-[256px] w-0 min-w-0 overflow-hidden'
                 }`}
             >

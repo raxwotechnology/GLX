@@ -16,6 +16,11 @@ export const getSettings = asyncHandler(async (req, res) => {
 // @route   PUT /api/settings
 // @access  Private/Admin
 export const updateSettings = asyncHandler(async (req, res) => {
+    if (req.body.bossSignature && req.body.bossSignature.length > 3 * 1024 * 1024) {
+        res.status(400);
+        throw new Error('Signature image payload exceeds maximum allowed size (2MB)');
+    }
+
     let settings = await Settings.findOne();
     
     if (!settings) {

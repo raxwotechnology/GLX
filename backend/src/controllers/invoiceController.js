@@ -114,6 +114,10 @@ export const createInvoice = asyncHandler(async (req, res) => {
         finalDueDate = d;
     }
 
+    if (rest.discountPercent !== undefined) {
+        rest.discountPercent = Math.max(0, Math.min(100, Number(rest.discountPercent) || 0));
+    }
+
     const invoice = new Invoice({
         customerId: customer._id,
         customerSnapshot: {

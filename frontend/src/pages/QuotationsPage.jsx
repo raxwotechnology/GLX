@@ -3,7 +3,7 @@ import api from '../api/axios';
 import { format } from 'date-fns';
 import {
     Plus, FileText, Trash2, Send,
-    MapPin, Clock, X, ShoppingCart, Edit, Eye, Download, Search, Image as ImageIcon, Printer, CheckCircle, RotateCcw
+    MapPin, Clock, X, ShoppingCart, Edit, Eye, Download, Search, Image as ImageIcon, Printer, CheckCircle, RotateCcw, Briefcase
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +13,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { useSettings } from '../features/settings/useSettings';
 import DocumentPrintView from '../components/print/DocumentPrintView';
 import ShareDocumentSmsModal from '../components/ShareDocumentSmsModal';
-import { exportDocumentToPDF, exportElementToPDF } from '../utils/dataExport';
+import { exportDocumentToPDF, exportElementToPDF, printDocumentAsPDF, printElementAsPDF } from '../utils/dataExport';
 import { getApiUrl } from '../api/config';
 import { translateText, detectLanguage } from '../utils/translationService';
 
@@ -461,7 +461,11 @@ const QuotationsPage = () => {
     };
 
     const handlePrintDocument = () => {
-        window.print();
+        if (printRef.current) {
+            printElementAsPDF(printRef.current);
+        } else if (previewQuote) {
+            printDocumentAsPDF(previewQuote, previewQuote.documentType || 'quotation');
+        }
     };
 
     const getStatusStyle = (status) => {
@@ -1114,42 +1118,95 @@ const QuotationsPage = () => {
                             <DocumentPrintView ref={printRef} document={previewQuote} companyInfo={settings} />
                         </div>
 
-                        <div className="flex justify-between items-center pt-4 border-t flex-wrap gap-2">
-                            <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>Close</Button>
-                            <div className="flex flex-wrap gap-2">
-                                <Button variant="outline" onClick={handlePrintDocument}>
-                                    <Printer size={16} className="mr-1.5" /> Print Document
-                                </Button>
-                                <Button variant="outline" onClick={() => setShareModalOpen(true)}>
-                                    <Send size={16} className="mr-1.5" /> Share SMS
-                                </Button>
-                                <Button variant="outline" onClick={() => exportElementToPDF(printRef.current, `${previewQuote.documentType || 'quotation'}_${(previewQuote.quoteNumber || previewQuote.quotationCode || 'document').replace(/[\/\\:]/g, '_')}.pdf`)}>
-                                    <Download size={16} className="mr-1.5" /> Download PDF
-                                </Button>
+                        {/* Professional Action Toolbar */}
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100 gap-3 flex-wrap">
+                            {/* Left: Close */}
+                            <button
+                                onClick={() => setIsPreviewOpen(false)}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 transition-all duration-150 shadow-sm"
+                            >
+                                <X size={15} />
+                                Close
+                            </button>
+
+                            {/* Right: Action Groups */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {/* Document Actions Group */}
+                                <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-xl p-1">
+                                    <button
+                                        onClick={handlePrintDocument}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 rounded-lg hover:bg-white hover:shadow-sm hover:text-gray-900 transition-all duration-150"
+                                        title="Print Document"
+                                    >
+                                        <Printer size={14} />
+                                        Print
+                                    </button>
+                                    <div className="w-px h-5 bg-gray-200" />
+                                    <button
+                                        onClick={() => setShareModalOpen(true)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 rounded-lg hover:bg-white hover:shadow-sm hover:text-gray-900 transition-all duration-150"
+                                        title="Share via SMS"
+                                    >
+                                        <Send size={14} />
+                                        Share SMS
+                                    </button>
+                                    <div className="w-px h-5 bg-gray-200" />
+                                    <button
+                                        onClick={() => exportElementToPDF(printRef.current, `${previewQuote.documentType || 'quotation'}_${(previewQuote.quoteNumber || previewQuote.quotationCode || 'document').replace(/[\/\\:]/g, '_')}.pdf`)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 rounded-lg hover:bg-emerald-50 hover:shadow-sm transition-all duration-150"
+                                        title="Download as PDF"
+                                    >
+                                        <Download size={14} />
+                                        Download PDF
+                                    </button>
+                                </div>
+
+                                {/* Conversion Actions Group */}
                                 {previewQuote.status === 'converted' ? (
-                                    <Button variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100 font-bold text-xs px-3 py-1.5" onClick={() => { setRevertQuote(previewQuote); setRevertAdminPassword(''); setIsRevertModalOpen(true); }}>
-                                        <RotateCcw size={14} className="mr-1.5" /> Revert Conversion (Admin)
-                                    </Button>
+                                    <button
+                                        onClick={() => { setRevertQuote(previewQuote); setRevertAdminPassword(''); setIsRevertModalOpen(true); }}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 hover:border-amber-300 transition-all duration-150 shadow-sm"
+                                    >
+                                        <RotateCcw size={13} />
+                                        Revert Conversion
+                                    </button>
                                 ) : (
-                                    <div className="flex gap-2">
-                                        <Button variant="primary" className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-2.5 py-1.5" onClick={() => handleOpenConvertToInvoiceModal(previewQuote, 'commercial')}>
-                                            Convert to Invoice (Commercial)
-                                        </Button>
-                                        <Button variant="outline" className="text-purple-600 border-purple-200 hover:bg-purple-50 text-xs px-2.5 py-1.5" onClick={() => handleOpenConvertToInvoiceModal(previewQuote, 'proforma')}>
-                                            Convert to Proforma
-                                        </Button>
-                                        <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-2.5 py-1.5" onClick={() => {
-                                            setConvertProjectYard('');
-                                            setConvertProjectEmployees([]);
-                                            setIsProjectAdvanceChecked(false);
-                                            setProjectAdvanceAmount(0);
-                                            setProjectAdvanceMethod('cash');
-                                            setProjectAdvanceBankAccountId('');
-                                            setProjectAdvanceReference('');
-                                            setIsConvertToProjectOpen(true);
-                                        }}>
-                                            Convert to Project
-                                        </Button>
+                                    <div className="flex items-center gap-1.5 bg-purple-50 border border-purple-100 rounded-xl p-1">
+                                        <button
+                                            onClick={() => handleOpenConvertToInvoiceModal(previewQuote, 'commercial')}
+                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-all duration-150 shadow-sm"
+                                            title="Convert to Commercial Invoice"
+                                        >
+                                            <FileText size={13} />
+                                            To Invoice
+                                        </button>
+                                        <div className="w-px h-5 bg-purple-200" />
+                                        <button
+                                            onClick={() => handleOpenConvertToInvoiceModal(previewQuote, 'proforma')}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 rounded-lg hover:bg-purple-100 transition-all duration-150"
+                                            title="Convert to Proforma Invoice"
+                                        >
+                                            <FileText size={13} />
+                                            To Proforma
+                                        </button>
+                                        <div className="w-px h-5 bg-purple-200" />
+                                        <button
+                                            onClick={() => {
+                                                setConvertProjectYard('');
+                                                setConvertProjectEmployees([]);
+                                                setIsProjectAdvanceChecked(false);
+                                                setProjectAdvanceAmount(0);
+                                                setProjectAdvanceMethod('cash');
+                                                setProjectAdvanceBankAccountId('');
+                                                setProjectAdvanceReference('');
+                                                setIsConvertToProjectOpen(true);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 rounded-lg hover:bg-blue-100 transition-all duration-150"
+                                            title="Convert to Project"
+                                        >
+                                            <Briefcase size={13} />
+                                            To Project
+                                        </button>
                                     </div>
                                 )}
                             </div>

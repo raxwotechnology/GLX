@@ -22,6 +22,8 @@ const settingsSchema = z.object({
     defaultTaxRate: z.coerce.number().min(0),
     lowStockThreshold: z.coerce.number().min(0),
     managerSmsPhone: z.string().optional(),
+    bossSignature: z.string().optional(),
+    bossTitle: z.string().optional(),
     invoiceCustomTemplateUrl: z.string().optional(),
     quotationCustomTemplateUrl: z.string().optional(),
     activeInvoiceTemplate: z.string().optional(),
@@ -89,7 +91,7 @@ export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('company');
     const [saved, setSaved] = useState(false);
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
         resolver: zodResolver(settingsSchema),
         defaultValues: {
             companyName: 'GLX Industries',
@@ -98,8 +100,24 @@ export default function SettingsPage() {
             defaultTaxRate: 0,
             lowStockThreshold: 10,
             managerSmsPhone: '',
+            bossTitle: 'Authorized Signature / Managing Director',
         },
     });
+
+    const handleSignatureFileUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Signature image file size must be less than 2MB');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setValue('bossSignature', reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     useEffect(() => {
         if (data?.data) reset(data.data);
@@ -268,6 +286,51 @@ export default function SettingsPage() {
                                                 error={errors.companyLogo?.message}
                                                 registration={register('companyLogo')}
                                             />
+                                        </div>
+
+                                        <div className="col-span-2 mt-2 p-4 rounded-xl border border-blue-100 bg-blue-50/40">
+                                            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1.5 mb-3">
+                                                <BadgeCheck size={16} className="text-blue-600" /> Authorized Boss / Admin Signature (for Payslips & Payment Sheets)
+                                            </label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                                                <div className="space-y-3">
+                                                    <StyledInput
+                                                        label="Signatory Title / Name"
+                                                        placeholder="Authorized Signature / Managing Director"
+                                                        error={errors.bossTitle?.message}
+                                                        registration={register('bossTitle')}
+                                                    />
+                                                    <div>
+                                                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Upload E-Signature / Stamp Image</label>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleSignatureFileUpload}
+                                                            className="mt-1 block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+                                                        />
+                                                        <p className="text-[11px] text-gray-400 mt-1">PNG with transparent background or dark ink on white paper recommended (Max 2MB).</p>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Signature Preview</label>
+                                                    <div className="h-28 w-full border border-dashed border-gray-300 rounded-xl bg-white flex items-center justify-center p-2 relative">
+                                                        {watch('bossSignature') ? (
+                                                            <img src={watch('bossSignature')} alt="Boss Signature Preview" className="max-h-24 max-w-full object-contain" />
+                                                        ) : (
+                                                            <span className="text-xs text-gray-400 font-medium">No signature uploaded yet</span>
+                                                        )}
+                                                    </div>
+                                                    {watch('bossSignature') && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setValue('bossSignature', '')}
+                                                            className="mt-1.5 text-xs text-rose-600 hover:underline font-medium"
+                                                        >
+                                                            Remove Signature
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -451,10 +451,13 @@ export const getAttendance = asyncHandler(async (req, res) => {
         if (endDate) filter.date.$lte = new Date(endDate);
     }
 
-    // Department filter requires employee lookup
+    // Department filter or active employee filter
     if (departmentId && req.user.role !== 'employee') {
-        const empIds = await Employee.find({ departmentId }).distinct('_id');
+        const empIds = await Employee.find({ departmentId, status: { $ne: 'terminated' } }).distinct('_id');
         filter.employeeId = { $in: empIds };
+    } else if (!filter.employeeId && req.user.role !== 'employee') {
+        const activeEmpIds = await Employee.find({ status: { $ne: 'terminated' } }).distinct('_id');
+        filter.employeeId = { $in: activeEmpIds };
     }
 
     const skip = (Number(page) - 1) * Number(limit);

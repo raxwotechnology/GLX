@@ -211,12 +211,13 @@ export const transferStock = asyncHandler(async (req, res) => {
         await session.withTransaction(async () => {
             for (const item of items) {
                 if (!item.productId || !item.quantity) continue;
+                const effectiveQty = Number(item.quantity) * (Number(item.conversionMultiplier) || 1);
 
                 // Decrease at source
                 const out = await decreaseStock({
                     productId: item.productId,
                     warehouseId: fromWarehouseId,
-                    quantity: Number(item.quantity),
+                    quantity: effectiveQty,
                     movementType: 'transfer_out',
                     sourceDocument: { type: 'stock_transfer', number: 'TRF' },
                     reason: 'Stock transfer',
@@ -229,7 +230,7 @@ export const transferStock = asyncHandler(async (req, res) => {
                 const inMove = await increaseStock({
                     productId: item.productId,
                     warehouseId: toWarehouseId,
-                    quantity: Number(item.quantity),
+                    quantity: effectiveQty,
                     costPerUnit: out.stockItem.costPerUnit,
                     movementType: 'transfer_in',
                     sourceDocument: { type: 'stock_transfer', number: 'TRF' },

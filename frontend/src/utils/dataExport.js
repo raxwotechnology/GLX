@@ -449,22 +449,159 @@ export const exportDocumentToPDF = async (docData, documentType = 'invoice') => 
 };
 
 /**
- * Capture an actual DOM element (exactly as rendered on screen) and download as PDF.
+ * Generate the same jsPDF document as exportDocumentToPDF but open it in a
+ * new browser tab/window so the user can use the browser's native Print dialog.
+ * This guarantees descriptions, QR codes, and layout are identical to the
+ * downloaded PDF — no DOM rendering quirks.
  */
-export const exportElementToPDF = async (element, filename = 'document.pdf') => {
+export const printDocumentAsPDF = async (docData, documentType = 'invoice') => {
+    // Re-use the same builder but intercept before save
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.width;
+    const fmt = (n) => new Intl.NumberFormat('en-LK', { minimumFractionDigits: 2 }).format(n || 0);
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-LK') : '—';
+
+    const isInvoice = documentType === 'invoice' || documentType === 'proforma';
+    const title = isInvoice
+        ? (documentType === 'proforma' ? 'PROFORMA INVOICE' : 'COMMERCIAL INVOICE')
+        : (documentType === 'estimate' ? 'ESTIMATE' : 'QUOTATION');
+
+    const customerName = docData.customerName || docData.customerSnapshot?.name || 'N/A';
+    const docCode = docData.quotationCode || docData.quoteNumber || docData.invoiceNumber || docData._id || 'DOC';
+    const docDate = docData.date || docData.invoiceDate || docData.createdAt;
+
+    // Page border
+    doc.setDrawColor(220); doc.setLineWidth(0.2);
+    doc.rect(5, 5, pageWidth - 10, doc.internal.pageSize.height - 10);
+
+    // Logo
+    const logoBase64 = await loadImageBase64('/logo.jpg');
+    if (logoBase64) doc.addImage(logoBase64, 'JPEG', 12, 10, 16, 16);
+
+    // Company header
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(0, 0, 0);
+    doc.text('GLX TRUCK BODY ENGINEERS', pageWidth / 2, 14, { align: 'center' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(80);
+    doc.text('ALUMINIUM, STEEL & FREEZER BOX MANUFACTURE', pageWidth / 2, 19, { align: 'center' });
+    doc.text('No.2020/3L, 2, Seeduwa Road, Kotugoda, Ja-Ela. Sri Lanka. (11390)', pageWidth / 2, 23, { align: 'center' });
+    doc.setFontSize(7.5); doc.setTextColor(0);
+    doc.text(`Mobile: 071 6666 888  |  Tel: 011 740 4446  |  Email: glx.engi@gmail.com  |  Web: www.glx.lk`, pageWidth / 2, 27, { align: 'center' });
+
+    // Divider
+    doc.setDrawColor(180); doc.setLineWidth(0.4);
+    doc.line(10, 30, pageWidth - 10, 30);
+
+    // Document title badge
+    doc.setFillColor(30, 30, 30); doc.roundedRect(pageWidth / 2 - 30, 32, 60, 7, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(255);
+    doc.text(title, pageWidth / 2, 37.2, { align: 'center' });
+    doc.setTextColor(0);
+
+    // Metadata
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text(`${title} No: ${docCode}`, 10, 44);
+    doc.text(`Date: ${fmtDate(docDate)}`, pageWidth - 10, 44, { align: 'right' });
+    doc.text(`Customer: ${customerName}`, 10, 49);
+    if (docData.vehicleNo) doc.text(`Vehicle No: ${docData.vehicleNo}`, pageWidth - 10, 49, { align: 'right' });
+    doc.text(`Sales Rep: ${docData.salesRep || 'Asanka'}  |  Branch: ${docData.branch || 'JA-ELA'}`, 10, 54);
+
+    // Divider
+    doc.setDrawColor(210); doc.setLineWidth(0.2);
+    doc.line(10, 57, pageWidth - 10, 57);
+
+    // Items table
+    const tableColumns = ['#', 'Description', 'Rate (LKR)', 'Qty', 'Amount (LKR)'];
+    const tableRows = (docData.items || []).map((item, idx) => {
+        const desc = [
+            item.productName || item.description || 'Line item',
+            item.description && item.description !== (item.productName || '') ? item.description : '',
+            item.notes || ''
+        ].filter(Boolean).join('\n');
+        const qty = item.quantity || 1;
+        const price = item.unitPrice || item.rate || 0;
+        const total = item.lineTotal || (qty * price);
+        return [idx + 1, desc, fmt(price), qty, fmt(total)];
+    });
+
+    autoTable(doc, {
+        startY: 60,
+        head: [tableColumns],
+        body: tableRows,
+        theme: 'grid',
+        headStyles: { fillColor: [243, 244, 246], textColor: [107, 114, 128], fontSize: 8, fontStyle: 'bold', halign: 'left' },
+        styles: { fontSize: 7.5, cellPadding: 2.5, valign: 'top', lineColor: [229, 231, 235], lineWidth: 0.2, textColor: [31, 41, 55] },
+        margin: { left: 10, right: 10 },
+        columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 100 }, 2: { cellWidth: 35, halign: 'right' }, 3: { cellWidth: 15, halign: 'center' }, 4: { cellWidth: 30, halign: 'right' } }
+    });
+
+    let finalY = doc.lastAutoTable.finalY + 8;
+    if (finalY > doc.internal.pageSize.height - 75) { doc.addPage(); finalY = 15; doc.setDrawColor(220); doc.rect(5, 5, pageWidth - 10, doc.internal.pageSize.height - 10); }
+
+    // Totals
+    const subtotal = docData.subtotal || docData.totalAmount || (docData.items || []).reduce((s, i) => s + (i.quantity * i.unitPrice), 0);
+    const discount = (docData.discount || 0) + (docData.specialDiscount || 0);
+    const grandTotal = docData.grandTotal || docData.finalSellingPrice || (subtotal - discount);
+
+    doc.setDrawColor(210); doc.setFillColor(255, 255, 255);
+    doc.roundedRect(pageWidth - 95, finalY, 85, 20, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text('SUB TOTAL:', pageWidth - 90, finalY + 6);
+    doc.text(`LKR ${fmt(subtotal)}`, pageWidth - 15, finalY + 6, { align: 'right' });
+    doc.setDrawColor(220); doc.line(pageWidth - 93, finalY + 10, pageWidth - 12, finalY + 10);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+    doc.text('GRAND TOTAL:', pageWidth - 90, finalY + 15);
+    doc.text(`LKR ${fmt(grandTotal)}`, pageWidth - 15, finalY + 15, { align: 'right' });
+    doc.setDrawColor(0); doc.setLineWidth(0.4);
+    doc.line(pageWidth - 45, finalY + 16.5, pageWidth - 15, finalY + 16.5);
+    doc.line(pageWidth - 45, finalY + 17.5, pageWidth - 15, finalY + 17.5);
+
+    if (!isInvoice) {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+        doc.text('Payment & Bank Details:', 10, finalY + 5);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+        doc.text('Account Name: GLX Truck Body Engineers\nBank: Nations Trust Bank, Ja-Ela Branch\nAccount No: 1001-XXXX-XXXX\nTerms: 70% Advance with Order, balance on Completion.', 10, finalY + 9);
+    }
+
+    const bottomY = doc.internal.pageSize.height - 40;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(100);
+    doc.text(`Printed at: ${new Date().toLocaleString('en-GB')}`, 10, bottomY + 8);
+    doc.setDrawColor(0); doc.setLineWidth(0.4);
+    doc.line(10, bottomY + 22, 75, bottomY + 22);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(0);
+    doc.text('GLX INDUSTRIES - JA ELA', 10, bottomY + 26);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+    doc.text('Authorized Signature', 10, bottomY + 29.5);
+    doc.setDrawColor(210); doc.setLineWidth(0.2);
+    doc.roundedRect(pageWidth - 38, bottomY, 28, 33, 1, 1, 'D');
+
+    try {
+        const qrBase64 = await QRCode.toDataURL(JSON.stringify({ type: title, number: docCode, date: fmtDate(docDate), customer: customerName, grandTotal }));
+        doc.addImage(qrBase64, 'PNG', pageWidth - 34, bottomY + 2, 20, 20);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(6); doc.setTextColor(50);
+        doc.text('SCAN TO VERIFY', pageWidth - 24, bottomY + 25.5, { align: 'center' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(5.5);
+        doc.text(docCode, pageWidth - 24, bottomY + 29, { align: 'center' });
+    } catch (e) { console.warn('QR failed', e); }
+
+    // Open blob URL in new tab for printing (instead of downloading)
+    const blobUrl = doc.output('bloburl');
+    const win = window.open(blobUrl, '_blank');
+    if (win) {
+        win.addEventListener('load', () => {
+            setTimeout(() => win.print(), 300);
+        });
+    }
+};
+
+/**
+ * Helper to generate a multi-page jsPDF instance from a DOM element (or multi-page .print-page elements).
+ */
+export const generateElementPDF = async (element) => {
     if (!element) {
-        console.error("No element provided to exportElementToPDF");
-        return;
+        console.error("No element provided to generateElementPDF");
+        return null;
     }
     
-    const canvas = await html2canvas(element, {
-        scale: 2.5, // Crisp, professional high-DPI scaling
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-    });
-    
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
     const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -473,23 +610,126 @@ export const exportElementToPDF = async (element, filename = 'document.pdf') => 
     
     const pdfWidth = pdf.internal.pageSize.width;
     const pdfHeight = pdf.internal.pageSize.height;
-    
-    // Fit canvas exactly onto A4 page width
-    const imgWidth = pdfWidth;
-    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-    
-    let heightLeft = imgHeight;
-    let position = 0;
-    
-    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pdfHeight;
-    
-    while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+
+    // Check if the target element contains multi-page (.print-page) elements
+    const pageElements = element.querySelectorAll('.print-page');
+
+    if (pageElements && pageElements.length > 0) {
+        for (let i = 0; i < pageElements.length; i++) {
+            const pageEl = pageElements[i];
+            const canvas = await html2canvas(pageEl, {
+                scale: 2.5, // Crisp high-DPI resolution
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff',
+                ignoreElements: (el) => el.classList?.contains('no-print') || el.tagName === 'BUTTON'
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const marginX = 6;
+            const marginTop = 5;
+            const marginBottom = 8;
+            const maxPageWidth = pdfWidth - (marginX * 2);
+            const maxPageHeight = pdfHeight - marginTop - marginBottom;
+
+            let imgWidth = maxPageWidth;
+            let imgHeight = (canvas.height * maxPageWidth) / canvas.width;
+
+            if (imgHeight > maxPageHeight) {
+                const scale = maxPageHeight / imgHeight;
+                imgWidth = imgWidth * scale;
+                imgHeight = maxPageHeight;
+            }
+
+            const xOffset = marginX + (maxPageWidth - imgWidth) / 2;
+            const yOffset = marginTop;
+
+            if (i > 0) pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', xOffset, yOffset, imgWidth, imgHeight);
+        }
+    } else {
+        const canvas = await html2canvas(element, {
+            scale: 2.5,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            ignoreElements: (el) => el.classList?.contains('no-print') || el.tagName === 'BUTTON'
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
         heightLeft -= pdfHeight;
+
+        while (heightLeft > 5) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pdfHeight;
+        }
     }
-    
+
+    return pdf;
+};
+
+/**
+ * Capture an actual DOM element (exactly as rendered on screen) and download as PDF.
+ * Ignores .no-print toolbar elements and renders multi-page .print-page containers cleanly on A4 pages.
+ */
+export const exportElementToPDF = async (element, filename = 'document.pdf') => {
+    const pdf = await generateElementPDF(element);
+    if (!pdf) return;
     pdf.save(filename);
+};
+
+/**
+ * Print the EXACT same generated PDF that is downloaded.
+ * Renders high-DPI multi-page PDF from the element and opens print dialog directly.
+ */
+export const printElementAsPDF = async (element) => {
+    if (!element) return;
+    const pdf = await generateElementPDF(element);
+    if (!pdf) return;
+
+    const blob = pdf.output('blob');
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Create an invisible iframe for direct seamless print
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    printFrame.src = blobUrl;
+
+    document.body.appendChild(printFrame);
+
+    printFrame.onload = () => {
+        setTimeout(() => {
+            try {
+                printFrame.contentWindow.focus();
+                printFrame.contentWindow.print();
+            } catch (err) {
+                // Fallback: open in new window
+                const printWin = window.open(blobUrl, '_blank');
+                if (printWin) {
+                    printWin.addEventListener('load', () => {
+                        setTimeout(() => printWin.print(), 300);
+                    });
+                }
+            }
+            setTimeout(() => {
+                try {
+                    document.body.removeChild(printFrame);
+                    URL.revokeObjectURL(blobUrl);
+                } catch (e) {}
+            }, 60000);
+        }, 400);
+    };
 };

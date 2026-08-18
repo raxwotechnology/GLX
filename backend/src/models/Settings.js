@@ -23,6 +23,14 @@ const settingsSchema = new mongoose.Schema({
         type: String,
         default: '+94716666888'
     },
+    bossSignature: {
+        type: String,
+        default: ''
+    },
+    bossTitle: {
+        type: String,
+        default: 'Authorized Signature / Managing Director'
+    },
     defaultTaxRate: {
         type: Number,
         default: 0

@@ -177,7 +177,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
     const Header = () => {
         if (isUsingCustom) {
             return (
-                <div className="w-full mb-4">
+                <div className="w-full mb-4 quotation-header print-header avoid-break">
                     <img
                         src={customTemplateUrl}
                         alt="Custom Template Header"
@@ -188,7 +188,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
         }
 
         return (
-            <div className="flex justify-between items-start pb-4 border-b border-gray-400 mb-4 font-calibri" style={{ fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif" }}>
+            <div className="quotation-header print-header avoid-break flex justify-between items-start pb-4 border-b border-gray-400 mb-4 font-calibri" style={{ fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif" }}>
                 <div className="flex gap-4 items-start w-full">
                     {/* Black & White Logo */}
                     <div className="w-16 h-16 flex-shrink-0">
@@ -240,15 +240,15 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
     // Split Quotation into two distinct pages
     if (isQuotation) {
         return (
-            <div ref={ref} className="font-calibri text-gray-900 bg-white max-w-[850px] mx-auto text-sm leading-relaxed p-6" style={{ fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif" }}>
+            <div ref={ref} className="quotation-print-area print-area print-container document-print-view font-calibri text-gray-900 bg-white max-w-[850px] mx-auto text-sm leading-relaxed p-6" style={{ fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif" }}>
                 <TemplateToolbar />
 
                 {/* ================= PAGE 1 ================= */}
-                <div className="print-page border border-gray-200 rounded-lg p-6 shadow-sm mb-8 bg-white" style={{ pageBreakAfter: 'always' }}>
+                <div className="print-page border border-gray-200 rounded-lg p-6 pb-8 shadow-sm mb-8 bg-white flex flex-col justify-between" style={{ pageBreakAfter: 'always', minHeight: '260mm' }}>
                     <Header />
 
                     {/* Customer Box & Metadata */}
-                    <div className="grid grid-cols-2 gap-6 bg-gray-50 p-4 rounded border border-gray-200 mb-6 text-xs">
+                    <div className="quotation-card avoid-break print-avoid-break grid grid-cols-2 gap-6 bg-gray-50 p-4 rounded border border-gray-200 mb-6 text-xs">
                         <div>
                             <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Customer</p>
                             <p className="font-bold text-gray-900 text-sm">{customerName}</p>
@@ -349,13 +349,14 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                     </div>
 
                     {/* Page 1 Footer */}
-                    <div className="mt-8 text-center text-xs text-gray-500 font-calibri border-t pt-2">
-                        First Page / Page 1
+                    <div className="mt-6 pt-3 border-t-2 border-gray-300 flex items-center justify-between text-xs font-calibri">
+                        <span className="font-semibold text-gray-700">GLX INDUSTRIES (PVT) LTD — Kotugoda, Ja-Ela, Sri Lanka</span>
+                        <span className="font-bold text-gray-800 tracking-wider">PAGE 1 / 2</span>
                     </div>
                 </div>
 
                 {/* ================= PAGE 2 ================= */}
-                <div className="print-page border border-gray-200 rounded-lg p-6 shadow-sm bg-white">
+                <div className="print-page border border-gray-200 rounded-lg p-6 pb-8 shadow-sm bg-white flex flex-col justify-between" style={{ minHeight: '260mm' }}>
                     <Header />
 
                     <div className="mb-4 overflow-hidden border border-gray-300 rounded">
@@ -370,7 +371,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                             </thead>
                             <tbody className="divide-y divide-gray-200 bg-white font-calibri">
                                 {/* Bank Details Row */}
-                                <tr>
+                                <tr className="bank-details avoid-break">
                                     <td className="py-4 px-3 text-gray-800 font-semibold leading-relaxed">
                                         <div className="font-bold text-gray-900 text-sm mb-1 uppercase">Bank Details for Payments:</div>
                                         Account Name : GLX Truck Body Engineers<br />
@@ -385,7 +386,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
 
                                 {/* Special Discount Row in Red */}
                                 {doc.specialDiscount > 0 && (
-                                    <tr className="text-red-600 font-bold">
+                                    <tr className="text-red-600 font-bold avoid-break">
                                         <td className="py-3 px-3 uppercase text-sm">Special Discount</td>
                                         <td className="py-3 px-3 text-right font-mono text-sm">-{formatCurrency(doc.specialDiscount)}</td>
                                         <td className="py-3 px-3 text-center text-sm">1</td>
@@ -397,7 +398,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                     </div>
 
                     {/* Totals Summary */}
-                    <div className="flex justify-between items-start mb-6">
+                    <div className="avoid-break print-avoid-break flex justify-between items-start mb-6">
                         <div className="text-xs text-gray-600 leading-relaxed max-w-sm pt-2">
                             <span className="font-bold text-gray-800">Remarks :</span> {doc.remarks || 'Please process payments directly to the designated Nations Trust Bank account.'}
                         </div>
@@ -438,7 +439,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                     </div>
 
                     {/* Payment & Warranty Terms */}
-                    <div className="mb-6 grid grid-cols-2 gap-6 text-xs text-gray-700 font-calibri">
+                    <div className="avoid-break bank-details mb-6 grid grid-cols-2 gap-6 text-xs text-gray-700 font-calibri">
                         <div className="bg-gray-50 p-4 rounded border border-gray-200">
                             <p className="font-bold text-gray-900 uppercase mb-2">Condition of Payments:</p>
                             <ul className="space-y-1 text-gray-700">
@@ -459,31 +460,33 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                     </div>
 
                     {/* Authorized Person Signature & QR Code */}
-                    <div className="mt-8 pt-4 border-t border-gray-300 flex justify-between items-end text-xs">
-                        <div className="space-y-3">
-                            <div className="text-left font-mono text-[10px] text-gray-500">
-                                Printed at: {new Date().toLocaleString('en-GB')}
+                    <div className="avoid-break print-footer mt-auto pt-6 border-t border-gray-300">
+                        <div className="flex justify-between items-end text-xs mb-4">
+                            <div className="space-y-3">
+                                <div className="text-left font-mono text-[10px] text-gray-500">
+                                    Printed at: {new Date().toLocaleString('en-GB')}
+                                </div>
+                                <div className="text-center w-56">
+                                    <div className="border-b border-gray-800 mb-1.5 h-10"></div>
+                                    <p className="font-bold text-gray-900 uppercase">Yours Faithfully,</p>
+                                    <p className="font-bold text-gray-900 uppercase text-[10px]">GLX INDUSTRIES - Ja Ela</p>
+                                    <p className="text-gray-600 text-[10px]">Authorized Person</p>
+                                </div>
                             </div>
-                            <div className="text-center w-56">
-                                <div className="border-b border-gray-800 mb-1.5 h-10"></div>
-                                <p className="font-bold text-gray-900 uppercase">Yours Faithfully,</p>
-                                <p className="font-bold text-gray-900 uppercase text-[10px]">GLX INDUSTRIES - Ja Ela</p>
-                                <p className="text-gray-600 text-[10px]">Authorized Person</p>
+
+                            {/* QR Code */}
+                            <div className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 rounded shadow-sm">
+                                <QRCodeSVG value={qrString} size={90} level="M" />
+                                <p className="text-[9px] font-bold text-gray-700 mt-2 uppercase tracking-wide">Scan to Verify</p>
+                                <p className="text-[8px] text-gray-400 font-mono mt-0.5">{docNumber}</p>
                             </div>
                         </div>
-
-                        {/* QR Code */}
-                        <div className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 rounded shadow-sm">
-                            <QRCodeSVG value={qrString} size={90} level="M" />
-                            <p className="text-[9px] font-bold text-gray-700 mt-2 uppercase tracking-wide">Scan to Verify</p>
-                            <p className="text-[8px] text-gray-400 font-mono mt-0.5">{docNumber}</p>
+                        <div className="flex items-center justify-between border-t-2 border-gray-300 pt-3 pb-1 text-xs font-calibri">
+                            <span className="font-semibold text-gray-700">GLX INDUSTRIES (PVT) LTD — Kotugoda, Ja-Ela, Sri Lanka</span>
+                            <span className="font-bold text-gray-800 tracking-wider">PAGE 2 / 2</span>
                         </div>
                     </div>
 
-                    {/* Page 2 Footer */}
-                    <div className="mt-8 text-center text-xs text-gray-500 font-calibri border-t pt-2">
-                        Second Page / Page 2
-                    </div>
                 </div>
             </div>
         );
@@ -491,12 +494,12 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
 
     // Default clean A4 print view for Invoice or Estimate
     return (
-        <div ref={ref} className="print-container font-calibri text-gray-900 bg-white p-8 max-w-[850px] mx-auto text-sm leading-relaxed border border-gray-200 rounded-lg shadow-sm" style={{ fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif" }}>
+        <div ref={ref} className="quotation-print-area print-area print-container document-print-view font-calibri text-gray-900 bg-white p-8 max-w-[850px] mx-auto text-sm leading-relaxed border border-gray-200 rounded-lg shadow-sm" style={{ fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif" }}>
             <TemplateToolbar />
             <Header />
 
             {/* Document Metadata Grid */}
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md border border-gray-200 mb-6 text-xs font-calibri">
+            <div className="quotation-card avoid-break print-avoid-break grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md border border-gray-200 mb-6 text-xs font-calibri">
                 <div className="space-y-1">
                     {doc.insuranceCompany && (
                         <p><span className="font-semibold text-gray-700">Insurance Company:</span> {doc.insuranceCompany}</p>
@@ -541,7 +544,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                             const lineTotal = item.lineTotal || (qty * unitPrice);
 
                             return (
-                                <tr key={idx} className="hover:bg-gray-50">
+                                <tr key={idx} className="hover:bg-gray-50 avoid-break print-table-row">
                                     <td className="py-2.5 px-3 text-center font-medium text-gray-500">{idx + 1}</td>
                                     <td className="py-2.5 px-3 font-semibold text-gray-800">
                                         <div>{desc}</div>
@@ -564,7 +567,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
             </div>
 
             {/* Totals Summary */}
-            <div className="flex justify-end mb-6">
+            <div className="avoid-break print-avoid-break flex justify-end mb-6">
                 <div className="w-72 bg-gray-50 border border-gray-300 rounded p-3 text-xs space-y-1.5 font-calibri">
                     <div className="flex justify-between text-gray-700">
                         <span>SUB TOTAL:</span>
@@ -584,7 +587,7 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
             </div>
 
             {/* Authorized Person Signature & QR Code */}
-            <div className="mt-12 pt-4 border-t border-gray-300 flex justify-between items-end text-xs">
+            <div className="avoid-break print-footer mt-12 pt-4 border-t border-gray-300 flex justify-between items-end text-xs">
                 <div className="space-y-3">
                     <div className="text-left font-mono text-[10px] text-gray-500">
                         Printed at: {new Date().toLocaleString('en-GB')}
@@ -602,6 +605,12 @@ const DocumentPrintView = forwardRef(({ document: doc, companyInfo }, ref) => {
                     <p className="text-[9px] font-bold text-gray-700 mt-2 uppercase tracking-wide">Scan to Verify</p>
                     <p className="text-[8px] text-gray-400 font-mono mt-0.5">{docNumber}</p>
                 </div>
+            </div>
+
+            {/* Bottom Footer Bar */}
+            <div className="flex items-center justify-between border-t border-gray-200 pt-3 mt-8">
+                <span className="text-[10px] text-gray-400 font-mono">GLX INDUSTRIES (PVT) LTD — Kotugoda, Ja-Ela, Sri Lanka</span>
+                <span className="text-[10px] text-gray-400 font-mono tracking-wider">PAGE 1 / 1</span>
             </div>
         </div>
     );

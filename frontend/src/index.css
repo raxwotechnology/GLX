@@ -52,23 +52,38 @@ textarea {
 
 /* Print styles */
 @media print {
-  body {
+  /* Fix Blank Print Preview */
+  html, body {
+    visibility: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
     font-family: Calibri, 'Segoe UI', Arial, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
-  body * {
-    visibility: hidden;
-  }
-
-  .print-container,
-  .print-container *,
-  .print-page,
-  .print-page * {
-    visibility: visible;
+  /* Hide navigation, sidebar, headers, buttons, and app shell non-printable elements */
+  aside,
+  nav, 
+  header,
+  .no-print, 
+  .sidebar-container, 
+  .app-sidebar, 
+  .app-header, 
+  button, 
+  .modal-backdrop {
+    display: none !important;
   }
 
   /* Reset layout of all ancestor/parent containers to allow 100% full-width printing */
-  html, body, #root, .app-layout, .main-content, .page-container,
+  #root, 
+  .app-layout, 
+  .main-content, 
+  .page-container,
   .fixed.inset-0.z-50, 
   .fixed.inset-0.z-50 > div,
   .fixed.inset-0.z-50 > div > div {
@@ -85,30 +100,71 @@ textarea {
     box-shadow: none !important;
     background: transparent !important;
     border: none !important;
+    overflow: visible !important;
   }
 
+  /* Quotation & Document print container visibility & position */
+  .quotation-print-area,
+  .print-area,
   .print-container,
+  .document-print-view,
   .print-page {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    box-shadow: none;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .quotation-print-area *,
+  .print-area *,
+  .print-container *,
+  .document-print-view *,
+  .print-page * {
+    visibility: visible !important;
   }
 
   .print-page {
     page-break-after: always;
     position: relative;
     display: block;
-    margin-bottom: 20mm;
+    margin-bottom: 10mm;
   }
 
-  /* Hide app shell and modal header/footer close buttons when printing */
-  .no-print,
-  .fixed.inset-0.z-50 button,
-  .fixed.inset-0.z-50 h2 {
-    display: none !important;
+  /* Page Break / Layout Split Fix */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm;
+  }
+
+  /* Table rows, headers, bank details, and sections avoiding breaks */
+  .quotation-header,
+  .quotation-card,
+  .bank-details,
+  .print-header,
+  .print-footer,
+  .print-avoid-break,
+  .avoid-break,
+  table,
+  tr,
+  tbody tr,
+  .print-table-row {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
   }
 
   .print-only-container {
@@ -122,11 +178,6 @@ textarea {
   
   .print-only-container * {
     visibility: visible !important;
-  }
-
-  @page {
-    size: A4 portrait;
-    margin: 10mm;
   }
 }
 

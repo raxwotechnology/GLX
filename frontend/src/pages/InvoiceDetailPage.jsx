@@ -15,7 +15,7 @@ import { useAuthStore } from '../store/authStore';
 import { useRef } from 'react';
 import PrintableInvoice from '../components/print/PrintableInvoice';
 import ShareDocumentSmsModal from '../components/ShareDocumentSmsModal';
-import { exportDocumentToPDF, exportElementToPDF } from '../utils/dataExport';
+import { exportDocumentToPDF, exportElementToPDF, printElementAsPDF } from '../utils/dataExport';
 import { getApiUrl } from '../api/config';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsApi } from '../features/payments/paymentsApi';
@@ -217,7 +217,11 @@ export default function InvoiceDetailPage() {
     };
 
     const handlePrint = () => {
-        window.print();
+        if (printRef.current) {
+            printElementAsPDF(printRef.current);
+        } else {
+            window.print();
+        }
     };
 
     // Hard-code your company info for now (we'll move to settings later)

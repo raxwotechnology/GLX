@@ -187,6 +187,10 @@ export const updateProductionBatchStatus = asyncHandler(async (req, res) => {
         batch.plannedEndDate = new Date();
         batch.processingStage = 'completed';
         batch.stageTimestamps = { ...batch.stageTimestamps, completed: new Date() };
+    } else if (status === 'cancelled') {
+        batch.plannedEndDate = new Date();
+        batch.processingStage = 'cancelled';
+        batch.stageTimestamps = { ...batch.stageTimestamps, cancelled: new Date() };
     }
 
     await batch.save();
