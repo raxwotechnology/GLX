@@ -281,6 +281,9 @@ export const deleteEmployee = asyncHandler(async (req, res) => {
     emp.deletedAt = new Date();
     emp.status = 'terminated';
     await emp.save();
+    res.json({ success: true, message: 'Employee terminated successfully' });
+});
+
 export const createShift = asyncHandler(async (req, res) => {
     const shift = await Shift.create(req.body);
     res.status(201).json({ success: true, data: shift });
@@ -472,6 +475,39 @@ export const getAttendance = asyncHandler(async (req, res) => {
     });
 });
 
+/**
+ * Bulk mark attendance for a day (for supervisors marking the whole team)
+ */
+export const bulkMarkAttendance = asyncHandler(async (req, res) => {
+    const { date, records } = req.body;
+    if (!date || !Array.isArray(records)) {
+        res.status(400); throw new Error('date and records array required');
+    }
+
+    const attendanceDate = new Date(date);
+    attendanceDate.setHours(0, 0, 0, 0);
+
+    const results = [];
+    for (const r of records) {
+        if (!r.employeeId) continue;
+        const emp = await Employee.findById(r.employeeId);
+        if (!emp) continue;
+
+        let att = await Attendance.findOne({ employeeId: r.employeeId, date: attendanceDate });
+        if (!att) {
+            att = new Attendance({
+                employeeId: emp._id,
+                employeeCode: emp.employeeCode,
+                employeeName: emp.fullName,
+                date: attendanceDate,
+                markedBy: req.user._id,
+            });
+        }
+        att.status = r.status || 'present';
+        const checkIn = (r.checkInTime && r.checkInTime !== "") ? new Date(r.checkInTime) : null;
+        const checkOut = (r.checkOutTime && r.checkOutTime !== "") ? new Date(r.checkOutTime) : null;
+        att.checkInTime = (checkIn && !isNaN(checkIn.getTime())) ? checkIn : null;
+        att.checkOutTime = (checkOut && !isNaN(checkOut.getTime())) ? checkOut : null;
         att.lateMinutes = r.lateMinutes || 0;
         att.overtimeMinutes = r.overtimeMinutes || 0;
         att.notes = r.notes;
